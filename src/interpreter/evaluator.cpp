@@ -524,7 +524,8 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
     auto new_env = std::make_shared<object::Environment>(env);
     auto gen = std::make_shared<object::Computation>(params, new_env, setup,
                                                      run, signal_generator);
-    Eval(gen->setup_, gen->env_);
+    // Don't eval setup here - defer until first run() call
+    // This allows init() to execute first and set up variables
     return gen;
   }
 
@@ -1310,6 +1311,12 @@ std::shared_ptr<object::Object> ApplyComputationRun(
   std::shared_ptr<object::Computation> comp =
       std::dynamic_pointer_cast<object::Computation>(callable);
   if (comp) {
+    // Run setup on first invocation - deferred from comp creation
+    // This allows init() to execute first and initialize variables
+    if (!comp->setup_executed_) {
+      Eval(comp->setup_, comp->env_);
+      comp->setup_executed_ = true;
+    }
     auto extended_env = ExtendEnv(comp, args);
     auto evaluated = Eval(comp->run_, extended_env);
     return UnwrapReturnValue(evaluated);

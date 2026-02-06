@@ -105,10 +105,10 @@ Classic analog-style synthesis with oscillators and filters.
 ```javascript
 let synth = minisynth();
 load_preset(synth, "PAD");
-note_on(synth, 48, vel = 100, dur = 2000);  // Long pad note
+note_on(synth, notes_in_chord(24, 24), vel = 100, dur = 2000);
 ```
 
-### Granular Sampler - granular()
+### Granular Looper - loop()
 Granular synthesis engine for texture and atmospheric sounds.
 
 ```javascript

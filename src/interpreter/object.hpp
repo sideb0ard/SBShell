@@ -282,7 +282,8 @@ class Computation : public CallableWithEnv {
       : CallableWithEnv(parameters, env),
         setup_{setup},
         run_{run},
-        signal_generator_{signal_generator} {};
+        signal_generator_{signal_generator},
+        setup_executed_{false} {};
   ~Computation() = default;
   ObjectType Type() override;
   std::string Inspect() override;
@@ -291,6 +292,7 @@ class Computation : public CallableWithEnv {
   std::shared_ptr<ast::BlockStatement> setup_;
   std::shared_ptr<ast::BlockStatement> run_;
   std::shared_ptr<ast::BlockStatement> signal_generator_;
+  bool setup_executed_;  // Defer setup until first run() call
 };
 
 class MidiArray : public Object {

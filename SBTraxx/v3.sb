@@ -1,72 +1,111 @@
-let qeb1 = sample(qebo/QEBO-LOCKDOWNFM-02FMHIGHHAT1.wav);
-let qeb2 = sample(qebo/QEBO-LOCKDOWNFM-32FMPERCUSSION9.wav);
-let qeb3 = sample(qebo/QEBO-LOCKDOWNFM-29FMPERCUSSION6.wav);
-let qeb4 = sample(qebo/QEBO-LOCKDOWNFM-38FMSNARE6.wav);
-let ye = sample(voices/KRSYEAH.wav);
-let cpr = sample(cp/clapLongReverb.aif);
-let thee = sample(perc/thee.wav);
-let ah = sample(ch/acidHat3.aiff);
-let cp = sample(cp/djkhaledClap.aiff);
-let bdg = sample(bd/gaborKick.aiff);
-let japc = sample(nuloopz/japanCROWDwave.wav);
+let qeb1 = NULL;
+let qeb2 = NULL;
+let qeb3 = NULL;
+let qeb4 = NULL;
+let ye = NULL;
+let cpr = NULL;
+let thee = NULL;
+let ah = NULL;
+let cp = NULL;
+let bdg = NULL;
+let japc = NULL;
 
-let perc1 = sample(bombz/BSQ_M504_s.wav);
-let perc2 = sample(ht/DR660808HighTom.aif);
-let perc3 = sample(garage/SideStick_Lindrum_24.wav);
-let wh = sample(ch/weekendCHat.aiff);
+let perc1 = NULL;
+let perc2 = NULL;
+let perc3 = NULL;
+let wh = NULL;
 
-bpm 150;
-set thee:pitch 0.8;
-set qeb1:pitch 0.8;
-set qeb2:pitch 0.7;
-set qeb3:pitch 0.5;
-vol qeb1 0.5;
-vol qeb2 0.5;
-vol qeb3 0.5;
-vol qeb4 0.5;
-pan qeb1 -0.1;
-pan qeb2 -0.2;
-pan qeb3 0.4;
-pan qeb4 0.3;
-vol hh 0.2; vol oh 0.4;
-pan hh -0.3;
-pan oh 0.5;
-pan thee 0.3;
-let str = loop(strings/summit.aiff); note_off(str, 0);
-add_fx(str, "nnirror");
-add_fx(str, "sidechain", sbdrum)
-load_preset(sbdrum, "V3");
-set sbdrum:bd_key 15;
-set sbdrum:bd_decay 100;
-load_preset(sb2, "fmznitch");
-let dx4 = fm();
-load_preset(dx, "UPRNT");
-load_preset(dx2, "WIBBLEWOB");
-load_preset(dx3, "briiight");
-load_preset(dx4, "V3z");
-load_preset(mo, "MODRONZ");
-add_fx(dx3, "nnirror");
-add_fx(dx2, "compressor");
-add_fx(dx, "sidechain", sbdrum);
-add_fx(dx3, "sidechain", sbdrum);
-set dx2:fx0:threshold -20; set dx2:fx0:ratio 1.4; set dx2:fx0:outputgain 10;
-send("delay", hh);
-send("delay", str);
-add_fx(mo, "sidechain", sbdrum);
-add_fx(mo, "geom");
-add_fx(mo, "reverb");
-send("delay", ye);
-add_fx(ye, "filter");
-### add_fx(dx2, "zyzzup34"); // newstodat // CTZZZ2
-add_fx(dx4, "sidechain", sbdrum);
-add_fx(cpr, "distort");
-set cpr:pitch 0.8;
-add_fx(thee, "distort");
-send("delay", thee);
-send("delay", japc);
-send("reverb", japc);
+let str = NULL;
+let bdp = NULL;
 
-let bdp = rand_array(16, 0, 0);
+
+let init = fn()
+{
+  qeb1 = sample(qebo/QEBO-LOCKDOWNFM-02FMHIGHHAT1.wav);
+  qeb2 = sample(qebo/QEBO-LOCKDOWNFM-32FMPERCUSSION9.wav);
+  qeb3 = sample(qebo/QEBO-LOCKDOWNFM-29FMPERCUSSION6.wav);
+  qeb4 = sample(qebo/QEBO-LOCKDOWNFM-38FMSNARE6.wav);
+  ye = sample(voices/KRSYEAH.wav);
+  cpr = sample(cp/clapLongReverb.aif);
+  thee = sample(perc/thee.wav);
+  ah = sample(ch/acidHat3.aiff);
+  cp = sample(cp/djkhaledClap.aiff);
+  bdg = sample(bd/gaborKick.aiff);
+  japc = sample(nuloopz/japanCROWDwave.wav);
+
+  perc1 = sample(bombz/BSQ_M504_s.wav);
+  perc2 = sample(ht/DR660808HighTom.aif);
+  perc3 = sample(garage/SideStick_Lindrum_24.wav);
+  wh = sample(ch/weekendCHat.aiff);
+
+  str = loop(strings/summit.aiff); note_off(str, 0);
+
+  bdp = rand_array(16, 0, 0);
+
+  bpm 150;
+
+  set thee:pitch 0.8;
+  set qeb1:pitch 0.8;
+  set qeb2:pitch 0.7;
+  set qeb3:pitch 0.5;
+  vol qeb1 0.5;
+  vol qeb2 0.5;
+  vol qeb3 0.5;
+  vol qeb4 0.5;
+  pan qeb1 -0.1;
+  pan qeb2 -0.2;
+  pan qeb3 0.4;
+  pan qeb4 0.3;
+  vol hh 0.2; vol oh 0.4;
+  pan hh -0.3;
+  pan oh 0.5;
+  pan thee 0.3;
+
+  add_fx(str, "nnirror");
+  add_fx(str, "sidechain", sbdrum);
+  load_preset(sbdrum, "V3");
+
+  set sbdrum:bd_key 15;
+  set sbdrum:bd_decay 100;
+  load_preset(sb2, "fmznitch");
+
+  let dx4 = fm();
+
+  load_preset(dx, "UPRNT");
+  load_preset(dx2, "WIBBLEWOB");
+  load_preset(dx3, "briiight");
+  load_preset(dx4, "V3z");
+  load_preset(mo, "MODRONZ");
+
+  add_fx(dx3, "nnirror");
+  add_fx(dx2, "compressor");
+  add_fx(dx, "sidechain", sbdrum);
+  add_fx(dx3, "sidechain", sbdrum);
+
+  set dx2:fx0:threshold -20;
+  set dx2:fx0:ratio 1.4;
+  set dx2:fx0:outputgain 10;
+
+  send("delay", hh);
+  send("delay", str);
+
+  add_fx(mo, "sidechain", sbdrum);
+  add_fx(mo, "geom");
+  add_fx(mo, "reverb");
+
+  send("delay", ye);
+  add_fx(ye, "filter");
+
+  add_fx(dx4, "sidechain", sbdrum);
+  add_fx(cpr, "distort");
+  set cpr:pitch 0.8;
+
+  add_fx(thee, "distort");
+  send("delay", thee);
+  send("delay", japc);
+  send("reverb", japc);
+
+}
 
 # p1 # BDPbeat_comp; p2 < osc 16 "3 53" "set sbdrum:cp_delay_ms %";
 # p3 # bassl_comp;
