@@ -56,6 +56,9 @@ load_preset(drums, "TR808");   // Classic 808
 load_preset(drums, "TR909");   // Punchy 909
 load_preset(drums, "DILLA");   // Warm, lo-fi
 
+list_presets(drums); // to see all presets
+save_preset(drums, "NEWPRESETNAME"); // to save a new preset
+
 // Drum voices (MIDI note numbers):
 // 0 = Kick
 // 1 = Snare
@@ -119,6 +122,13 @@ setparam grain:density 20;
 note_on(grain, 60);
 ```
 
+### More information
+When you use `ps` you only see an overview of a sound generator. In order to view all parameters and their settings use `info(<sound_generator_name>)` e.g.
+```javascript
+info(dx);
+info(drums);
+```
+
 ---
 
 ## 3. Basic Interaction
@@ -127,16 +137,17 @@ note_on(grain, 60);
 
 ```javascript
 // Basic syntax
-note_on(instrument, note_number);
+note_on(<instrument_name>, <note_number>);
 
+// e.g.
 // With velocity (0-127, default 100)
-note_on(instrument, note_number, vel = 80);
+note_on(dx, 20, vel = 80);
 
 // With duration in milliseconds (default 100)
-note_on(instrument, note_number, dur = 500);
+note_on(dx, 20, dur = 1000);
 
 // With both
-note_on(instrument, note_number, vel = 110, dur = 250);
+note_on(dx, 20, vel = 120, dur = 2000);
 ```
 
 ### Changing Parameters
@@ -146,21 +157,25 @@ Every sound generator has dozens of parameters you can tweak:
 ```javascript
 let drums = drum();
 
+// See all available parameters
+info(drums);
+
 // Set a parameter
 setparam drums:bd_vol 1.0;        // Kick volume
 setparam drums:bd_decay 200;      // Kick decay time
 setparam drums:bd_pitch_env_range 12;  // Pitch sweep depth
 
-// Get current value
-getparam drums:bd_vol;
-
-// See all available parameters
-info(drums);
 ```
 
 ### Working with Presets
 
 ```javascript
+// List available presets
+list_presets(<instrument name>);
+
+// e.g.
+list_presets(drums);
+
 // Load a built-in preset
 load_preset(drums, "TR909");
 
@@ -170,8 +185,6 @@ save_preset(drums, "MY_KICKS");
 // Load your custom preset
 load_preset(drums, "MY_KICKS");
 
-// List available presets
-list_presets();
 ```
 
 ---
@@ -186,13 +199,14 @@ SoundB0ard runs on a global clock synced via Ableton Link.
 // Set tempo (also syncs with other Link-enabled apps)
 bpm(120);
 
-// Check current BPM
-bpm();
+// See current BPM via `ps` output.
 ```
 
 ### Beat Divisions and pp
 
-The magic variable `pp` means "pulses per step" - it represents one 16th note in the current tempo:
+Within SBShell time is addressable in Midi ticks.
+One loop, i.e. one bar, is 3840 midi ticks long. No matter what the BPM is, the midi clock will adjust to fill the space.
+The most commonly addressed time division is a 16th, and 3840 / 16 = 240. This value is used so often I have it saved as a variable `pp` - 'pulses per step'. This variable is set within the `startup.sb` file, which you can view and adjust yourself.
 
 ```javascript
 // At 120 BPM:
@@ -201,14 +215,14 @@ The magic variable `pp` means "pulses per step" - it represents one 16th note in
 // pp * 4 = quarter note
 // pp * 16 = one bar
 
+### Scheduling Notes with note_on_at()
+
 // Schedule notes in musical time
 note_on_at(drums, 0, 0);        // On the 1
 note_on_at(drums, 1, pp * 4);   // Beat 2
 note_on_at(drums, 0, pp * 8);   // Beat 3
 note_on_at(drums, 1, pp * 12);  // Beat 4
 ```
-
-### Scheduling Notes with note_on_at()
 
 While `note_on()` plays immediately, `note_on_at()` schedules notes at specific times:
 
@@ -219,7 +233,7 @@ note_on_at(drums, 1, pp * 4);      // One beat later
 note_on_at(drums, 2, pp * 2);      // Half beat later
 
 // With swing (offset timing)
-let swing = 15;  // milliseconds
+let swing = 15;  // midi_ticks
 note_on_at(drums, 2, pp * 1 + swing);
 note_on_at(drums, 2, pp * 3 - swing);
 ```
@@ -228,27 +242,32 @@ note_on_at(drums, 2, pp * 3 - swing);
 
 SoundB0ard automatically syncs with other apps via Ableton Link:
 
-```javascript
-// Just set the BPM and Link handles the rest
-bpm(128);
-
-// Check Link status
-link_status();
-```
-
 ---
 
 ## 5. Samples
 
 Load and play audio samples from the `wavs/` directory:
 
+Add your own samples and directories here.
+
+### List samples
+
+```javascript
+// list sample directories within `wavs/`
+ls
+
+// list contents of sample directory
+ls bd
+```
+
+
 ### Loading Samples
 
 ```javascript
-// Load a sample
+// Load a sample using the relative path
 let kick = sample(bd/kick8.aif);
 let snare = sample(sd/2snare.aif);
-let vocal = sample(vox/yeah.wav);
+let sh = sample(perc/chezShaker.aiff);
 
 // Samples are organized in directories:
 // bd/   - bass drums
@@ -257,44 +276,60 @@ let vocal = sample(vox/yeah.wav);
 // ch/   - closed hats
 // oh/   - open hats
 // perc/ - percussion
-// vox/  - vocals
-// noises/ - sound effects
 ```
 
 ### Playing Samples
 
 ```javascript
 // Trigger a sample
-note_on(kick, 1);  // Note number usually 1 for samples
+note_on(kick, 1);  // Note number ignored for samples
 
 // Control playback
 vol kick 0.8;
 pan kick 0.2;   // Pan right (range -1.0 to 1.0)
 
 // Pitch shifting
-set kick:pitch 1.5 at = 0;   // 1.5x speed (higher pitch)
-set kick:pitch 0.5 at = 0;   // 0.5x speed (lower pitch)
-```
-
-### Layering Samples with Synths
-
-Combine samples and synths for richer sounds:
-
-```javascript
-let drums = drum();
-load_preset(drums, "TR808");
-let kick_sample = sample(bd/wuk77.aiff);
-
-// Layer them
-note_on_at(drums, 0, 0);           // 808 kick
-note_on_at(kick_sample, 1, 5);     // Add sample 5ms later for thickness
+set kick:pitch 1.5;   // 1.5x speed (higher pitch)
+set kick:pitch 0.5;   // 0.5x speed (lower pitch)
 ```
 
 ---
 
 ## 6. Patterns & Arrays
 
-Patterns are the heart of rhythm programming in SoundB0ard.
+I've found arrays to be the most useful holder for patterns.
+
+```javascript
+// manually create an array of vals
+let pat = [1, 2, 5, 0];
+
+// access via idx
+pat[0]
+1
+
+// length of array
+len(pat);
+4
+
+// first value
+head(pat);
+1
+
+// rest of array
+tail(pat);
+[2, 5, 0]
+
+// last value
+last(pat);
+0
+
+// create an empty array of 16 values
+rand_array(16, 0, 0);
+[0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0]
+
+// create an range array of 16 values between 0 and 4 inclusive
+rand_array(16, 0, 4);
+[0, 4, 3, 2,  0, 4, 1, 4,  0, 4, 0, 3,  0, 1, 3, 0]
 
 ### Basic Pattern Arrays
 
@@ -316,10 +351,12 @@ let drums = drum();
 let kicks = [1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0,  1, 0, 0, 0];
 
 for (let i = 0; i < 16; i++) {
-  if (kicks[i] == 1) {
-    note_on_at(drums, 0, i * pp);
-  }
+    if (kicks[i] == 1) {
+      print(kicks[i]);
+      note_on_at(drums, 0, i * pp);
+    }
 }
+
 ```
 
 ### Velocity Patterns
@@ -332,7 +369,7 @@ let vx = 0;
 for (let i = 0; i < 16; i++) {
   if (kicks[i] == 1) {
     note_on_at(drums, 0, i * pp, vel = vels[vx]);
-    vx = incr(vx, 0, len(vels));  // Cycle through velocities
+    vx = incr(vx, 0, len(vels));
   }
 }
 ```
@@ -340,53 +377,80 @@ for (let i = 0; i < 16; i++) {
 ### Timing Offset Patterns (Swing)
 
 ```javascript
-// J Dilla-style drunk swing
 let swings = [0, -18, 12, -25, 15, -22, 18, -28, 10, -20, 16, -24];
 
 for (let i = 0; i < 16; i++) {
   if (kicks[i] == 1) {
-    note_on_at(drums, 0, i * pp + swings[i]);  // Add timing offset
+    note_on_at(drums, 0, i * pp + swings[i]);
   }
 }
 ```
 
-### Pattern Manipulation Functions
+### Pattern Creation Functions
 
 ```javascript
 // Euclidean rhythm generator
-let pattern = bjork(5, 16);  // 5 hits distributed over 16 steps
+let pat = bjork(5, 16);  // 5 hits distributed over 16 steps
 // Returns: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0]
 
-// Array functions
-len(pattern);          // Get length
-pattern[3];            // Access element
-append(arr, value);    // Add to array
+// random kick pattern
+rand_beat();
+
 ```
 
 ---
 
 ## 7. Computations (Live Coding)
 
-Computations (`comp()`) are where the magic happens - they let you create evolving, generative patterns.
+Computations (`comp()`) allow you to live code rather than working directly in the repl, and allow you to create longer and more complex processes.
+
+I find the best way to work is to have a split terminal screen, with an open SBShell repl on my left, and a text editor (vi) on my right.
 
 ### Basic Structure
 
+The structure of a Computation is based on Processing and Arduino, wherein you have two functions, a setup() and a run(). Setup creates your environment and runs once, setting inital values, and run() is called once on every loop, i.e. once every 3840 midi ticks at the top of the bar.
+
+Open a file in a text editor and create computations.
+
 ```javascript
+
+$ vi SBTraxx/DEMO1.sb
+
 let my_comp = comp()
 {
   setup()
   {
-    // Initialize variables (runs once)
-    let pattern = [1, 0, 1, 0,  1, 0, 1, 0];
-    let counter = 0;
+    let pat = [1, 0, 1, 0,  1, 0, 1, 0];
+    let pidx = 0;
   }
   run()
   {
-    // Executes every bar (runs repeatedly)
-    print("Bar:", counter);
-    counter++;
+    print("Pat value:", pat[pidx]);
+    pidx = incr(pidx, 0, len(pat));
   }
 }
+
+```
+
+Then within your SBShell window, monitor that file:
+
+```javascript
+SB#> monitor("SBTraxx/DEMO1.sb");
+
+// now you can run it once:
+
+SB#> my_comp()
+Pat value:1
+```
+
+Or you can assign it to a process position and it will run continually until you reset the process.
+```javascript
+
+SB#> p1 # my_comp
+SB#> Pat value:1
+Pat value:0
+Pat value:1
+Pat value:0
 ```
 
 ### Simple Drum Pattern

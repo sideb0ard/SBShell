@@ -1,0 +1,13 @@
+let my_comp = comp()
+{
+  setup()
+  {
+    let pat = [1, 0, 1, 0,  1, 0, 1, 0];
+    let pidx = 0;
+  }
+  run()
+  {
+    print("Pat value:", pat[pidx]);
+    pidx = incr(pidx, 0, len(pat));
+  }
+}

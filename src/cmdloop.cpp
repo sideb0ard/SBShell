@@ -54,9 +54,14 @@ int event_hook() {
                       ReadFileContents(f.function_file_filepath);
                   eval_command_queue.push(contents);
 
-                  // Call init() only on first load
+                  // Call init() if it exists and hasn't been called yet
+                  // Uses NULL pattern: _sb_init_done stays NULL until init runs
+                  eval_command_queue.push(
+                      "let _sb_init_done = NULL; "
+                      "if (init != NULL && _sb_init_done == NULL) { init(); "
+                      "_sb_init_done = true; }");
+
                   if (!f.initialized) {
-                    eval_command_queue.push("init()");
                     f.initialized = true;
                     std::cout << "Initializing " << f.function_file_filepath
                               << std::endl;
