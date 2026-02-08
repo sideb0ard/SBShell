@@ -65,7 +65,44 @@ class SquareOscillatorBank {
 class DrumModule {
  public:
   virtual void NoteOn(double vel) = 0;
+  virtual void DoRetrigger(
+      double vel) = 0;  // Subclass implements actual restart
   virtual StereoVal Generate() = 0;
+
+  // Call this instead of restarting envelopes directly on retrigger
+  void RequestRetrigger(double vel) {
+    pending_retrigger_ = true;
+    pending_velocity_ = vel;
+    retrigger_ramp_ = 1.0;
+  }
+
+  // Call this in Generate() to apply fade and check for retrigger completion
+  // Uses exponential fade-out, then linear fade-in after restart
+  StereoVal ApplyRetriggerFade(StereoVal out) {
+    if (pending_retrigger_) {
+      // Fade out phase
+      out.left *= retrigger_ramp_;
+      out.right *= retrigger_ramp_;
+      retrigger_ramp_ *= retrigger_fade_factor_;  // Exponential decay
+      if (retrigger_ramp_ <= 0.001) {             // -60dB threshold
+        retrigger_ramp_ = 0.0;
+        pending_retrigger_ = false;
+        fadein_active_ = true;
+        fadein_ramp_ = 0.0;
+        DoRetrigger(pending_velocity_);
+      }
+    } else if (fadein_active_) {
+      // Fade in phase - smooth the attack
+      out.left *= fadein_ramp_;
+      out.right *= fadein_ramp_;
+      fadein_ramp_ += fadein_rate_;
+      if (fadein_ramp_ >= 1.0) {
+        fadein_ramp_ = 1.0;
+        fadein_active_ = false;
+      }
+    }
+    return out;
+  }
 
   double velocity_{1};
 
@@ -76,6 +113,19 @@ class DrumModule {
   bool use_delay_{false};
   bool note_on_{false};
   std::unique_ptr<StereoDelay> delay_;
+
+  // Retrigger fade-out to prevent clicks
+  // Exponential fade: 10ms to reach -60dB (0.001) at 44.1kHz
+  // Factor = 0.001^(1/441) ≈ 0.9844
+  bool pending_retrigger_{false};
+  double pending_velocity_{0};
+  double retrigger_ramp_{0};
+  static constexpr double retrigger_fade_factor_{0.9844};
+
+  // Fade-in after retrigger (5ms linear ramp)
+  bool fadein_active_{false};
+  double fadein_ramp_{0};
+  static constexpr double fadein_rate_{1.0 / 220.0};  // 5ms at 44.1kHz
 };
 
 const double kDefaultKickFrequency = 80;
@@ -86,6 +136,7 @@ class BassDrum : public DrumModule {
   virtual ~BassDrum() = default;
 
   void NoteOn(double vel) override;
+  void DoRetrigger(double vel) override;
   StereoVal Generate() override;
 
   bool hard_sync_{false};
@@ -118,6 +169,7 @@ class SnareDrum : public DrumModule {
   virtual ~SnareDrum() = default;
 
   void NoteOn(double vel) override;
+  void DoRetrigger(double vel) override;
   StereoVal Generate() override;
 
   float low_freq_{kLowSnareFreq};
@@ -137,6 +189,7 @@ class HandClap : public DrumModule {
   virtual ~HandClap() = default;
 
   void NoteOn(double vel) override;
+  void DoRetrigger(double vel) override;
   StereoVal Generate() override;
 
   std::unique_ptr<QBLimitedOscillator> noise_;
@@ -152,6 +205,7 @@ class HiHat : public DrumModule {
   virtual ~HiHat() = default;
 
   void NoteOn(double vel) override;
+  void DoRetrigger(double vel) override;
   StereoVal Generate() override;
 
   void SetAmplitude(double val);
@@ -169,6 +223,7 @@ class FMDrum : public DrumModule {
   virtual ~FMDrum() = default;
 
   void NoteOn(double vel) override;
+  void DoRetrigger(double vel) override;
   StereoVal Generate() override;
 
   std::unique_ptr<QBLimitedOscillator> carrier_;
@@ -186,6 +241,7 @@ class Lazer : public DrumModule {
   virtual ~Lazer() = default;
 
   void NoteOn(double vel) override;
+  void DoRetrigger(double vel) override;
   StereoVal Generate() override;
 
   std::unique_ptr<QBLimitedOscillator> osc1_;

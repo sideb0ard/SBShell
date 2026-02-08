@@ -52,6 +52,10 @@ int event_hook() {
                 if (ftime > f.function_file_filepath_last_write_time) {
                   std::string contents =
                       ReadFileContents(f.function_file_filepath);
+
+                  // Pre-define init as NULL so the check doesn't error
+                  // If file defines init, it will overwrite this
+                  eval_command_queue.push("let init = NULL;");
                   eval_command_queue.push(contents);
 
                   // Call init() if it exists and hasn't been called yet
