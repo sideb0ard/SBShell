@@ -77,10 +77,8 @@ class DrumModule {
   }
 
   // Call this in Generate() to apply fade and check for retrigger completion
-  // Uses exponential fade-out, then linear fade-in after restart
   StereoVal ApplyRetriggerFade(StereoVal out) {
     if (pending_retrigger_) {
-      // Fade out phase
       out.left *= retrigger_ramp_;
       out.right *= retrigger_ramp_;
       retrigger_ramp_ *= retrigger_fade_factor_;  // Exponential decay
@@ -92,7 +90,6 @@ class DrumModule {
         DoRetrigger(pending_velocity_);
       }
     } else if (fadein_active_) {
-      // Fade in phase - smooth the attack
       out.left *= fadein_ramp_;
       out.right *= fadein_ramp_;
       fadein_ramp_ += fadein_rate_;

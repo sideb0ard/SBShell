@@ -1,12 +1,12 @@
 # SBShell User Guide
 
-SBShell is a unix shell inspired music making environment - it’s a text based interface, an interactive REPL - Read-Eval-Print Loop, and also supports live-coding in Slang, SBShell’s javascript like language, via file monitoring, to allow for complex evolving music programs.
+SBShell is a unix shell inspired music making environment - it’s a text based interface, an interactive REPL - Read-Eval-Print Loop, and also supports live-coding in Slang, SBShell’s javascript like language, via file monitoring, to allow for more complex computations.
 
 ---
 
 ## 0. Where am i?
 
-You're goto command is `ps`. In Unix this would be 'process status', for SBShell, it's more like 'program status' - it shows you mixer stats like volume and BPM; it shows you environment variables, which can be standard objects like numbers, strings and booleans, and also sound generator objects like FMSynth, MiniSynth, DrumSynth, or Sampler; and it shows the running Processes. More about all of that below..
+You're goto command is `ps`. In Unix this would be 'process status', for SBShell, it's more like 'program status' - it shows you mixer stats like volume and BPM; it shows you environment variables, which can be standard objects like numbers, strings and booleans, and also its special sauce --  sound generator objects like FMSynth, MiniSynth, DrumSynth, or Sampler; and it shows the running Processes. More about all of that below..
 
 ## 1. Quick Start / First Sounds
 
@@ -19,19 +19,24 @@ ps
 // you'll see various synths already created in the environment.
 // such as dx, dx2 and dx2, sbdrum and more.
 
-// Trigger a kick drum (note 0)
+// Trigger a kick drum on a drum synth    (note 0)
 note_on(sbdrum, 0);
 
-// Try a clap (note 2)
+// clap (note 2)
 note_on(sbdrum, 2);
 
-// play a long bass note (midi 20 - G#)
+// what else?
+info sbdrum;
+
+// bd(0) // sd(1) // cp(2) // hh(3) // hh2(4) ..
+
+// play a long bass note on an FM Synth (midi 20 - G#)
 note_on(dx, 20, dur = 5000);
 ```
 
 
 ```javascript
-// Load a classic preset
+// Load a preset
 load_preset(sbdrum, "TR808");
 note_on(sbdrum, 0);
 
@@ -115,18 +120,15 @@ note_on(synth, notes_in_chord(24, 24), vel = 100, dur = 2000);
 Granular synthesis engine for texture and atmospheric sounds.
 
 ```javascript
-let grain = granular();
-// Load a sample and granularize it
-setparam grain:grain_size 100;
-setparam grain:density 20;
-note_on(grain, 60);
+let clavl = loop(perc/808clave.aif);
+set clavl:len 8;
 ```
 
 ### More information
 When you use `ps` you only see an overview of a sound generator. In order to view all parameters and their settings use `info(<sound_generator_name>)` e.g.
 ```javascript
 info(dx);
-info(drums);
+info(sbdrum);
 ```
 
 ---
@@ -377,12 +379,13 @@ for (let i = 0; i < 16; i++) {
 ### Timing Offset Patterns (Swing)
 
 ```javascript
-let swings = [0, -18, 12, -25, 15, -22, 18, -28, 10, -20, 16, -24];
 
 for (let i = 0; i < 16; i++) {
-  if (kicks[i] == 1) {
-    note_on_at(drums, 0, i * pp + swings[i]);
-  }
+    let offs = 40;
+    if (i % 2 == 0) {
+        offs = 0;
+    }
+    note_on_at(drums, 3, i * pp + offs);
 }
 ```
 
@@ -474,6 +477,9 @@ let kick_comp = comp()
     }
   }
 }
+
+p2 # kick_comp
+
 ```
 
 ### Pattern Switching
@@ -483,21 +489,20 @@ let snare_comp = comp()
 {
   setup()
   {
-    // Multiple pattern variations
     let s1 = [0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0];
     let s2 = [0, 0, 0, 0,  1, 0, 0, 1,  0, 0, 0, 0,  1, 0, 0, 0];
     let s3 = [0, 0, 0, 0,  1, 0, 1, 0,  0, 0, 0, 0,  1, 0, 1, 1];
   }
   run()
   {
-    let spat = s1;  // Default pattern
+    let spat = s1;
 
-    // Switch patterns based on count
+    # every 4th bar
     if (count % 4 == 3) {
-      spat = s2;  // Every 4th bar
+      spat = s2;
     }
     if (count % 8 == 7) {
-      spat = s3;  // Every 8th bar (fill)
+      spat = s3;
     }
 
     for (let i = 0; i < 16; i++) {
@@ -511,7 +516,8 @@ let snare_comp = comp()
 
 ### The count Variable
 
-Every computation automatically has a `count` variable that increments each bar:
+There is a global variable called 'count' which is incremented for every bar. 
+You can use this to make decisions over time, using a modulo operation, i.e. every 2nd bar would be `count % 2 == 0` or on the last bar of an 8 bar loop would be `count % 8 == 7`.
 
 ```javascript
 run()
@@ -524,7 +530,7 @@ run()
   }
 
   if (count == 16) {
-    // Drop the drums!
+    // drop the beat
   }
 }
 ```
@@ -600,8 +606,6 @@ p32 # "";          // Stop snares
 p32 # snare_comp;  // Bring snares back
 ```
 
-**Important:** Process IDs (p1, p2, p31, etc.) are reserved - don't use them as variable names!
-
 ### Master Arrangement Computation
 
 ```javascript
@@ -647,19 +651,31 @@ let main_comp = comp()
 
 ## 9. Effects
 
-SoundB0ard has a powerful FX system for sound design and creative processing.
+There are a number of FX that can be added to each sound generator, and there are also 3 mixer level FX that can routed to.
 
 ### Adding Effects to Sound Generators
 
 Use the `fx()` command to add effects to any instrument:
 
 ```javascript
-let synth = minisynth();
 
-// Add effects to the chain
-fx(synth, distort);    // Add distortion
-fx(synth, reverb);     // Add reverb
-fx(synth, delay);      // Add delay
+add_fx(sbdrum, "distort");
+
+add_fx(dx, "delay");
+add_fx(dx, "reverb");
+
+// view the effects under the soundgenerator when you view `ps`:
+
+ps
+dx = FmSynth(mo_jazz) vol:0.80 pan:0.00 algo:7
+     fx0 Delay! ms:23 fb:0 rat:0 mx:0.5 mode:norm sync:0 sync_len:1/16
+     fx1 Reverb! predelayms:40 reverbtime:100 wetmx:20
+
+// you can address any parameter via the syntax <soundgenerator_name>:fx<num>:<param_name>
+// e.g. 
+
+set dx:fx0:ms 10;
+set dx:fx1:predelayms 100;
 
 // Multiple effects process in order
 ```
@@ -668,28 +684,32 @@ fx(synth, delay);      // Add delay
 
 #### Distortion (Multi-Mode)
 
-The distortion effect now has **4 different algorithms**:
+The distortion effect has **4 different algorithms**:
 
 ```javascript
-let drums = drum();
-fx(drums, distort);
+add_fx(sbdrum, "distort");
+ps
+sbdrum = DrumZynth -  - vol:1
+         fx0 Distortion - mode:HARD_CLIP(0) threshold:0.5 drive:1
 
 // Mode 0: HARD_CLIP - Brick wall clipping (classic)
-setparam drums:distortion_mode 0;
-setparam drums:distortion_threshold 0.5;  // 0.01-1.0
-setparam drums:distortion_drive 2.0;      // 1.0-10.0 (input gain)
+set sbdrum:fx0:mode 0;
+# 0.01-1.0
+set sbdrum:fx0:threshold 0.5;
+# 1.0-10.0 (input gain)
+set sbdrum:fx0:drive 2.0;      
 
 // Mode 1: SOFT_CLIP - Smooth tanh saturation
 setparam drums:distortion_mode 1;
-setparam drums:distortion_drive 3.5;  // Warm, musical saturation
+setparam drums:distortion_drive 3.5;
 
 // Mode 2: TUBE - Asymmetric tube-style warmth
 setparam drums:distortion_mode 2;
-setparam drums:distortion_drive 2.5;  // Vintage tube sound
+setparam drums:distortion_drive 2.5;
 
 // Mode 3: FOLDBACK - Wavefold/foldback distortion
 setparam drums:distortion_mode 3;
-setparam drums:distortion_drive 5.0;  // Extreme, gnarly tones
+setparam drums:distortion_drive 5.0;
 ```
 
 #### Waveshaper
@@ -1008,8 +1028,7 @@ Create files with `.sb` extension in the `SBTraxx/` directory:
 
 **my_beat.sb:**
 ```javascript
-// My awesome beat
-// This is a comment
+# This is a comment
 
 let drums = drum();
 load_preset(drums, "TR808");
@@ -1034,25 +1053,6 @@ let kick_comp = comp()
 p31 # kick_comp;
 ```
 
-### Running Scripts
-
-```javascript
-// Run a script
-run("SBTraxx/my_beat.sb");
-
-// Or with relative path
-run("my_beat.sb");
-```
-
-### Comments
-
-```javascript
-// Full-line comment
-
-let x = 5;  // Inline comment after code
-
-load_preset(drums, "TR808");  // This works too
-```
 
 ### Project Organization
 
@@ -1138,20 +1138,20 @@ midi_target(drums);
 
 ### WebSocket Control
 
-Control SoundB0ard from other applications via WebSocket:
+ontrol SoundB0ard from other applications via WebSocket:
 
-```javascript
-// WebSocket server runs on port 9002 by default
-// Send JSON commands from your browser/app
+``javascript
+/ WebSocket server runs on port 9002 by default
+/ Send JSON commands from your browser/app
 
-// Example: trigger from JavaScript
-ws.send(JSON.stringify({
-  command: "note_on",
-  instrument: "drums",
-  note: 0,
-  velocity: 100
-}));
-```
+/ Example: trigger from JavaScript
+s.send(JSON.stringify({
+ command: "note_on",
+ instrument: "drums",
+ note: 0,
+ velocity: 100
+));
+``
 
 ---
 
@@ -1451,18 +1451,10 @@ if (i < len(pattern)) {
 4. **Listen to the examples** - Run AUTECHRE_808.sb, DILLA_DRUNK_SWING.sb, PREMIER_BOOM_BAP.sb
 5. **Experiment with parameters** - Use info(drums) to see what you can tweak
 6. **Build a library** - Create reusable comp() patterns you can mix and match
-7. **Use track() for live coding** - Edit .sb files and hear changes immediately
+7. **Use monitor() for live coding** - Edit .sb files and hear changes immediately
 
 ---
 
 ## Where to Go Next
 
-- Explore the example beats in `SBTraxx/`
-- Read through the preset files in `settings/` to see how different sounds are made
-- Try combining multiple synths (drums + bass + pads)
-- Experiment with granular synthesis for textures
-- Build a full track structure with arrangement sections
-- Connect a MIDI controller for live performance
-- Share your creations!
-
-**Welcome to the SoundB0ard community. Happy live coding!**
+- If you got this far, wow! Hit me up!

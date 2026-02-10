@@ -57,17 +57,11 @@ BassDrum::BassDrum() {
 }
 
 void BassDrum::NoteOn(double vel) {
-  // Always request retrigger - let the fade handle transitions
-  // This works for both fresh starts and retriggers
   if (note_on_ || osc1_->m_note_on || pending_retrigger_ || fadein_active_) {
-    // Sound is playing or fading - request retrigger with fade
     RequestRetrigger(vel);
   } else {
-    // Truly silent - can start fresh with fade-in
     velocity_ = vel;
     note_on_ = true;
-    fadein_active_ = true;
-    fadein_ramp_ = 0.0;
     DoRetrigger(vel);
   }
 }
@@ -76,7 +70,6 @@ void BassDrum::DoRetrigger(double vel) {
   velocity_ = vel;
   note_on_ = true;
 
-  // Full restart
   click_.Trigger();
 
   osc1_->m_osc_fo = frequency_;
@@ -85,10 +78,8 @@ void BassDrum::DoRetrigger(double vel) {
   osc2_->StartOscillator();
 
   noise_->StartOscillator();
-  noise_eg_.m_envelope_output = 0.0;
   noise_eg_.StartEg();
 
-  eg_.m_envelope_output = 0.0;
   eg_.StartEg();
 }
 
@@ -201,26 +192,25 @@ SnareDrum::SnareDrum() {
 }
 
 void SnareDrum::NoteOn(double vel) {
-  velocity_ = vel;
-
-  if (!note_on_) {
-    note_on_ = true;
-    noise_->StartOscillator();
-    noise_eg_.StartEg();
-
-    lo_osc_->StartOscillator();
-    hi_osc_->StartOscillator();
-
-    eg_.StartEg();
-  } else {
-    // Use fade-out to prevent clicks on retrigger
+  if (note_on_ || lo_osc_->m_note_on || pending_retrigger_ || fadein_active_) {
     RequestRetrigger(vel);
+  } else {
+    velocity_ = vel;
+    note_on_ = true;
+    DoRetrigger(vel);
   }
 }
 
 void SnareDrum::DoRetrigger(double vel) {
   velocity_ = vel;
+  note_on_ = true;
+
+  noise_->StartOscillator();
   noise_eg_.StartEg();
+
+  lo_osc_->StartOscillator();
+  hi_osc_->StartOscillator();
+
   eg_.StartEg();
 }
 
@@ -260,10 +250,10 @@ StereoVal SnareDrum::Generate() {
     out = {.left = out_left * velocity_, .right = out_right * velocity_};
 
     out = distortion_.Process(out);
-
-    // Apply retrigger fade-out to prevent clicks
-    out = ApplyRetriggerFade(out);
   }
+
+  // Apply retrigger fade OUTSIDE the generation block so it always runs
+  out = ApplyRetriggerFade(out);
 
   if (eg_.GetState() == OFFF) {
     lo_osc_->StopOscillator();
@@ -319,22 +309,24 @@ HandClap::HandClap() {
 }
 
 void HandClap::NoteOn(double vel) {
-  velocity_ = vel;
-
-  if (!note_on_) {
-    note_on_ = true;
-    noise_->StartOscillator();
-    lfo_->StartOscillator();
-    noise_eg_.StartEg();
-    eg_.StartEg();
-  } else {
+  if (note_on_ || noise_->m_note_on || pending_retrigger_ || fadein_active_) {
     RequestRetrigger(vel);
+  } else {
+    velocity_ = vel;
+    note_on_ = true;
+    DoRetrigger(vel);
   }
 }
 
 void HandClap::DoRetrigger(double vel) {
   velocity_ = vel;
+  note_on_ = true;
+
+  noise_->StartOscillator();
+  lfo_->StartOscillator();
+
   noise_eg_.StartEg();
+
   eg_.StartEg();
 }
 
@@ -370,9 +362,10 @@ StereoVal HandClap::Generate() {
     out = {.left = out_left * velocity_, .right = out_right * velocity_};
 
     out = distortion_.Process(out);
-
-    out = ApplyRetriggerFade(out);
   }
+
+  // Apply retrigger fade OUTSIDE the generation block so it always runs
+  out = ApplyRetriggerFade(out);
 
   if (eg_.GetState() == OFFF) {
     noise_->StopOscillator();
@@ -463,19 +456,21 @@ void HiHat::SetAmplitude(double val) {
 }
 
 void HiHat::NoteOn(double vel) {
-  velocity_ = vel;
-
-  if (!note_on_) {
-    note_on_ = true;
-    osc_bank_.Start();
-    eg_.StartEg();
-  } else {
+  if (note_on_ || osc_bank_.IsNoteOn() || pending_retrigger_ ||
+      fadein_active_) {
     RequestRetrigger(vel);
+  } else {
+    velocity_ = vel;
+    note_on_ = true;
+    DoRetrigger(vel);
   }
 }
 
 void HiHat::DoRetrigger(double vel) {
   velocity_ = vel;
+  note_on_ = true;
+
+  osc_bank_.Start();
   eg_.StartEg();
 }
 
@@ -506,9 +501,10 @@ StereoVal HiHat::Generate() {
     out = {.left = out_left * velocity_, .right = out_right * velocity_};
 
     out = distortion_.Process(out);
-
-    out = ApplyRetriggerFade(out);
   }
+
+  // Apply retrigger fade OUTSIDE the generation block so it always runs
+  out = ApplyRetriggerFade(out);
 
   if (eg_.GetState() == OFFF) {
     osc_bank_.Stop();
@@ -566,23 +562,23 @@ FMDrum::FMDrum() {
 }
 
 void FMDrum::NoteOn(double vel) {
-  velocity_ = vel;
-
-  if (!note_on_) {
-    note_on_ = true;
-    carrier_->StartOscillator();
-    eg_.StartEg();
-
-    modulator_->StartOscillator();
-    modulator_eg_.StartEg();
-  } else {
+  if (note_on_ || carrier_->m_note_on || pending_retrigger_ || fadein_active_) {
     RequestRetrigger(vel);
+  } else {
+    velocity_ = vel;
+    note_on_ = true;
+    DoRetrigger(vel);
   }
 }
 
 void FMDrum::DoRetrigger(double vel) {
   velocity_ = vel;
+  note_on_ = true;
+
+  carrier_->StartOscillator();
   eg_.StartEg();
+
+  modulator_->StartOscillator();
   modulator_eg_.StartEg();
 }
 
@@ -611,9 +607,10 @@ StereoVal FMDrum::Generate() {
     out = {.left = out_left * velocity_, .right = out_right * velocity_};
 
     out = distortion_.Process(out);
-
-    out = ApplyRetriggerFade(out);
   }
+
+  // Apply retrigger fade OUTSIDE the generation block so it always runs
+  out = ApplyRetriggerFade(out);
 
   if (modulator_eg_.GetState() == OFFF) {
     modulator_->StopOscillator();
@@ -626,7 +623,7 @@ StereoVal FMDrum::Generate() {
     note_on_ = false;
   }
 
-  out = delay_->Process(out);
+  if (use_delay_) out = delay_->Process(out);
   return out;
 }
 
@@ -648,19 +645,20 @@ Lazer::Lazer() {
 }
 
 void Lazer::NoteOn(double vel) {
-  velocity_ = vel;
-
-  if (!note_on_) {
-    note_on_ = true;
-    osc1_->StartOscillator();
-    eg_.StartEg();
-  } else {
+  if (note_on_ || osc1_->m_note_on || pending_retrigger_ || fadein_active_) {
     RequestRetrigger(vel);
+  } else {
+    velocity_ = vel;
+    note_on_ = true;
+    DoRetrigger(vel);
   }
 }
 
 void Lazer::DoRetrigger(double vel) {
   velocity_ = vel;
+  note_on_ = true;
+
+  osc1_->StartOscillator();
   eg_.StartEg();
 }
 
@@ -685,9 +683,10 @@ StereoVal Lazer::Generate() {
     dca_.DoDCA(osc_out, osc_out, &out_left, &out_right);
 
     out = {.left = out_left * velocity_, .right = out_right * velocity_};
-
-    out = ApplyRetriggerFade(out);
   }
+
+  // Apply retrigger fade OUTSIDE the generation block so it always runs
+  out = ApplyRetriggerFade(out);
 
   if (eg_.GetState() == OFFF) {
     osc1_->StopOscillator();
@@ -695,6 +694,7 @@ StereoVal Lazer::Generate() {
     note_on_ = false;
   }
 
+  if (use_delay_) out = delay_->Process(out);
   return out;
 }
 }  // namespace SBAudio

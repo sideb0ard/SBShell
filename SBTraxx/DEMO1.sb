@@ -11,3 +11,47 @@ let my_comp = comp()
     pidx = incr(pidx, 0, len(pat));
   }
 }
+
+let kick_comp = comp()
+{
+  setup()
+  {
+    let kicks = [1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0,  1, 0, 0, 0];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (kicks[i] == 1) {
+        note_on_at(sbdrum, 0, i * pp, vel = 100);
+      }
+    }
+  }
+}
+
+let snare_comp = comp()
+{
+  setup()
+  {
+    let s1 = [0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0];
+    let s2 = [0, 0, 0, 0,  1, 0, 0, 1,  0, 0, 0, 0,  1, 0, 0, 0];
+    let s3 = [0, 0, 0, 0,  1, 0, 1, 0,  0, 0, 0, 0,  1, 0, 1, 1];
+  }
+  run()
+  {
+    let spat = s1;
+
+    # every 4th bar
+    if (count % 4 == 3) {
+      spat = s2;
+    }
+    if (count % 8 == 7) {
+      spat = s3;
+    }
+
+    for (let i = 0; i < 16; i++) {
+      if (spat[i] == 1) {
+        note_on_at(sbdrum, 1, i * pp, vel = 100 + rand(20));
+      }
+    }
+  }
+}

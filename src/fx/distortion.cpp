@@ -22,18 +22,19 @@ std::string Distortion::Status() {
   ss << "Distortion - ";
 
   // Show mode name
+  ss << "mode:";
   switch (mode_) {
     case DistortionMode::HARD_CLIP:
-      ss << "HARD_CLIP";
+      ss << "HARD_CLIP(0)";
       break;
     case DistortionMode::SOFT_CLIP:
-      ss << "SOFT_CLIP";
+      ss << "SOFT_CLIP(1)";
       break;
     case DistortionMode::TUBE:
-      ss << "TUBE";
+      ss << "TUBE(2)";
       break;
     case DistortionMode::FOLDBACK:
-      ss << "FOLDBACK";
+      ss << "FOLDBACK(3)";
       break;
   }
 

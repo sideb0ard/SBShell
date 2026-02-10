@@ -792,7 +792,7 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
       AddSoundGenerator(std::move(action->sg));
     }
   } else if (action->type == AudioAction::ADD_FX) {
-    if (action->soundgen_num && IsValidSoundgenNum(action->soundgen_num)) {
+    if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];
       if (sg) {
         for (auto fx : action->fx) {
@@ -801,7 +801,7 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
       }
     }
   } else if (action->type == AudioAction::ADD_BUFFER) {
-    if (action->soundgen_num && IsValidSoundgenNum(action->soundgen_num)) {
+    if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];
       if (sg && sg->type == LOOPER_TYPE) {
         sg->AddBuffer(std::move(action->fb));
