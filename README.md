@@ -11,11 +11,11 @@
 
 ```
 
-SoundB0ard is an interactive music-making environment with a Unix-style shell interface. It's a real-time audio synthesis and sampling system that allows users to create music through command-line interactions.
+SoundB0ard is a text based interactive music-making environment. It is a programming language with inbuilt Sound Generators - FM synth, subtractive synth, drum machine and sampler and the means to control those sound generators over time.
 
 ### Key Features
-- Unix-style shell for music creation and performance
-- SLANG language, javascript like syntax.
+- Unix-style shell for interactive control of the system.
+- Slang language, javascript like syntax.
 - Live coding support - can track files for changes 
 - Ableton Link integration for tempo synchronization across apps
 - FM and subtractive synth engines, based on DX100 and MiniMoog.
@@ -56,6 +56,7 @@ SoundB0ard is an interactive music-making environment with a Unix-style shell in
 mkdir build && cd build
 cmake ..
 cmake --build . -j$(nproc)
+cd ..
 ```
 
 ### Running
@@ -93,6 +94,7 @@ SoundB0ard/
 
 - Build instructions: `BUILD.md`
 - Credits: `CREDITS.md`
+- User Guide: `USER_GUIDE.md`
 
 [![Alt text](https://img.youtube.com/vi/wNFlijArs2g/0.jpg)](https://www.youtube.com/watch?v=VRMtDkt9qRY)
 

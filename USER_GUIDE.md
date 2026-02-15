@@ -1,6 +1,13 @@
 # SBShell User Guide
 
-SBShell is a unix shell inspired music making environment - it’s a text based interface, an interactive REPL - Read-Eval-Print Loop, and also supports live-coding in Slang, SBShell’s javascript like language, via file monitoring, to allow for more complex computations.
+Soundb0ard Shell is my Unix shell inspired music making environment. Rather than being the shell around an operating system, it is a shell around an audio mixing desk with several music instruments - drum machine, granular looper, FM and subtractive synths; and a javascript-like programming language called Slang, to control them.
+
+You launch it from the command line and enter an interactive shell where you can type commands. The color scheme is designed for a dark terminal.
+
+Once you have successfully followed the [BUILD](BUILD.md) instructions, you launch it from the projet root with:
+```bash
+build/Sbsh
+```
 
 ---
 
@@ -18,7 +25,11 @@ ps
 
 // you'll see various synths already created in the environment.
 // such as dx, dx2 and dx2, sbdrum and more.
+```
+ ![SoundB0ard ps command](images/sbshell_ps.png "ps command output")
 
+
+```javascript
 // Trigger a kick drum on a drum synth    (note 0)
 note_on(sbdrum, 0);
 
