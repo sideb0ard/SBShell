@@ -17,11 +17,6 @@ SoundB0ard is a command-line music making environment that can be built on Linux
    cmake --build . -j$(nproc)
    ```
 
-3. **Install** (optional):
-   ```bash
-   sudo cmake --build . --target install
-   ```
-
 4. **Run**
     ```bash
     # Run from project root (so it can find wavs/ directory)
@@ -81,20 +76,6 @@ SoundB0ard uses the following libraries:
 - **Readline** - Command-line editing
 - **JsonCpp** - JSON parsing
 - **pkg-config** - Package configuration
-
-## Build Options
-
-- **Debug build**: `cmake -DCMAKE_BUILD_TYPE=Debug ..`
-- **With tests**: `cmake -DBUILD_TESTS=ON ..`
-- **With sanitizers**: `cmake -DENABLE_SANITIZERS=ON -DCMAKE_BUILD_TYPE=Debug ..`
-
-## Development Targets
-
-- `cmake --build . --target format` - Format code with clang-format
-- `cmake --build . --target cppcheck` - Run static analysis  
-- `cmake --build . --target lint` - Run all linting tools
-- `cmake --build . --target dev` - Quick development cycle (format + build)
-- `cmake --build . --target check-all` - Run all checks
 
 ## Troubleshooting
 
