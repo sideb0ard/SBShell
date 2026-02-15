@@ -13,6 +13,8 @@
 
 SoundB0ard is a text based interactive music-making environment. It is a programming language with inbuilt Sound Generators - FM synth, subtractive synth, drum machine and sampler and the means to control those sound generators over time.
 
+ ![SoundB0ard ps command](images/sbshell_ps.png "ps command output")
+
 ### Key Features
 - Unix-style shell for interactive control of the system.
 - Slang language, javascript like syntax.
