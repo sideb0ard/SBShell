@@ -141,7 +141,7 @@ Load and play audio samples from the `wavs/` directory:
 
 Add your own samples and directories here.
 
-## List samples
+#### List samples
 
 ```javascript
 // list all directories within `wavs/`
@@ -152,7 +152,7 @@ ls bd
 ```
 
 
-## Loading Samples
+#### Loading Samples
 
 ```javascript
 // preview a sound
@@ -172,7 +172,7 @@ let sh = sample(perc/chezShaker.aiff);
 // perc/ - percussion
 ```
 
-## Playing Samples
+#### Playing Samples
 
 ```javascript
 // Trigger a sample
