@@ -139,8 +139,14 @@ set clavl:len 8;
 When you use `ps` you only see an overview of a sound generator. In order to view all parameters and their settings use `info(<sound_generator_name>)` e.g.
 ```javascript
 info(dx);
-info(sbdrum);
 ```
+
+![info dx command](images/infodx.png "info dx output")
+
+```javascript
+info(mo);
+```
+![info mo command](images/infomo.png "info mo output")
 
 ---
 
