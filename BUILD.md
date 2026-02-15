@@ -22,6 +22,12 @@ SoundB0ard is a command-line music making environment that can be built on Linux
    sudo cmake --build . --target install
    ```
 
+4. **Run**
+    ```bash
+    # Run from project root (so it can find wavs/ directory)
+    build/Sbsh
+    ```
+
 ## Manual Dependency Installation
 
 ### Ubuntu/Debian
