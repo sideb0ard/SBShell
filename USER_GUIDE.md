@@ -26,7 +26,7 @@ ps
 // you'll see various synths already created in the environment.
 // such as dx, dx2 and dx2, sbdrum and more.
 ```
- ![SoundB0ard ps command](images/sbshell_ps.png "ps command output")
+ ![SoundB0ard ps command](images/sbshell_ps_full.png "ps command output")
 
 
 ```javascript
