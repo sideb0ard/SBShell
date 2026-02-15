@@ -22,6 +22,24 @@ endif()
 # Find required packages
 find_package(PkgConfig REQUIRED)
 
+# macOS Homebrew support - add paths for both Intel and Apple Silicon
+if(APPLE)
+  # Apple Silicon Homebrew paths
+  if(EXISTS "/opt/homebrew")
+    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
+    list(APPEND CMAKE_LIBRARY_PATH "/opt/homebrew/lib")
+    list(APPEND CMAKE_INCLUDE_PATH "/opt/homebrew/include")
+    include_directories("/opt/homebrew/include")
+    link_directories("/opt/homebrew/lib")
+  endif()
+  # Intel Mac Homebrew paths
+  if(EXISTS "/usr/local/Cellar")
+    list(APPEND CMAKE_PREFIX_PATH "/usr/local")
+    list(APPEND CMAKE_LIBRARY_PATH "/usr/local/lib")
+    list(APPEND CMAKE_INCLUDE_PATH "/usr/local/include")
+  endif()
+endif()
+
 # Use FetchContent for external dependencies
 include(FetchContent)
 
@@ -89,6 +107,7 @@ if(NOT PORTAUDIO_FOUND)
   find_library(
     PORTAUDIO_LIB portaudio
     PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64
+          /opt/homebrew/lib # Apple Silicon Homebrew
     NO_DEFAULT_PATH)
   if(NOT PORTAUDIO_LIB)
     # Fallback to default search
@@ -98,7 +117,8 @@ if(NOT PORTAUDIO_FOUND)
     message(
       FATAL_ERROR
         "PortAudio library not found. Install with: "
-        "sudo apt install portaudio19-dev (Ubuntu/Debian) or equivalent")
+        "brew install portaudio (macOS) or "
+        "sudo apt install portaudio19-dev (Ubuntu/Debian)")
   endif()
 endif()
 
@@ -106,6 +126,7 @@ endif()
 find_library(
   PORTMIDI_LIB portmidi
   PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64
+        /opt/homebrew/lib # Apple Silicon Homebrew
   NO_DEFAULT_PATH)
 if(NOT PORTMIDI_LIB)
   # Fallback to default search
@@ -113,9 +134,10 @@ if(NOT PORTMIDI_LIB)
 endif()
 if(NOT PORTMIDI_LIB)
   message(
-    FATAL_ERROR "PortMidi library not found. Install with: "
-                "sudo apt install libportmidi-dev (Ubuntu/Debian) or equivalent"
-  )
+    FATAL_ERROR
+      "PortMidi library not found. Install with: "
+      "brew install portmidi (macOS) or "
+      "sudo apt install libportmidi-dev (Ubuntu/Debian)")
 endif()
 
 pkg_check_modules(SNDFILE sndfile)

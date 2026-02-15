@@ -82,7 +82,7 @@ std::string MiniSynth::Status() {
     ss << ANSI_COLOR_RESET;
   else
     ss << ANSI_COLOR_CYAN;
-  ss << "Moog(" << m_settings.m_settings_name << ")"
+  ss << "MiniSynth(" << m_settings.m_settings_name << ")"
      << " vol:" << volume << " pan:" << pan
      << " voice:" << S_VOICES[m_settings.m_voice_mode] << "("
      << m_settings.m_voice_mode << ")" << ANSI_COLOR_RESET;

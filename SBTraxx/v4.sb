@@ -52,7 +52,7 @@ let bd_comp = comp()
             vx = incr(vx, 0, len(velz));
           }
           note_on_at(sbdrum, 0, i * pp, vel = v);
-          note_on_at(dx2, notes_in_chord(42, 42), i * pp, vel = v, dur = durz[drx]);
+          #note_on_at(dx2, notes_in_chord(42, 42), i * pp, vel = v, dur = durz[drx]);
           drx = incr(drx, 0, len(durz));
         }
       }
@@ -178,15 +178,15 @@ let dx1blah_comp = comp()
       nx = incr(nx, 0, len(notz));
     }
 
-    if (count % 4 == 1) {
-      let pat = bjork(bjz[bx], 16);
-      bx = incr(bx, 0, len(bjz));
-      for (let i = 0; i < 16; i++) {
-        if (pat[i] == 1) {
-          note_on_at(dx3, notz[nx], i * pp, dur = 300, vel = 90);
-        }
-      }
-    }
+    # if (count % 4 == 1) {
+      #   let pat = bjork(bjz[bx], 16);
+      #   bx = incr(bx, 0, len(bjz));
+      #   for (let i = 0; i < 16; i++) {
+        #     if (pat[i] == 1) {
+          #       note_on_at(dx3, notz[nx], i * pp, dur = 300, vel = 90);
+          #     }
+        #   }
+      # }
   }
 }
 
@@ -264,5 +264,63 @@ let percblah_comp = comp()
         px = incr(px, 0, len(pitchz));
       }
     }
+  }
+}
+
+let peshblah_comp = comp()
+{
+  setup()
+  {
+    let beat1 = [1, 0, 0, 1,  0, 0, 1, 0,  0, 0, 1, 0,  0, 0, 1, 0];
+    let pix = 0;
+    let pmax = 3;
+    let pitz = [1, 2, 1.5, 0.6, 0.7, 1.2];
+    let px = 0;
+  }
+  run()
+  {
+    let beat = beat1;
+    if (count % 2 == 1) {
+      beat = rand_array(16, 0, 1);
+    }
+
+    if (count % 8 < 6) {
+      for (let i = 0; i < 16; i++) {
+        if (beat[i] == 1) {
+          note_on_at(pesh, pix, i * pp);
+          set mixer:xfader:xpos -1 at=i*pp;
+        } else {
+          note_on_at(rock, pix, i * pp);
+          set mixer:xfader:xpos 1 at=i*pp;
+        }
+        pix = incr(pix, 0, pmax);
+      }
+      if (count % 4 == 3) {
+        pmax = incr(pmax, 3, 16);
+        set pesh:reverse 1;
+        set rock:reverse 1;
+      }
+      if (count % 6 == 2) {
+        print("pitch:", pitz[px]);
+        solo(pesh, at=10*pp);
+        set pesh:pitch pitz[px];
+        px = incr(px, 0, len(pitz));
+        set rock:pitch pitz[px];
+      }
+    }
+  }
+}
+
+let wurker = comp()
+{
+  setup()
+  {
+    let valz = [10, 34, 50, 77, 3];
+    let vx = 0;
+  }
+  run()
+  {
+    print("VAL IS:", valz[vx]);
+    vx = incr(vx, 0, len(valz));
   }
 }

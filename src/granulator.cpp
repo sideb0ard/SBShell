@@ -57,7 +57,8 @@ void Granulator::Reset() {
   incoming_grain_ = grain_b_.get();
   reverse_mode_ = false;
   SetGrainDensity(15);
-  eg_.SetAttackTimeMsec(5);
+  eg_.m_reset_to_zero = true;
+  eg_.SetAttackTimeMsec(10);  // Slightly longer attack to avoid clicks
   eg_.SetDecayTimeMsec(10);
   eg_.SetSustainLevel(1);
   eg_.SetReleaseTimeMsec(80);
@@ -212,6 +213,7 @@ void Granulator::LaunchGrain(SoundGrain *grain, mixer_timing_info tinfo) {
       .reverse_mode = reverse_mode_,
       .num_channels = file_buffer->num_channels_,
       .degrade_by = degrade_by_,
+      .pitch_ratio = file_buffer->pitch_ratio_.load(),
       .audio_buffer = audio_buffer,
   };
 

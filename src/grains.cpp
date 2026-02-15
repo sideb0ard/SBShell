@@ -25,6 +25,7 @@ void SoundGrainSample::Initialize(SoundGrainParams params) {
   audiobuffer_num_channels = params.num_channels;
   degrade_by = params.degrade_by;
   reverse_mode = params.reverse_mode;
+  pitch_ratio = params.pitch_ratio;
 
   grain_len_frames = params.dur_frames;
   audiobuffer_cur_pos = params.starting_idx;
@@ -60,7 +61,7 @@ StereoVal SoundGrainSample::Generate() {
     out.right = (*audio_buffer)[read_idx_right];
   }
 
-  audiobuffer_cur_pos += (incr * audiobuffer_num_channels);
+  audiobuffer_cur_pos += (incr * pitch_ratio * audiobuffer_num_channels);
   grain_frame_counter++;
 
   if (grain_frame_counter > grain_len_frames) {

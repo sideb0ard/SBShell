@@ -66,6 +66,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Detected macOS system"
     if command -v brew &> /dev/null; then
         brew install \
+            cmake \
             portaudio \
             portmidi \
             libsndfile \
