@@ -98,5 +98,5 @@ SoundB0ard/
 - [User Guide](USER_GUIDE.md)
 - [Credits](CREDITS.md)
 
-[![Alt text](https://img.youtube.com/vi/wNFlijArs2g/0.jpg)](https://www.youtube.com/watch?v=VRMtDkt9qRY)
+[![Alt text](images/liveshot.png)](https://www.youtube.com/watch?v=RbzhaLBoXVY)
 
