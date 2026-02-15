@@ -1,6 +1,6 @@
 # SBShell User Guide
 
-Soundb0ard Shell is my Unix shell inspired music making environment. Rather than being the shell around an operating system, it is a shell around an audio mixing desk with several music instruments - drum machine, granular looper, FM and subtractive synths; and a javascript-like programming language called Slang, to control them.
+Soundb0ard Shell is my Unix shell inspired music making environment. Rather than being the shell around an operating system, it is a shell around an audio mixing desk with several music instruments - drum machine, granular looper, FM and subtractive synths, and sample player; and a javascript-like programming language called Slang, to control them.
 
 You launch it from the command line and enter an interactive shell where you can type commands. The color scheme is designed for a dark terminal.
 
@@ -61,7 +61,7 @@ note_on(sbdrum, 1, vel = 40);   // Quiet ghost note
 
 ## 2. Sound Generators
 
-SoundB0ard has four main types of sound generators:
+SoundB0ard has five types of sound generators:
 
 ### Drum Machine - drum()
 Synthesized drums with 9 voices: kick, snare, closed hat, clap, open hat, 3 FM toms, and a laser zap.
@@ -135,6 +135,59 @@ let clavl = loop(perc/808clave.aif);
 set clavl:len 8;
 ```
 
+### Sample Player
+
+Load and play audio samples from the `wavs/` directory:
+
+Add your own samples and directories here.
+
+## List samples
+
+```javascript
+// list all directories within `wavs/`
+ls
+
+// list contents of specific directory
+ls bd
+```
+
+
+## Loading Samples
+
+```javascript
+// preview a sound
+play bd/mawkick.aiff;
+
+// Load a sample using the relative path
+let kick = sample(bd/kick8.aif);
+let snare = sample(sd/2snare.aif);
+let sh = sample(perc/chezShaker.aiff);
+
+// Samples are organized in directories:
+// bd/   - bass drums
+// sd/   - snares
+// cp/   - claps
+// ch/   - closed hats
+// oh/   - open hats
+// perc/ - percussion
+```
+
+## Playing Samples
+
+```javascript
+// Trigger a sample
+note_on(kick, 1);  // Note number ignored for samples
+
+// Control playback
+vol kick 0.8;
+pan kick 0.2;   // Pan right (range -1.0 to 1.0)
+
+// Pitch shifting
+set kick:pitch 1.5;   // 1.5x speed (higher pitch)
+set kick:pitch 0.5;   // 0.5x speed (lower pitch)
+```
+
+---
 ### More information
 When you use `ps` you only see an overview of a sound generator. In order to view all parameters and their settings use `info(<sound_generator_name>)` e.g.
 ```javascript
@@ -263,59 +316,6 @@ SoundB0ard automatically syncs with other apps via Ableton Link:
 
 ---
 
-## 5. Samples
-
-Load and play audio samples from the `wavs/` directory:
-
-Add your own samples and directories here.
-
-### List samples
-
-```javascript
-// list all directories within `wavs/`
-ls
-
-// list contents of specific directory
-ls bd
-```
-
-
-### Loading Samples
-
-```javascript
-// preview a sound
-play bd/mawkick.aiff;
-
-// Load a sample using the relative path
-let kick = sample(bd/kick8.aif);
-let snare = sample(sd/2snare.aif);
-let sh = sample(perc/chezShaker.aiff);
-
-// Samples are organized in directories:
-// bd/   - bass drums
-// sd/   - snares
-// cp/   - claps
-// ch/   - closed hats
-// oh/   - open hats
-// perc/ - percussion
-```
-
-### Playing Samples
-
-```javascript
-// Trigger a sample
-note_on(kick, 1);  // Note number ignored for samples
-
-// Control playback
-vol kick 0.8;
-pan kick 0.2;   // Pan right (range -1.0 to 1.0)
-
-// Pitch shifting
-set kick:pitch 1.5;   // 1.5x speed (higher pitch)
-set kick:pitch 0.5;   // 0.5x speed (lower pitch)
-```
-
----
 
 ## 6. Patterns & Arrays
 
