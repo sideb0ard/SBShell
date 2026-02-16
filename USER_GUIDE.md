@@ -128,11 +128,77 @@ note_on(synth, notes_in_chord(24, 24), vel = 100, dur = 2000);
 ```
 
 ### Granular Looper - loop()
-Granular synthesis engine for texture and atmospheric sounds.
+Granular synthesis engine for looping, slicing and mangling audio samples.
 
 ```javascript
 let clavl = loop(perc/808clave.aif);
 set clavl:len 8;
+```
+
+#### Looper Parameters
+
+```javascript
+set clavl:speed 2;        // Playback speed multiplier
+set clavl:pitch 1.5;      // Pitch ratio (independent of speed)
+set clavl:mode 0;         // 0=LOOP, 1=STATIC, 2=SMUDGE
+set clavl:len 4;          // Loop length in bars
+set clavl:poffset 4;      // Pattern offset (0-15, in sixteenths)
+set clavl:plooplen 8;     // Pattern loop length (1-16 sixteenths)
+```
+
+#### Looper FX
+
+The Granular Looper has built-in rhythmic FX that remap, gate or pitch-shift the 16 sixteenth-note slices within a bar. Each FX is triggered with `set` and lasts for one bar, then playback returns to normal. Fire them from a computation for repeating use.
+
+**Slice Remap FX** — these rearrange which sixteenth-note slice plays at each step:
+
+```javascript
+set clavl:scramble 1;     // Randomise slice order (anchors beat 1 of each group of 4)
+set clavl:stutter 1;      // Repeat slices with random holds — stuttery/glitchy
+set clavl:reverse 1;      // Play the whole buffer backwards for one bar
+set clavl:speedulate 1;   // Half-speed, double-speed, or mixed — randomly chosen
+set clavl:slowdown 1;     // Tape-stop deceleration — normal start, stutters to a halt
+set clavl:repeat 1;       // Beat repeat — locks onto a slice and repeats it (2x, 4x, 8x)
+set clavl:strobe 1;       // Alternates between an anchor slice and normal playback
+```
+
+**Gate FX** — silences specific steps for a rhythmic chop (can stack with slice FX):
+
+```javascript
+set clavl:gate 1;         // Rhythmic gate — randomly picks off-beat, sparse, syncopated, or random pattern
+```
+
+**Pitch FX** — per-step pitch shifting (can stack with slice FX and gate):
+
+```javascript
+set clavl:pitch_ramp 1;      // Smooth pitch ramp across the bar (up, down, or V-shape)
+set clavl:octave_jump 1;     // Random octave shifts per step (0.5x, 1x, 2x)
+set clavl:pitch_staircase 1; // Chromatic staircase — steps up or down by semitones
+```
+
+**Example: triggering FX from a computation**
+
+```javascript
+let fx_comp = comp()
+{
+  setup()
+  {
+    let lp = loop(perc/808clave.aif);
+    set lp:len 4;
+  }
+  run()
+  {
+    // Scramble every 4th bar
+    if (count % 4 == 3) {
+      set lp:scramble 1;
+    }
+    // Gate + pitch ramp on bar 8
+    if (count % 8 == 7) {
+      set lp:gate 1;
+      set lp:pitch_ramp 1;
+    }
+  }
+}
 ```
 
 ### Sample Player
@@ -1101,7 +1167,7 @@ set synth:release 500;
 drum()                  // Drum machine
 dxsynth()              // FM synth
 minisynth()            // Subtractive synth
-granular()             // Granular sampler
+loop("path")           // Granular looper
 sample("path")           // Load audio sample
 
 // Playback

@@ -8,7 +8,7 @@
 #include <fx/envelope.h>
 #include <fx/fx.h>
 #include <fx/reverb.h>
-#include <granulator.h>
+#include <granular_looper.h>
 #include <minisynth.h>
 #include <mixer.h>
 #include <obliquestrategies.h>
@@ -939,7 +939,7 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
             else
               f->SetParam(action->param_name, param_val);
           } else {
-            // if is Granulator - which re-uses the fx_id slot.
+            // if is GranularLooper - which re-uses the fx_id slot.
             if (sg->type == LOOPER_TYPE) {
               sg->SetSubParam(fx_num, action->param_name, param_val);
             }

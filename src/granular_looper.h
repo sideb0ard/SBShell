@@ -12,11 +12,11 @@
 
 namespace SBAudio {
 
-class Granulator : public SoundGenerator {
+class GranularLooper : public SoundGenerator {
  public:
-  Granulator(std::string filename, unsigned int loop_mode);
-  Granulator();
-  ~Granulator() override;
+  GranularLooper(std::string filename, unsigned int loop_mode);
+  GranularLooper();
+  ~GranularLooper() override;
   StereoVal GenNext(mixer_timing_info tinfo) override;
   std::string Status() override;
   std::string Info() override;
@@ -89,6 +89,14 @@ class Granulator : public SoundGenerator {
   void SetStopPending(int loops);
   void SetStutterPending();
   void SetReversePending();
+  void SetSpeedulatePending();
+  void SetGatePending();
+  void SetSlowdownPending();
+  void SetRepeatPending();
+  void SetStrobePending();
+  void SetPitchRampPending();
+  void SetOctaveJumpPending();
+  void SetPitchStaircasePending();
 
   void LaunchGrain(SoundGrain *grain, mixer_timing_info tinfo);
 

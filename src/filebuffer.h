@@ -54,6 +54,35 @@ class FileBuffer {
   bool stutter_mode_{false};
   bool stutter_pending_{false};
 
+  bool speedulate_mode_{false};
+  bool speedulate_pending_{false};
+
+  bool gate_mode_{false};
+  bool gate_pending_{false};
+
+  bool slowdown_mode_{false};
+  bool slowdown_pending_{false};
+
+  bool repeat_mode_{false};
+  bool repeat_pending_{false};
+
+  bool strobe_mode_{false};
+  bool strobe_pending_{false};
+
+  bool pitch_ramp_mode_{false};
+  bool pitch_ramp_pending_{false};
+
+  bool octave_jump_mode_{false};
+  bool octave_jump_pending_{false};
+
+  bool pitch_staircase_mode_{false};
+  bool pitch_staircase_pending_{false};
+
+  std::array<double, 16> pitch_pattern_{1, 1, 1, 1, 1, 1, 1, 1,
+                                        1, 1, 1, 1, 1, 1, 1, 1};
+  std::array<int, 16> gate_pattern_{1, 1, 1, 1, 1, 1, 1, 1,
+                                    1, 1, 1, 1, 1, 1, 1, 1};
+
   std::string filename_{};
   int num_channels_{2};
 
