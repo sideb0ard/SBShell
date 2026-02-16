@@ -4,6 +4,13 @@ SoundB0ard is a command-line music making environment that can be built on Linux
 
 ## Quick Start
 
+0. **Download this repository and enter directory**
+   ```
+   # Either git clone or download zip.
+   git clone git@github.com:sideb0ard/SBShell.git
+   cd SBShell
+   ```
+
 1. **Install dependencies** (run the provided script):
    ```bash
    ./install_deps.sh

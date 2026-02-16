@@ -52,6 +52,13 @@ SoundB0ard is a text based interactive music-making environment. It is a program
 
 ## Build & Development
 
+### Download
+```bash
+git clone git@github.com:sideb0ard/SBShell.git
+# or download zip file and enter directory
+cd SBShell
+```
+
 ### Building
 ```bash
 ./install_deps.sh    # Install dependencies
