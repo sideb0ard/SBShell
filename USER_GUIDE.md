@@ -1085,10 +1085,27 @@ let kick_comp = comp()
     }
   }
 }
-
-// Start it
-p31 # kick_comp;
 ```
+
+Then from the command shell, start monitoring the file:
+
+```javascript
+SB#> monitor("SBTraxx/my_beat.sb");
+```
+
+This imports all the contents, so your variables, Computations and functions are availble. You can then either run it once with it's name.
+
+```javascript
+SB#> kick_comp();
+```
+
+or you can assign it to one of the Process slots with:
+```javascript
+p1 # kick_comp;
+```
+
+This will evaluate the run() function at the start of every bar.
+Now that you're monitoring the file, you can edit and resave the file, and it will automatically be reloaded.
 
 
 ### Project Organization
@@ -1123,42 +1140,7 @@ load_preset(drums, "TR808");
 
 ---
 
-## 12. Advanced Topics
-
-### Live Coding with Track Watching
-
-Watch a file for changes and automatically reload it:
-
-```javascript
-// Start watching a file
-monitor("SBTraxx/my_beat.sb");
-
-// Now edit my_beat.sb in your editor
-// Save the file - contents reloaded
-
-```
-
-### Modulation
-
-Use LFOs and envelopes for movement:
-
-```javascript
-let synth = minisynth();
-
-// LFO modulation
-set synth:lfo_rate 2.0;    // Hz
-set synth:lfo_depth 0.5;   // Amount
-
-// Envelope
-set synth:attack 10;       // ms
-set synth:decay 200;
-set synth:sustain 0.5;     // 0-1
-set synth:release 500;
-```
-
----
-
-## 13. Reference
+## 12. Reference
 
 ### Quick Command Cheat Sheet
 
@@ -1225,7 +1207,6 @@ let pattern = bjork(5, 16);
 
 ```
 Ctrl+D    - Exit SoundB0ard
-Tab       - Auto-complete
 ↑/↓       - Command history
 ```
 

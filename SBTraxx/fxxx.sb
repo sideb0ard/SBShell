@@ -1,0 +1,44 @@
+
+let blah_comp = comp()
+{
+  setup()
+  {
+    let beat =  [1, 0, 0, 0,  1, 0, 0, 0,  0, 0, 1, 0,  1, 0, 0, 0];
+  }
+  run()
+  {
+    if (count % 8 == 0) {
+      set rocka:gate 1;
+      set scd:stutter 1;
+    }
+    if (count % 8 == 3) {
+      set rocka:octave_jump 1;
+      set scd:strobe 1;
+    }
+    if (count % 8 == 4) {
+      set rocka:strobe 1;
+      set scd:octave_jump 1;
+    }
+    if (count % 8 == 5) {
+      set rocka:pitch_ramp 1;
+      set scd:pitch_ramp 1;
+    }
+    if (count % 8 == 6) {
+      set rocka:slowdown 1;
+      set scd:pitch_ramp 1;
+    }
+    if (count % 8 == 7) {
+      set scd:gate 1;
+      set rocka:reverse 1;
+    }
+
+    if (count % 2 == 0) {
+      for (let i = 0; i < 16; i++) {
+        if (beat[i] == 1) {
+          note_on_at(sbdrum, 0, i * pp);
+        }
+      }
+    }
+
+  }
+}
