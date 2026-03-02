@@ -17,8 +17,6 @@ bool starts_with_comment(std::string line) {
 }
 
 std::string strip_inline_comment(std::string line) {
-  // Find the first '#' that's not inside a string and is after a semicolon
-  // (to distinguish from pattern syntax like "p31 # kick_comp")
   bool in_string = false;
   char string_char = '\0';
   size_t last_semicolon = std::string::npos;
@@ -26,7 +24,6 @@ std::string strip_inline_comment(std::string line) {
   for (size_t i = 0; i < line.length(); i++) {
     char c = line[i];
 
-    // Track if we're inside a string literal
     if (!in_string && (c == '"' || c == '\'')) {
       in_string = true;
       string_char = c;
@@ -36,20 +33,21 @@ std::string strip_inline_comment(std::string line) {
       string_char = '\0';
     }
 
-    // Track last semicolon position (outside strings)
     if (!in_string && c == ';') {
       last_semicolon = i;
     }
 
-    // If we find a '#' outside of a string AND after a semicolon, strip from
-    // there
+    // '//' is always a comment
+    if (!in_string && c == '/' && i + 1 < line.length() && line[i + 1] == '/') {
+      return line.substr(0, i);
+    }
+
+    // '#' is only a comment if it comes after a semicolon
+    // (otherwise it's pattern syntax like "p31 # kick_comp")
     if (!in_string && c == '#') {
-      // Only treat as comment if it comes after a semicolon
       if (last_semicolon != std::string::npos && i > last_semicolon) {
         return line.substr(0, i);
       }
-      // Otherwise, it might be pattern syntax like "p31 # kick_comp"
-      // so we keep it
     }
   }
 

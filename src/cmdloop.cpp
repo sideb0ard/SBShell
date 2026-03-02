@@ -29,6 +29,25 @@ extern Tsqueue<std::string> repl_queue;
 #define READLINE_SAFE_RESET "\001\x1b[0m\002"
 
 char const *prompt = READLINE_SAFE_MAGENTA "SB#> " READLINE_SAFE_RESET;
+
+static std::string strip_line_comment(const std::string &line) {
+  bool in_string = false;
+  char string_char = '\0';
+  for (size_t i = 0; i < line.length(); i++) {
+    char c = line[i];
+    if (!in_string && (c == '"' || c == '\'')) {
+      in_string = true;
+      string_char = c;
+    } else if (in_string && c == string_char &&
+               (i == 0 || line[i - 1] != '\\')) {
+      in_string = false;
+    } else if (!in_string && c == '/' && i + 1 < line.length() &&
+               line[i + 1] == '/') {
+      return line.substr(0, i);
+    }
+  }
+  return line;
+}
 static bool active{true};
 const std::string tick("tick");
 constexpr int kFileCheckInterval = 960;  // Check once per beat (PPQN)
@@ -115,7 +134,7 @@ void *loopy() {
         add_history(line.get());
         last_line = current_line;
       }
-      eval_command_queue.push(current_line);
+      eval_command_queue.push(strip_line_comment(current_line));
     }
   }
 
