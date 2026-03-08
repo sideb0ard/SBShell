@@ -14,9 +14,6 @@
 
 #include <AudioPlatform.hpp>
 #include <PerlinNoise.hpp>
-// #include <asio/io_context.hpp>  // Temporarily disabled for WebSocket
-// #include <asio/executor_work_guard.hpp>  // Temporarily disabled for
-// WebSocket
 #include <interpreter/evaluator.hpp>
 #include <interpreter/lexer.hpp>
 #include <interpreter/object.hpp>
@@ -29,7 +26,7 @@
 #include <thread>
 #include <tsqueue.hpp>
 
-// #include "websocket/web_socket_server.h"  // Temporarily disabled
+#include "websocket/web_socket_server.h"
 
 extern std::unique_ptr<Mixer> global_mixr;
 
@@ -132,33 +129,17 @@ void *process_worker_thread() {
   return nullptr;
 }
 
-/*
-void *websocket_worker(WebsocketServer &server) {
-  std::cout << "AM A WEE WEBSOCKET THREAD!\n";
-  auto eventLoop = link_asio_1_30_2::io_context{};
-
-  // TODO: Fix WebSocket++ template issues with Link's ASIO
-  // Temporarily disable WebSocket callbacks to test basic compilation
-  // server.connect callback removed
-  // server.disconnect callback removed
-
-  std::thread websocket_server_thread([&server]() { server.run(kPortNumber); });
-
-  // Keep the event loop alive
-  // auto work =
-asio::executor_work_guard<asio::io_context::executor_type>(eventLoop.get_executor());
-  eventLoop.run();
-
-  return nullptr;
+void websocket_worker(WebsocketServer &server) {
+  server.run(kPortNumber);
 }
-*/
 
 int main() {
   srand(time(NULL));
   signal(SIGINT, SIG_IGN);
 
-  // WebsocketServer server;  // Temporarily disabled
-  global_mixr = std::make_unique<Mixer>();  // Create as unique_ptr
+  WebsocketServer websocket_server;
+  global_mixr = std::make_unique<Mixer>();
+  global_mixr->SetWebsocketServer(&websocket_server);
 
   State state(*global_mixr);
 
@@ -168,9 +149,7 @@ int main() {
   //// Processes
   std::thread worker_thread(process_worker_thread);
 
-  // //// WebSocket Server - Temporarily disabled
-  // // std::thread websocket_worker_thread(websocket_worker, std::ref(server));
-  // // Disabled
+  std::thread websocket_thread(websocket_worker, std::ref(websocket_server));
 
   //// Eval loop
   std::thread eval_thread(eval_queue);
@@ -186,4 +165,7 @@ int main() {
 
   eval_command_queue.close();
   eval_thread.join();
+
+  websocket_server.stop();
+  websocket_thread.join();
 }

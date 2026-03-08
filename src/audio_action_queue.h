@@ -18,7 +18,6 @@ enum AudioAction {
   ADD_BUFFER,
   BPM,
   INFO,
-  HELP,
   LIST_PRESETS,
   LOAD_PRESET,
   RAND_PRESET,

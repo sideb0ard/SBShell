@@ -15,7 +15,6 @@
 namespace ableton {
 class Link;
 }
-class WebsocketServer;
 #include <filesystem>
 #include <process.hpp>
 #include <string>
@@ -28,6 +27,7 @@ class WebsocketServer;
 #include "fx/fx.h"
 #include "minisynth.h"
 #include "soundgenerator.h"
+#include "websocket/web_socket_server.h"
 // #include "websocket/web_socket_server.h"  // TODO: Fix websocket compilation
 // issues
 #include "xfader.h"
@@ -158,7 +158,7 @@ struct Mixer {
   bool midi_print = {false};
   std::unordered_map<int, std::string> midi_mapped_controls_ = {};
 
-  // WebsocketServer &websocket_server_;  // Temporarily disabled
+  WebsocketServer *websocket_server_{nullptr};
 
   void AddMidiMapping(int id, std::string param);
   void ResetMidiMappings();
@@ -176,7 +176,6 @@ struct Mixer {
   void ScheduleAction(int when, Action item);
   void RunScheduledActions();
 
-  void Help();
   void Ps(bool all);
 
   std::string StatusEnv();
@@ -201,7 +200,6 @@ struct Mixer {
   void PrintTimingInfo();
   void PrintDxAlgos();
   void PrintDxRatioz();
-  void PrintMidiInfo();
   void PrintFuncAndGenInfo();
 
   void AddSoundGenerator(std::unique_ptr<SBAudio::SoundGenerator> sg);
@@ -358,10 +356,9 @@ struct Mixer {
       out[j + 1] = final_right;
     }
 
-    // WebSocket temporarily disabled
-    // if (websocket_enabled_) {
-    //   websocket_server_.sendData(out, 2 * frames_per_buffer * sizeof(float));
-    // }
+    if (websocket_enabled_ && websocket_server_) {
+      websocket_server_->sendData(out, 2 * frames_per_buffer * sizeof(float));
+    }
 
     return return_bpm;
   }
@@ -380,6 +377,9 @@ struct Mixer {
   void AddFileToMonitor(std::string filepath);
 
   // for sending websocket to p5.js
+  void SetWebsocketServer(WebsocketServer *ws) {
+    websocket_server_ = ws;
+  }
   void EnableWebSocket(bool en) {
     websocket_enabled_ = en;
   }

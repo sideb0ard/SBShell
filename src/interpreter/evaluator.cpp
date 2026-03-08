@@ -257,7 +257,7 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
   std::shared_ptr<ast::HelpStatement> help_stmt =
       std::dynamic_pointer_cast<ast::HelpStatement>(node);
   if (help_stmt) {
-    print_help();
+    repl_queue.push(build_help());
     return NULLL;
   }
 

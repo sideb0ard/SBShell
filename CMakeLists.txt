@@ -9,7 +9,6 @@ set(CMAKE_CXX_STANDARD
     CACHE STRING "The C++ standard to use")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-add_definitions(-D_WEBSOCKETPP_CPP11_STRICT_)
 
 # Enable ccache if available for faster rebuilds
 find_program(CCACHE_PROGRAM ccache)
@@ -96,9 +95,8 @@ FetchContent_Declare(
   GIT_TAG v3.0.0)
 FetchContent_MakeAvailable(perlin_noise)
 
-# WebSocket temporarily disabled FetchContent_Declare( websocketpp
-# GIT_REPOSITORY https://github.com/zaphoyd/websocketpp.git GIT_TAG develop )
-# FetchContent_MakeAvailable(websocketpp)
+# WebSocket uses a custom POSIX-socket implementation (no WebSocketPP/ASIO
+# needed)
 
 # Try to find system libraries using pkg-config first, then fallback to
 # find_library
@@ -291,9 +289,7 @@ endif()
 file(GLOB_RECURSE Sbsh_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE Sbsh_HEADERS CONFIGURE_DEPENDS "src/*.h")
 
-# Temporarily exclude WebSocket files to avoid ASIO conflicts
-list(FILTER Sbsh_SOURCES EXCLUDE REGEX "src/websocket/.*")
-list(FILTER Sbsh_HEADERS EXCLUDE REGEX "src/websocket/.*")
+# WebSocket sources use custom POSIX implementation (no ASIO conflicts)
 
 set(SBSH_INCLUDE_DIRS "")
 foreach(header_file ${Sbsh_HEADERS})

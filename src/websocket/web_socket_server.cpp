@@ -1,178 +1,265 @@
 #include "websocket/web_socket_server.h"
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <algorithm>
-#include <functional>
+#include <cstdint>
+#include <cstring>
 #include <iostream>
+#include <string>
 
-// The name of the special JSON field that holds the message type for messages
-#define MESSAGE_FIELD "__MESSAGE__"
+namespace {
 
-Json::Value WebsocketServer::parseJson(const string& json) {
-  Json::Value root;
-  Json::Reader reader;
-  reader.parse(json, root);
-  return root;
+// --- Inline SHA-1 (RFC 3174, public domain) ---
+
+static uint32_t sha1_rol(uint32_t v, int n) {
+  return (v << n) | (v >> (32 - n));
 }
 
-string WebsocketServer::stringifyJson(const Json::Value& val) {
-  // When we transmit JSON data, we omit all whitespace
-  Json::StreamWriterBuilder wbuilder;
-  wbuilder["commentStyle"] = "None";
-  wbuilder["indentation"] = "";
+static void sha1_block(uint32_t h[5], const uint8_t* blk) {
+  uint32_t w[80];
+  for (int i = 0; i < 16; ++i)
+    w[i] = (uint32_t(blk[i * 4]) << 24) | (uint32_t(blk[i * 4 + 1]) << 16) |
+           (uint32_t(blk[i * 4 + 2]) << 8) | blk[i * 4 + 3];
+  for (int i = 16; i < 80; ++i)
+    w[i] = sha1_rol(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
 
-  return Json::writeString(wbuilder, val);
+  uint32_t a = h[0], b = h[1], c = h[2], d = h[3], e = h[4];
+  for (int i = 0; i < 80; ++i) {
+    uint32_t f, k;
+    if (i < 20) {
+      f = (b & c) | (~b & d);
+      k = 0x5A827999;
+    } else if (i < 40) {
+      f = b ^ c ^ d;
+      k = 0x6ED9EBA1;
+    } else if (i < 60) {
+      f = (b & c) | (b & d) | (c & d);
+      k = 0x8F1BBCDC;
+    } else {
+      f = b ^ c ^ d;
+      k = 0xCA62C1D6;
+    }
+    uint32_t t = sha1_rol(a, 5) + f + e + k + w[i];
+    e = d;
+    d = c;
+    c = sha1_rol(b, 30);
+    b = a;
+    a = t;
+  }
+  h[0] += a;
+  h[1] += b;
+  h[2] += c;
+  h[3] += d;
+  h[4] += e;
 }
 
-WebsocketServer::WebsocketServer() {
-  std::cout << "WEBSCOKSERV CTOR!\n";
+static void sha1(const void* data, size_t len, uint8_t digest[20]) {
+  uint32_t h[5] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
+  const uint8_t* p = static_cast<const uint8_t*>(data);
+  size_t remaining = len;
 
-  // Wire up our event handlers
-  this->endpoint.set_open_handler(
-      std::bind(&WebsocketServer::onOpen, this, std::placeholders::_1));
-  this->endpoint.set_close_handler(
-      std::bind(&WebsocketServer::onClose, this, std::placeholders::_1));
-  this->endpoint.set_message_handler(std::bind(&WebsocketServer::onMessage,
-                                               this, std::placeholders::_1,
-                                               std::placeholders::_2));
+  while (remaining >= 64) {
+    sha1_block(h, p);
+    p += 64;
+    remaining -= 64;
+  }
 
-  // Initialise the Asio library, using our own event loop object
-  this->endpoint.clear_access_channels(websocketpp::log::alevel::all);
-  this->endpoint.clear_error_channels(websocketpp::log::elevel::all);
-  this->endpoint.init_asio(&(this->eventLoop));
+  uint8_t buf[128] = {};
+  std::memcpy(buf, p, remaining);
+  buf[remaining] = 0x80;
+  size_t pad_len = (remaining < 56) ? 64 : 128;
+  uint64_t bit_len = uint64_t(len) * 8;
+  for (int i = 0; i < 8; ++i)
+    buf[pad_len - 8 + i] = uint8_t(bit_len >> (56 - 8 * i));
+
+  sha1_block(h, buf);
+  if (pad_len == 128) sha1_block(h, buf + 64);
+
+  for (int i = 0; i < 5; ++i) {
+    digest[i * 4 + 0] = h[i] >> 24;
+    digest[i * 4 + 1] = h[i] >> 16;
+    digest[i * 4 + 2] = h[i] >> 8;
+    digest[i * 4 + 3] = h[i];
+  }
 }
+
+// --- Base64 encoder ---
+
+static const char kB64[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static std::string base64_encode(const uint8_t* data, size_t len) {
+  std::string out;
+  out.reserve(((len + 2) / 3) * 4);
+  for (size_t i = 0; i < len; i += 3) {
+    uint32_t v = uint32_t(data[i]) << 16;
+    if (i + 1 < len) v |= uint32_t(data[i + 1]) << 8;
+    if (i + 2 < len) v |= data[i + 2];
+    out += kB64[(v >> 18) & 63];
+    out += kB64[(v >> 12) & 63];
+    out += (i + 1 < len) ? kB64[(v >> 6) & 63] : '=';
+    out += (i + 2 < len) ? kB64[v & 63] : '=';
+  }
+  return out;
+}
+
+// --- WebSocket accept key ---
+
+static std::string ws_accept_key(const std::string& key) {
+  const std::string magic = key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+  uint8_t digest[20];
+  sha1(magic.data(), magic.size(), digest);
+  return base64_encode(digest, 20);
+}
+
+}  // namespace
+
 WebsocketServer::~WebsocketServer() {
-  std::cout << "See ya, wouldn't wanna be ya." << std::endl;
+  stop();
 }
 
 void WebsocketServer::run(int port) {
-  // Listen on the specified port number and start accepting connections
-  this->endpoint.set_reuse_addr(true);
-  this->endpoint.listen(port);
-  this->endpoint.start_accept();
+  server_fd_ = ::socket(AF_INET, SOCK_STREAM, 0);
+  if (server_fd_ < 0) {
+    std::cerr << "WebSocket: socket() failed\n";
+    return;
+  }
 
-  std::cout << "YO WEBSOCKET SERVER RUNNING ON PORT:" << port << std::endl;
-  // Start the Asio event loop
-  this->endpoint.run();
+  int opt = 1;
+  setsockopt(server_fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+  sockaddr_in addr{};
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = INADDR_ANY;
+  addr.sin_port = htons(port);
+
+  if (::bind(server_fd_, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) <
+      0) {
+    std::cerr << "WebSocket: bind() failed on port " << port << "\n";
+    ::close(server_fd_);
+    server_fd_ = -1;
+    return;
+  }
+
+  ::listen(server_fd_, 8);
+  running_ = true;
+  std::cout << "WebSocket server listening on port " << port << "\n";
+
+  while (running_) {
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(server_fd_, &fds);
+    timeval tv{1, 0};  // 1 second timeout so we can check running_
+    if (::select(server_fd_ + 1, &fds, nullptr, nullptr, &tv) > 0) {
+      int client_fd = ::accept(server_fd_, nullptr, nullptr);
+      if (client_fd >= 0) {
+        // Prevent SIGPIPE when writing to a closed client
+#ifdef SO_NOSIGPIPE
+        int nosig = 1;
+        setsockopt(client_fd, SOL_SOCKET, SO_NOSIGPIPE, &nosig, sizeof(nosig));
+#endif
+        if (doHandshake(client_fd)) {
+          std::lock_guard<std::mutex> lock(clients_mutex_);
+          clients_.push_back(client_fd);
+          std::cout << "WebSocket: client connected (" << clients_.size()
+                    << " total)\n";
+        } else {
+          ::close(client_fd);
+        }
+      }
+    }
+  }
+
+  ::close(server_fd_);
+  server_fd_ = -1;
+}
+
+void WebsocketServer::stop() {
+  running_ = false;
+  if (server_fd_ >= 0) ::shutdown(server_fd_, SHUT_RDWR);
+  std::lock_guard<std::mutex> lock(clients_mutex_);
+  for (int fd : clients_) ::close(fd);
+  clients_.clear();
 }
 
 size_t WebsocketServer::numConnections() {
-  // Prevent concurrent access to the list of open connections from multiple
-  // threads
-  std::lock_guard<std::mutex> lock(this->connectionListMutex);
-
-  return this->openConnections.size();
+  std::lock_guard<std::mutex> lock(clients_mutex_);
+  return clients_.size();
 }
 
-void WebsocketServer::sendMessage(ClientConnection conn,
-                                  const string& messageType,
-                                  const Json::Value& arguments) {
-  // Copy the argument values, and bundle the message type into the object
-  Json::Value messageData = arguments;
-  messageData[MESSAGE_FIELD] = messageType;
+bool WebsocketServer::doHandshake(int fd) {
+  char buf[4096] = {};
+  int n = static_cast<int>(::recv(fd, buf, sizeof(buf) - 1, 0));
+  if (n <= 0) return false;
 
-  // Send the JSON data to the client (will happen on the networking thread's
-  // event loop)
-  this->endpoint.send(conn, WebsocketServer::stringifyJson(messageData),
-                      websocketpp::frame::opcode::text);
+  std::string req(buf, n);
+  const std::string key_header = "Sec-WebSocket-Key: ";
+  auto pos = req.find(key_header);
+  if (pos == std::string::npos) return false;
+  pos += key_header.size();
+  auto end = req.find("\r\n", pos);
+  if (end == std::string::npos) return false;
+  std::string key = req.substr(pos, end - pos);
+
+  std::string response =
+      "HTTP/1.1 101 Switching Protocols\r\n"
+      "Upgrade: websocket\r\n"
+      "Connection: Upgrade\r\n"
+      "Sec-WebSocket-Accept: " +
+      ws_accept_key(key) + "\r\n\r\n";
+
+  return ::send(fd, response.data(), response.size(), 0) ==
+         static_cast<ssize_t>(response.size());
 }
 
-void WebsocketServer::sendData(float* data, size_t len) {
-  // std::vector<float> buffer(data, data + len);
-  //   TODO - POST ON OWN MESSAGE LOOP
-  //       this->connectHandlers.push_back(handler); });
-  //  this->eventLoop.post([this, buffer]() {
-  std::lock_guard<std::mutex> lock(this->connectionListMutex);
-  for (auto conn : this->openConnections) {
-    // this->endpoint.send(conn, &buffer, buffer.size(),
-    //                     websocketpp::frame::opcode::binary);
-    this->endpoint.send(conn, data, len, websocketpp::frame::opcode::binary);
+bool WebsocketServer::sendFrame(int fd, const void* data, size_t len) {
+  uint8_t header[10];
+  int header_len;
+
+  header[0] = 0x82;  // FIN=1, opcode=2 (binary)
+  if (len <= 125) {
+    header[1] = static_cast<uint8_t>(len);
+    header_len = 2;
+  } else if (len <= 65535) {
+    header[1] = 126;
+    header[2] = (len >> 8) & 0xFF;
+    header[3] = len & 0xFF;
+    header_len = 4;
+  } else {
+    header[1] = 127;
+    for (int i = 0; i < 8; ++i)
+      header[2 + i] = static_cast<uint8_t>(len >> (56 - 8 * i));
+    header_len = 10;
   }
-  //});
+
+#ifdef MSG_NOSIGNAL
+  const int flags = MSG_NOSIGNAL;
+#else
+  const int flags = 0;
+#endif
+
+  if (::send(fd, header, header_len, flags) != header_len) return false;
+  if (::send(fd, data, len, flags) != static_cast<ssize_t>(len)) return false;
+  return true;
 }
 
-void WebsocketServer::broadcastMessage(const string& messageType,
-                                       const Json::Value& arguments) {
-  // Prevent concurrent access to the list of open connections from multiple
-  // threads
-  std::lock_guard<std::mutex> lock(this->connectionListMutex);
+void WebsocketServer::sendData(const float* data, size_t byte_len) {
+  std::lock_guard<std::mutex> lock(clients_mutex_);
+  if (clients_.empty()) return;
 
-  for (auto conn : this->openConnections) {
-    this->sendMessage(conn, messageType, arguments);
-  }
-}
-
-void WebsocketServer::onOpen(ClientConnection conn) {
-  std::cout << "YO ON OPEN CALLED!\n";
-  {
-    // Prevent concurrent access to the list of open connections from multiple
-    // threads
-    std::lock_guard<std::mutex> lock(this->connectionListMutex);
-    std::cout << "YO ON OPEN CALLED GOT LOCK!\n";
-
-    // Add the connection handle to our list of open connections
-    this->openConnections.push_back(conn);
-  }
-
-  // Invoke any registered handlers
-  for (auto handler : this->connectHandlers) {
-    handler(conn);
-  }
-}
-
-void WebsocketServer::onClose(ClientConnection conn) {
-  {
-    // Prevent concurrent access to the list of open connections from multiple
-    // threads
-    std::lock_guard<std::mutex> lock(this->connectionListMutex);
-
-    // Remove the connection handle from our list of open connections
-    auto connVal = conn.lock();
-    auto newEnd = std::remove_if(this->openConnections.begin(),
-                                 this->openConnections.end(),
-                                 [&connVal](ClientConnection elem) {
-                                   // If the pointer has expired, remove it from
-                                   // the vector
-                                   if (elem.expired() == true) {
-                                     return true;
-                                   }
-
-                                   // If the pointer is still valid, compare it
-                                   // to the handle for the closed connection
-                                   auto elemVal = elem.lock();
-                                   if (elemVal.get() == connVal.get()) {
-                                     return true;
-                                   }
-
-                                   return false;
-                                 });
-
-    // Truncate the connections vector to erase the removed elements
-    this->openConnections.resize(
-        std::distance(openConnections.begin(), newEnd));
-  }
-
-  // Invoke any registered handlers
-  for (auto handler : this->disconnectHandlers) {
-    handler(conn);
-  }
-}
-
-void WebsocketServer::onMessage(ClientConnection conn,
-                                WebsocketEndpoint::message_ptr msg) {
-  // Validate that the incoming message contains valid JSON
-  Json::Value messageObject = WebsocketServer::parseJson(msg->get_payload());
-  if (messageObject.isNull() == false) {
-    // Validate that the JSON object contains the message type field
-    if (messageObject.isMember(MESSAGE_FIELD)) {
-      // Extract the message type and remove it from the payload
-      std::string messageType = messageObject[MESSAGE_FIELD].asString();
-      messageObject.removeMember(MESSAGE_FIELD);
-
-      // If any handlers are registered for the message type, invoke them
-      auto& handlers = this->messageHandlers[messageType];
-      for (auto handler : handlers) {
-        handler(conn, messageObject);
-      }
+  auto it = clients_.begin();
+  while (it != clients_.end()) {
+    if (sendFrame(*it, data, byte_len)) {
+      ++it;
+    } else {
+      std::cout << "WebSocket: client disconnected\n";
+      ::close(*it);
+      it = clients_.erase(it);
     }
   }
 }

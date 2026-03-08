@@ -1,97 +1,33 @@
-#ifndef SOUNDBOARD_WEB_SOCKET_SERVER_H
-#define SOUNDBOARD_WEB_SOCKET_SERVER_H
+#pragma once
 
-// We need to define this when using the Asio library without Boost
-// Note: ASIO_STANDALONE is already defined by Ableton Link
-#ifndef ASIO_STANDALONE
-#define ASIO_STANDALONE
-#endif
+// Pure POSIX socket WebSocket server — no ASIO, no WebSocketPP.
+// Avoids the link_asio_1_30_2 namespace clash with Ableton Link.
 
-#include <json/json.h>
-
-#include <array>
-#include <functional>
-#include <map>
+#include <atomic>
 #include <mutex>
-#include <string>
 #include <vector>
-#include <websocketpp/config/asio_no_tls.hpp>
-// #include <websocketpp/config/debug_asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
-using std::map;
-using std::string;
-using std::vector;
-
-// typedef websocketpp::server<websocketpp::config::debug_asio>
-// WebsocketEndpoint;
-typedef websocketpp::server<websocketpp::config::asio> WebsocketEndpoint;
-typedef websocketpp::connection_hdl ClientConnection;
 
 class WebsocketServer {
  public:
-  WebsocketServer();
+  WebsocketServer() = default;
   ~WebsocketServer();
-  void run(int port);
 
-  // Returns the number of currently connected clients
+  // Blocking — call from a dedicated thread. Returns when stop() is called.
+  void run(int port);
+  void stop();
+
+  // Send raw float audio data as a binary WebSocket frame to all clients.
+  // byte_len is the number of bytes (not floats).
+  void sendData(const float* data, size_t byte_len);
+
   size_t numConnections();
 
-  // Registers a callback for when a client connects
-  template <typename CallbackTy>
-  void connect(CallbackTy handler) {
-    // Make sure we only access the handlers list from the networking thread
-    this->eventLoop.post(
-        [this, handler]() { this->connectHandlers.push_back(handler); });
-  }
+ private:
+  bool doHandshake(int client_fd);
+  bool sendFrame(int fd, const void* data, size_t len);
 
-  // Registers a callback for when a client disconnects
-  template <typename CallbackTy>
-  void disconnect(CallbackTy handler) {
-    // Make sure we only access the handlers list from the networking thread
-    this->eventLoop.post(
-        [this, handler]() { this->disconnectHandlers.push_back(handler); });
-  }
-
-  // Registers a callback for when a particular type of message is received
-  template <typename CallbackTy>
-  void message(const string& messageType, CallbackTy handler) {
-    // Make sure we only access the handlers list from the networking thread
-    this->eventLoop.post([this, messageType, handler]() {
-      this->messageHandlers[messageType].push_back(handler);
-    });
-  }
-
-  // Sends a message to an individual client
-  //(Note: the data transmission will take place on the thread that called
-  // WebsocketServer::run())
-  void sendMessage(ClientConnection conn, const string& messageType,
-                   const Json::Value& arguments);
-
-  // Sends a message to all connected clients
-  //(Note: the data transmission will take place on the thread that called
-  // WebsocketServer::run())
-  void broadcastMessage(const string& messageType,
-                        const Json::Value& arguments);
-
-  void sendData(float* data, size_t len);
-
- protected:
-  static Json::Value parseJson(const string& json);
-  static string stringifyJson(const Json::Value& val);
-
-  void onOpen(ClientConnection conn);
-  void onClose(ClientConnection conn);
-  void onMessage(ClientConnection conn, WebsocketEndpoint::message_ptr msg);
-
-  link_asio_1_30_2::io_context eventLoop;
-  WebsocketEndpoint endpoint;
-  vector<ClientConnection> openConnections;
-  std::mutex connectionListMutex;
-
-  vector<std::function<void(ClientConnection)>> connectHandlers;
-  vector<std::function<void(ClientConnection)>> disconnectHandlers;
-  map<string, vector<std::function<void(ClientConnection, const Json::Value&)>>>
-      messageHandlers;
+  int server_fd_{-1};
+  std::vector<int> clients_;
+  std::mutex clients_mutex_;
+  std::atomic<bool> running_{false};
 };
-
-#endif  // SOUNDBOARD_WEB_SOCKET_SERVER_H

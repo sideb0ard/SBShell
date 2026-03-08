@@ -1,5 +1,6 @@
 #include <audio_action_queue.h>
 #include <audioutils.h>
+#include <help.h>
 #include <midi_cmds.h>
 #include <mixer.h>
 #include <utils.h>
@@ -955,7 +956,7 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
          [](const std::vector<std::shared_ptr<object::Object>>& args)
              -> std::shared_ptr<object::Object> {
            (void)args;
-           global_mixr->PrintMidiInfo();
+           repl_queue.push(build_midi_ref());
            return evaluator::NULLL;
          })},
     {"now", std::make_shared<object::BuiltIn>(

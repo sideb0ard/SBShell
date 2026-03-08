@@ -359,21 +359,6 @@ void Mixer::Now() {
   audio_reply_queue.push(timing_info.midi_tick);
 }
 
-void Mixer::Help() {
-  std::string reply;
-  if (rand() % 100 > 90) {
-    reply = oblique_strategy();
-  } else {
-    std::stringstream ss;
-    ss << ANSI_COLOR_WHITE;
-    ss << "###### Haaaalp! ################################\n";
-    ss << ANSI_COLOR_RESET;
-
-    reply = ss.str();
-  }
-  repl_queue.push(reply);
-}
-
 void Mixer::EmitEvent(broadcast_event event) {
   event_queue_item ev;
   ev.type = Event::TIMING_EVENT;
@@ -618,37 +603,6 @@ void Mixer::PrintDxRatioz() {
   repl_queue.push(ss.str());
 }
 
-void Mixer::PrintMidiInfo() {
-  std::stringstream ss;
-  ss << ANSI_COLOR_WHITE "Midi Notes:\n";
-  ss << "- C:0  C#:1  D:2  D#:3  E:4  F:5  F#:6  G:7  G#:8  A:9  A#:10 "
-        "B:11\n";
-  ss << "0 C:12 C#:13 D:14 D#:15 E:16 F:17 F#:18 G:19 G#:20 A:21 A#:22 "
-        "B:23\n";
-  ss << "1 C:24 C#:25 D:26 D#:27 E:28 F:29 F#:30 G:31 G#:32 A:33 A#:34 "
-        "B:35\n";
-  ss << "2 C:36 C#:37 D:38 D#:39 E:40 F:41 F#:42 G:43 G#:44 A:45 A#:46 "
-        "B:47\n";
-  ss << "3 C:48 C#:49 D:50 D#:51 E:52 F:53 F#:54 G:55 G#:56 A:57 A#:58 "
-        "B:59\n";
-  ss << "4 C:60 C#:61 D:62 D#:63 E:64 F:65 F#:66 G:67 G#:68 A:69 A#:70 "
-        "B:71\n";
-  ss << "5 C:72 C#:73 D:74 D#:75 E:76 F:77 F#:78 G:79 G#:80 A:81 A#:82 "
-        "B:83\n";
-  ss << "Chord Progressions: I-IV-V, I-V-vi-IV, I-vi-IV-V, vi-ii-V-I "
-        "vi-IV-I-V\n";
-  ss << "Chord Mods: None(0), Seventh(1), Seventh Inv(2) Root Inv(3) "
-        "Power(4)\n";
-  ss << "Key Mods: None(0), Natural Minor(1), Harmonic Minor Inv(2) Melodic "
-        "Minor(3) "
-        "Phrygian(4)\n";
-  ss << "Filters: LPF1, HPF1, LPF2, HPF2, BPF2, BSF2, LPF4, HPF4, BPF4\n";
-  ss << "Major Scale: W W H W W W H // Minor Scale: W H W W H W W\n"
-     << ANSI_COLOR_RESET;
-
-  repl_queue.push(ss.str());
-}
-
 void Mixer::PrintTimingInfo() {
   const mixer_timing_info *info = &timing_info;
   printf("TIMING INFO!\n");
@@ -783,8 +737,6 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
     EnableWebSocket(action->general_val);
   } else if (action->type == AudioAction::MIDI_MAP_SHOW)
     PrintMidiMappings();
-  else if (action->type == AudioAction::HELP)
-    global_mixr->Help();
   else if (action->type == AudioAction::MONITOR) {
     AddFileToMonitor(action->filepath);
   } else if (action->type == AudioAction::ADD) {

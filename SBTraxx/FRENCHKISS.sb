@@ -4,28 +4,40 @@ let key_mod = 1;
 
 let notez = notes_in_key(key, key_mod);
 
-let bd = sample(bd/808Kkick.wav);
-let cp = sample(cp/DR660808Clap.aif); vol cp 0.5;
-let sd = sample(sd/snare20.aif); vol sd 0.5;
-let ch = sample(ch/LOUhat.aiff);
-let oh = sample(oh/mawopenhh2.aiff);
+let bd = NULL;
+let cp = NULL:
+let sd = NULL;
+let ch = NULL;
+let oh = NULL;
 
-let rockn = sample(voices/theerwasaTIME.wav);
+let rockn = NULL;
 
-bpm 128;
-load_preset(dx, "LOUIS");
-load_preset(dx2, "UNDg");
-load_preset(dx3, "ORGAN");
-let dx4 = fm();
-load_preset(dx4, "SMMTH");
-load_preset(mo, "FRENCH");
-vol ch 0;
-vol oh 0;
-set dx:op3out 95
-#
+let dx4 = NULL;
 # p1 $ melblah_gen;
 # p2 $ hhblah_gen;
 # p3 $ snblah_gen
+
+let init = fn()
+{
+  bd = sample(bd/808Kkick.wav);
+  cp = sample(cp/DR660808Clap.aif); vol cp 0.5;
+  sd = sample(sd/snare20.aif); vol sd 0.5;
+  ch = sample(ch/LOUhat.aiff);
+  oh = sample(oh/mawopenhh2.aiff);
+
+  rockn = sample(voices/theerwasaTIME.wav);
+
+  bpm 128;
+  load_preset(dx, "LOUIS");
+  load_preset(dx2, "UNDg");
+  load_preset(dx3, "ORGAN");
+  dx4 = fm();
+  load_preset(dx4, "SMMTH");
+  load_preset(mo, "FRENCH");
+  vol ch 0;
+  vol oh 0;
+  set dx:op3out 95
+}
 
 let playyyablah_gen = comp()
 {
