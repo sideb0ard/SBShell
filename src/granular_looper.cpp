@@ -405,11 +405,15 @@ void GranularLooper::EventNotify(broadcast_event event,
       if (reverse_mode_)
         new_read_idx = (audio_buffer->size() - 1) - new_read_idx;
 
-      new_read_idx =
-          fmodf((fmodf(new_read_idx, file_buffer_->size_of_sixteenth_ *
-                                         file_buffer_->plooplen_) +
-                 file_buffer_->poffset_ * file_buffer_->size_of_sixteenth_),
-                audio_buffer->size());
+      // size_of_sixteenth_ is scaled by loop_len_, so recover the 1-bar
+      // sixteenth size for ploop region bounds — otherwise a 2-bar loop wraps
+      // at half the buffer instead of the full buffer.
+      double one_bar_sixteenth =
+          file_buffer_->size_of_sixteenth_ * file_buffer_->loop_len_;
+      new_read_idx = fmodf(
+          (fmodf(new_read_idx, one_bar_sixteenth * file_buffer_->plooplen_) +
+           file_buffer_->poffset_ * one_bar_sixteenth),
+          audio_buffer->size());
 
       // this ensures new_read_idx is even
       if (file_buffer_->num_channels_ == 2)

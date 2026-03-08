@@ -1,12 +1,53 @@
 
+# add distortion
+# dloops/scudBeat2.aiff // len 2
+# dloops/rsuteri.wav
+
+let scd = NULL;
+let rocka = NULL;
+let init = fn()
+{
+  # scd = loop(dloops/scudBeat2.aiff);
+  scd = loop(dloops2/rockRokcLEN.wav);
+  add_fx(scd, "distort");
+  set scd:len 2;
+  rocka = loop(dloops/rsuteri.wav);
+  add_fx(rocka, "distort");
+  load_preset(dx, "lowr");
+  load_preset(dx3, "phatz");
+  xassign(0, scd);
+  xassign(1, rocka);
+  set scd:pitch 0.4;
+  set rocka:pitch 0.4;
+  p1 # blah_comp;
+  p3 # dx3blah_comp;
+}
+
+# p1 # blah_comp;
+# p2 # dxblah_comp;
+# p3 # dx3blah_comp;
 let blah_comp = comp()
 {
   setup()
   {
     let beat =  [1, 0, 0, 0,  1, 0, 0, 0,  0, 0, 1, 0,  1, 0, 0, 0];
+    let pitchz = [1, 0.3, 0.1, 2, 1, 0.8, 0.3];
+    let px = 0;
   }
   run()
   {
+    if (count % 3 == 0) {
+      let mixpat = rand_array(16, -1, 1);
+      for (let i = 0; i < 16; i++) {
+        set mixer:xfader:xpos mixpat[i] at = i * pp;
+      }
+    }
+    if (count % 4 == 0) {
+      set scd:pitch pitchz[px];
+      px = incr(px, 0, len(pitchz));
+      set rocka:pitch pitchz[px];
+    }
+
     if (count % 8 == 0) {
       set rocka:gate 1;
       set scd:stutter 1;
@@ -40,5 +81,51 @@ let blah_comp = comp()
       }
     }
 
+  }
+}
+
+# lowr
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let lenz = [4, 2, 3, 5, 7];
+    let lx = 0;
+    let durz = [20, 40, 60, 100, 200, 300];
+    let drx = 0;
+  }
+  run()
+  {
+    let pp = 3840 / lenz[lx];
+    let offs = pp / 2;
+    for (let i = 0; i < lenz[lx]; i++) {
+      note_on_at(dx, 27, i *pp + offs, dur = durz[drx]);
+    }
+    lx = incr(lx, 0, len(lenz));
+    drx = incr(drx, 0, len(durz));
+  }
+}
+
+# phatz
+let dx3blah_comp = comp()
+{
+  setup()
+  {
+    let lenz = [11, 3, 5, 7, 9];
+    let lx = 0;
+    let durz = [200, 40, 200, 300];
+    let drx = 0;
+  }
+  run()
+  {
+    if (count % 2 == 1) {
+      let pp = 3840 / lenz[lx];
+      let offs = pp / 2;
+      for (let i = 0; i < lenz[lx]; i++) {
+        note_on_at(dx3, 34, i *pp + offs, dur = durz[drx]);
+      }
+      lx = incr(lx, 0, len(lenz));
+      drx = incr(drx, 0, len(durz));
+    }
   }
 }
