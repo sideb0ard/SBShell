@@ -1,8 +1,8 @@
 # SBShell User Guide
 
-Soundb0ard Shell is my Unix shell inspired music making environment. Rather than being the shell around an operating system, it is a shell around an audio mixing desk with several music instruments - drum machine, granular looper, FM and subtractive synths, and sample player; and a javascript-like programming language called Slang, to control them.
+Soundb0ard Shell is my Unix shell inspired music making environment. Rather than being the shell around an operating system, it is a shell around an audio mixing desk with several music instruments - FM synth, subtractive synth, drum synth, granular looper, and one-shot sample player. You control the shell via a javascript-like programming language called Slang.
 
-You launch it from the command line and enter an interactive shell where you can type commands. The color scheme is designed for a dark terminal.
+Once launched from the command line, you enter an interactive shell where you can type commands. The color scheme is designed for a dark terminal.
 
 Once you have successfully followed the [BUILD](BUILD.md) instructions, you launch it from the projet root with:
 ```bash
@@ -13,20 +13,175 @@ build/Sbsh
 
 ## 0. Where am i?
 
-You're goto command is `ps`. In Unix this would be 'process status', for SBShell, it's more like 'program status' - it shows you mixer stats like volume and BPM; it shows you environment variables, which can be standard objects like numbers, strings and booleans, and also its special sauce --  sound generator objects like FMSynth, MiniSynth, DrumSynth, or Sampler; and it shows the running Processes. More about all of that below..
+After running `build/Sbsh` you should find yourself at an `SB#>` prompt where you can start typing. You're goto command is `ps`. In Unix this would be 'process status', for SBShell, it's more like 'program status' - it shows you mixer stats like volume and BPM; it shows you environment variables, which can be standard objects like numbers, strings and booleans, and also its special sauce --  sound generator objects like FMSynth, MiniSynth, DrumSynth, or Sampler; and it shows the running Processes. More about all of that below..
 
-## 1. Quick Start / First Sounds
+## 1. Code syntax
 
-Let's make some noise! Start SoundB0ard and type these commands at the `SB#>` prompt:
+Slang is based upon [Monkey](https://monkeylang.org/) and all monkey code should be valid. e.g.
+
+```
+// Integers & arithmetic expressions...
+let version = 1 + (50 / 2) - (8 * 3);
+
+// ... and strings
+let name = "The SBShell Programming Language - Slang!";
+
+// ... booleans
+let audioProgrammingFun = true;
+
+// ... arrays & hash maps
+let pals = [{"name": "Kenny", "age": 53}, {"name": "Pat", "age": 51}];
+
+// User-defined functions...
+let getName = fn(person) { person["name"]; };
+getName(pals[0]); // => "Kenny"
+getName(pals[1]); // => "Pat"
+
+print(len(pals)); // prints: 2
+
+let fibonacci = fn(x) {
+  if (x == 0) {
+    0
+  } else {
+    if (x == 1) {
+      return 1;
+    } else {
+      fibonacci(x - 1) + fibonacci(x - 2);
+    }
+  }
+};
+
+fibonnaci(14); // => 377
+
+// `newAdder` returns a closure that makes use of the free variables `a` and `b`:
+let newAdder = fn(a, b) {
+    fn(c) { a + b + c };
+};
+// This constructs a new `adder` function:
+let adder = newAdder(1, 2);
+
+adder(8); // => 11
+```
+
+## 2. Audio! Sound Generators
+
+Ok! How do i make noise?!
 
 ```javascript
 // whats going on?
 ps
-
-// you'll see various synths already created in the environment.
-// such as dx, dx2 and dx2, sbdrum and more.
 ```
+
  ![SoundB0ard ps command](images/sbshell_ps_full.png "ps command output")
+
+```javascript
+// you'll see various synths already created in the environment.
+// such as 'dx', 'dx2', 'dx3' - these are instances of the DX Synth,
+// 'mo' the MiniSynth, and 'sbdrum', 'sb2', both drum machine instances,
+// plus several one-shot sample players with names like 'bd', bdd', 'cp', 'sn'
+// This is my default setup but you can create as many of these sound
+// generators as you like.
+```
+
+Lets try a DX synth first.
+
+All sound generators can be triggered via the `note_on(..)` function, which takes a sound generator for the first param and a MIDI note for the second param.
+
+```javascript
+note_on(dx, 44);
+
+// try a chord
+note_on(dx, [44, 48, 51]);
+```
+
+\ Um, ok, i have no idea what those numbers are? 
+/ Soundb0ard deals directly with MIDI numbers. There is a built-in guide you can print with `midi_ref()`
+
+```javascript
+SB#> midi_ref()
+SB#> Midi Note Reference
+------------------------------------------------------------------------
+ - C:0 C#:1 D:2 D#:3 E:4 F:5 F#:6 G:7 G#:8 A:9 A#:10 B:11
+ 0 C:12 C#:13 D:14 D#:15 E:16 F:17 F#:18 G:19 G#:20 A:21 A#:22 B:23
+ 1 C:24 C#:25 D:26 D#:27 E:28 F:29 F#:30 G:31 G#:32 A:33 A#:34 B:35
+ 2 C:36 C#:37 D:38 D#:39 E:40 F:41 F#:42 G:43 G#:44 A:45 A#:46 B:47
+ 3 C:48 C#:49 D:50 D#:51 E:52 F:53 F#:54 G:55 G#:56 A:57 A#:58 B:59
+ 4 C:60 C#:61 D:62 D#:63 E:64 F:65 F#:66 G:67 G#:68 A:69 A#:70 B:71
+ 5 C:72 C#:73 D:74 D#:75 E:76 F:77 F#:78 G:79 G#:80 A:81 A#:82 B:83
+```
+
+and lots of built in functions for using midi numbers:
+```javascript
+SB#> notes_in_key(44)
+SB#> [44, 46, 48, 49,  51, 53, 55, 56]
+print_notes(notes_in_key(44))
+SB#> Notes:[44, 46, 48, 49,  51, 53, 55, 56]
+G# A# C C# D# F G G#
+print_notes(notes_in_key(44, 1))
+SB#> Notes:[44, 46, 47, 49,  51, 52, 54, 56]
+G# A# B C# D# E F# G#
+notes_in_chord(44, 44)
+SB#> [44, 48, 51]
+SB#> note_on(dx, notes_in_chord(44, 44))
+```
+
+Try some other DX synth:
+
+```javascript
+SB#> note_on(dx2, 24, dur=700) // C
+SB#> note_on(dx2, 26, dur=1700)
+
+SB#> note_on(dx3, 69, dur=200)
+SB#> note_on(dx3, 74, dur=2700)
+```
+
+### FM Synth - fmsynth()
+
+View the DX parameters via:
+```javascript
+SB#> info dx
+## FM SZYNTHZZZZZZZizzzzer (LOUIS) ####
+## Voice Section ####################################
+   algo:0 vol:0.80 pan:0.00 pitchbend:0
+   midi_osc:1 porta:0.00 pitchrange:12 op4fb:4.29
+   vel2att:0 note2dec:0 reset2zero:0 legato:0
+   op1out:95.00 op2out:70.00 op3out:50.00 op4out:0.00
+
+## Operator 1 ####################################
+   o1wav: SINE(0)  o1rat:1.00 o1det:0.00 o1sus:0
+   e1att:5.00 e1dec:4.00 e1sus:0.30 e1rel:200.00
+   op1freq:103.83
+
+## Operator 2 ####################################
+   o2wav: SINE(0)  o2rat:3.00 o2det:0.00 o2sus:0
+   e2att:11.00 e2dec:400.00 e2sus:1.00 e2rel:1003.33
+   op2freq:103.83
+
+## Operator 3 ####################################
+   o3wav: SINE(0)  o3rat:4.00 o3det:0.00 o3sus:0
+   e3att:100.00 e3dec:4.00 e3sus:0.20 e3rel:1003.33
+   op3freq:103.83
+
+## Operator 4 ####################################
+   o4wav: SINE(0)  o4rat:3.00 o4det:2.60 o4sus:0
+   e4att:5.00 e4dec:1743.61 e4sus:0.00 e4rel:803.67
+   op4freq:103.83
+
+## LFO Routing ####################################
+   l1_wav:sine(0) l1_int:0.20 l1_rate:0.38
+   l1_dest1:dx_dest_none
+   l1_dest2:dx_dest_none
+   l1_dest3:dx_dest_none
+   l1_dest4:dx_dest_none
+
+SB#>
+```
+
+All the paramaters can be changed via the following syntax:
+`set <sound_generator_name>:<param_name> val`;
+e.g. `set dx:o2rat 4.7`
+
+
 
 
 ```javascript
@@ -86,7 +241,7 @@ save_preset(drums, "NEWPRESETNAME"); // to save a new preset
 ```
 
 ### FM Synth - fmsynth()
-6-operator FM synthesis for bells, bass, keys, and experimental sounds.
+4-operator FM synthesis for bells, bass, keys, and experimental sounds.
 
 ```javascript
 let dx1 = fmsynth();

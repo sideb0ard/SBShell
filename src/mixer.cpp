@@ -181,30 +181,30 @@ std::string Mixer::StatusMixr() {
   //  clang-format off
   std::stringstream ss;
 
-  ss << COOL_COLOR_GREEN << ":::::::::::::::: vol:" << ANSI_COLOR_WHITE
-     << volume << COOL_COLOR_GREEN << " bpm:" << ANSI_COLOR_WHITE << bpm
+  ss << COOL_COLOR_GREEN << ":::::::::::: vol:" << ANSI_COLOR_WHITE << volume
+     << COOL_COLOR_GREEN << " bpm:" << ANSI_COLOR_WHITE << bpm
      << COOL_COLOR_GREEN << " looplen:" << ANSI_COLOR_WHITE << 3840
      << COOL_COLOR_GREEN << " midi_device:" << ANSI_COLOR_WHITE
      << (have_midi_controller ? "true" : "false") << COOL_COLOR_GREEN
      << " websock:" << ANSI_COLOR_WHITE
      << (websocket_enabled_ ? "true" : "false") << COOL_COLOR_GREEN
-     << " ::::::::::::::::::::::\n";
+     << " :::::::::::::::::\n";
 
   if (fx_[0]) {
-    ss << COOL_COLOR_GREEN << ":::::::::::::::: " << COOL_COLOR_ORANGE
+    ss << COOL_COLOR_GREEN << ":::::::::::: " << COOL_COLOR_ORANGE
        << "delay: " << fx_[0]->Status() << std::endl;
   }
   if (fx_[1]) {
-    ss << COOL_COLOR_GREEN << ":::::::::::::::: " << COOL_COLOR_ORANGE
+    ss << COOL_COLOR_GREEN << ":::::::::::: " << COOL_COLOR_ORANGE
        << "reverb: " << fx_[1]->Status() << std::endl;
   }
   if (fx_[2]) {
-    ss << COOL_COLOR_GREEN << ":::::::::::::::: " << COOL_COLOR_ORANGE
+    ss << COOL_COLOR_GREEN << ":::::::::::: " << COOL_COLOR_ORANGE
        << "distort: " << fx_[2]->Status() << std::endl;
   }
 
   if (global_env) {
-    ss << COOL_COLOR_GREEN << ":::::::::::::::: " << COOL_COLOR_ORANGE
+    ss << COOL_COLOR_GREEN << ":::::::::::: " << COOL_COLOR_ORANGE
        << "xfader: " << xfader_.Status(global_env->GetSoundGeneratorsById())
        << std::endl;
   }

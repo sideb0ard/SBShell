@@ -22,7 +22,6 @@ load_preset(sbdrum, "BEAT42");
 
 # load_preset(dx, "fnord0");
 
-
 # p4 $ hypeblah_gen; p3 $ ""
 
 # mellblah_gen // OPENER WUUUURP
