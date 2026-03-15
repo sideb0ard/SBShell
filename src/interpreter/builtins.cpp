@@ -2292,7 +2292,7 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            cmd = "let sb2 = drum(); load_preset(sb2,\"FMZ\");";
            eval_command_queue.push(cmd);
 
-           cmd = "let dx = fm(); vol dx 0.8; load_preset(dx,\"LOUIS\");";
+           cmd = "let dx = fm(); vol dx 0.8; load_preset(dx,\"OCWARF2\");";
            eval_command_queue.push(cmd);
 
            cmd = "let dx2 = fm(); vol dx2 0.7; load_preset(dx2, \"MAW2\");";

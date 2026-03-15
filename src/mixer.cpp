@@ -143,8 +143,10 @@ void Action::Run() {
   }
 }
 
-Mixer::Mixer() {  // WebSocket server temporarily disabled
+Mixer::Mixer() {
   UpdateBpm(DEFAULT_BPM);
+  solo_gain_.fill(1.0);
+  solo_gain_target_.fill(1.0);
 
   for (int i = 0; i < MAX_NUM_PROC; i++)
     processes_[i] = std::make_shared<Process>();
@@ -823,9 +825,18 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
   } else if (action->type == AudioAction::SOLO) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       soloed_sound_generator_idz.push_back(action->soundgen_num);
+      // Fade out all generators not in the solo group
+      for (int i = 0; i < sound_generators_idx_; i++) {
+        bool is_soloed = std::find(soloed_sound_generator_idz.begin(),
+                                   soloed_sound_generator_idz.end(),
+                                   i) != soloed_sound_generator_idz.end();
+        solo_gain_target_[i] = is_soloed ? 1.0 : 0.0;
+      }
     }
   } else if (action->type == AudioAction::UNSOLO) {
     soloed_sound_generator_idz.clear();
+    // Fade all generators back in
+    for (int i = 0; i < sound_generators_idx_; i++) solo_gain_target_[i] = 1.0;
   } else if (action->type == AudioAction::STOP) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];

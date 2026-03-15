@@ -75,6 +75,14 @@ const TokenType SLANG_BITWISE_RIGHTSHIFT = ">>";
 // /////////////////////////
 
 const TokenType SLANG_AT = "AT";
+const TokenType SLANG_FX_DELAY = "FX_DELAY";
+const TokenType SLANG_FX_REVERB = "FX_REVERB";
+const TokenType SLANG_FX_DISTORT = "FX_DISTORT";
+const TokenType SLANG_FX_LOFI = "FX_LOFI";
+const TokenType SLANG_FX_SCULPTOR = "FX_SCULPTOR";
+const TokenType SLANG_FX_DIFFUSER = "FX_DIFFUSER";
+const TokenType SLANG_FX_MODDELAY = "FX_MODDELAY";
+const TokenType SLANG_FX_COMPRESSOR = "FX_COMPRESSOR";
 const TokenType SLANG_BPM = "BPM";
 const TokenType SLANG_BITOP = "BITOP";
 const TokenType SLANG_DURATION = "DURATION";

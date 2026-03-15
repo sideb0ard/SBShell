@@ -5,13 +5,20 @@
 
 let scd = NULL;
 let rocka = NULL;
+let syncl = NULL;
+
 let init = fn()
 {
   # scd = loop(dloops/scudBeat2.aiff);
-  scd = loop(dloops2/rockRokcLEN.wav);
+  # scd = loop(dloops2/rockRokcLEN.wav);
+  scd = loop(dloops2/harshx.wav);
   add_fx(scd, "distort");
   set scd:len 2;
-  rocka = loop(dloops/rsuteri.wav);
+  #rocka = loop(dloops/rsuteri.wav);
+  rocka = loop(dloops/offkilterpercdrums.aiff);
+
+  load_preset(mo, "squirrrm");
+  syncl = loop(loops/synthCLAP.wav);
   add_fx(rocka, "distort");
   load_preset(dx, "lowr");
   load_preset(dx3, "phatz");
@@ -21,11 +28,13 @@ let init = fn()
   set rocka:pitch 0.4;
   p1 # blah_comp;
   p3 # dx3blah_comp;
+  p5 # playblah_comp;
 }
 
 # p1 # blah_comp;
 # p2 # dxblah_comp;
 # p3 # dx3blah_comp;
+# p4 # moblah_comp;
 let blah_comp = comp()
 {
   setup()
@@ -96,13 +105,15 @@ let dxblah_comp = comp()
   }
   run()
   {
-    let pp = 3840 / lenz[lx];
-    let offs = pp / 2;
-    for (let i = 0; i < lenz[lx]; i++) {
-      note_on_at(dx, 27, i *pp + offs, dur = durz[drx]);
+    if (count % 4 == 3) {
+      let pp = 3840 / lenz[lx];
+      let offs = pp / 2;
+      for (let i = 0; i < lenz[lx]; i++) {
+        note_on_at(dx, 27, i *pp + offs, dur = durz[drx]);
+      }
+      lx = incr(lx, 0, len(lenz));
+      drx = incr(drx, 0, len(durz));
     }
-    lx = incr(lx, 0, len(lenz));
-    drx = incr(drx, 0, len(durz));
   }
 }
 
@@ -118,14 +129,63 @@ let dx3blah_comp = comp()
   }
   run()
   {
-    if (count % 2 == 1) {
+    if (count % 4 == 2) {
       let pp = 3840 / lenz[lx];
       let offs = pp / 2;
       for (let i = 0; i < lenz[lx]; i++) {
-        note_on_at(dx3, 34, i *pp + offs, dur = durz[drx]);
+        note_on_at(dx3, 24, i *pp + offs, dur = durz[drx]);
       }
       lx = incr(lx, 0, len(lenz));
       drx = incr(drx, 0, len(durz));
     }
+  }
+}
+
+let playblah_comp = comp()
+{
+  setup()
+  {
+    let pitchz = [0.1, 0.5, 2, 1, 1.2, 1.4, 1.7];
+    let px = 0;
+  }
+  run()
+  {
+    let pat = rand_array(16, 0, 8);
+    if (count % 2 == 0) {
+      set syncl:pitch pitchz[px];
+      px = incr(px, 0, len(pitchz));
+      play_array(syncl, pat);
+      #set hhp:octave_jump 1;
+    } else {
+      #set hhp:pitch_ramp 1;
+      # play_array(sbdrum, pat);
+    }
+  }
+}
+
+let moblah_comp = comp()
+{
+  setup()
+  {
+    let chrd1 =  up([24, 28, 31, 35], 36);
+    let chrd2 =  up( [31, 35, 38, 41], 24);
+  }
+  run()
+  {
+    if (count % 4 == 0) {
+      note_on(mo, chrd1, dur = 4000);
+    }
+    if (count % 9 == 8) {
+      let pat = rand_array(16, 0, 2);
+      for (let i = 0; i < 16; i++) {
+        if (pat[i] == 0) {
+          note_on_at(mo, chrd1, i * pp, dur = 100);
+        }
+        if (pat[i] == 1) {
+          note_on_at(mo, chrd2, i * pp, dur = 200);
+        }
+      }
+    }
+
   }
 }

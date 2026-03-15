@@ -771,14 +771,14 @@ void GranularLooper::SetReverseMode(bool b) {
 }
 
 void GranularLooper::SetLoopMode(unsigned int m) {
-  volume = 0.2;
+  // volume = 0.2;
   const std::unique_ptr<FileBuffer> &buffer = file_buffer_;
   switch (m) {
     case (0):
       buffer->loop_mode_ = LoopMode::loop_mode;
       quasi_grain_fudge_ = 0;
       granular_spray_frames_ = 0;
-      volume = 1;
+      // volume = 1;
       break;
     case (1):
       buffer->loop_mode_ = LoopMode::static_mode;

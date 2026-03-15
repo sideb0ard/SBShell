@@ -131,6 +131,7 @@ class Parser {
   std::shared_ptr<ast::BlockStatement> ParseBlockStatement();
 
   bool ExpectPeek(token::TokenType t);
+  bool ExpectPeekFxName();  // accepts any of the FX keyword tokens
   bool CurTokenIs(token::TokenType t) const;
   bool PeekTokenIs(token::TokenType t) const;
 

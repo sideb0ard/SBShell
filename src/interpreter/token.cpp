@@ -6,6 +6,14 @@
 namespace token {
 const std::unordered_map<std::string, TokenType> keywords{
     {"at", SLANG_AT},
+    {"delay", SLANG_FX_DELAY},
+    {"reverb", SLANG_FX_REVERB},
+    {"distort", SLANG_FX_DISTORT},
+    {"lofi", SLANG_FX_LOFI},
+    {"sculptor", SLANG_FX_SCULPTOR},
+    {"diffuser", SLANG_FX_DIFFUSER},
+    {"moddelay", SLANG_FX_MODDELAY},
+    {"compressor", SLANG_FX_COMPRESSOR},
     {"bitop", SLANG_BITOP},
     {"break", SLANG_BREAK},
     {"bpm", SLANG_BPM},

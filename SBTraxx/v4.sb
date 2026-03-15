@@ -3,6 +3,9 @@ let perc1 = NULL;
 let perc2 = NULL;
 let perc3 = NULL;
 let perc4 = NULL;
+let pesh = NULL;
+let rock = NULL;
+let wash = NULL;
 
 let key = NULL;
 
@@ -10,6 +13,14 @@ let init = fn()
 {
   load_preset(sbdrum, "V4");
   key = 52;
+
+  pesh = loop(dloops/peshayBrwak.aiff);
+  add_fx(pesh, "distort");
+  set pesh:fx0:mode 1;
+  set pesh:fx0:threshold 0.2;
+  set pesh:plooplen 2;
+  set pesh:poffset 6;
+  rock = loop(legowelt/Synth-SimpleBeautyLow.wav);
 
   send("delay", sd);
   set sd:pitch 1.8;
@@ -19,7 +30,22 @@ let init = fn()
   perc2 = sample(glitchedVinyl/pitchsweel.wav);
   perc3 = sample(noises/RevPercMatmos.aiff);
   perc4 = sample(noises/Woodblock2_bip.aif);
+
+  wash = loop(loops/washreverbloop.aiff);
+  add_fx(wash, "sidechain", sbdrum);
+  p3 < osc 8 "-40 0" "set wash:fx0:threshold %";
+  add_fx(wash, "reverb");
+  p4 < osc 13 "10 90" "set wash:fx1:wetmx %";
+  p1 # peshblah_comp;
+  p2 # bd_comp;
+  p10 # wahblah_comp;
 }
+
+# p6 # dx1blah_comp;
+# p7 # twiblah_comp;
+# p9 # bounce_roll;
+# p8 # nested_tuplet_roll;
+# p10 # percblah_comp
 
 let bd_comp = comp()
 {
@@ -52,7 +78,7 @@ let bd_comp = comp()
             vx = incr(vx, 0, len(velz));
           }
           note_on_at(sbdrum, 0, i * pp, vel = v);
-          #note_on_at(dx2, notes_in_chord(42, 42), i * pp, vel = v, dur = durz[drx]);
+          note_on_at(dx2, notes_in_chord(key - 24, key), i * pp, vel = v, dur = durz[drx]);
           drx = incr(drx, 0, len(durz));
         }
       }
@@ -74,15 +100,9 @@ let snblah_comp = comp()
     if (count % 16 < 14) {
       set mixer:delay:fb fbz[fbx];
       fbx = incr(fbx, 0, len(fbz));
-      note_on_at(sd, 1, 8 * pp - rand(140), dur = durz[drx]);
+      cmbeat(sbdrum, 2);
+      # note_on_at(sbdrum, 2, 8 * pp - rand(140), dur = durz[drx]);
       drx = incr(drx, 0, len(durz));
-    }
-
-    let pat = rand_beat();
-    for (let i = 0; i < 16; i++) {
-      if (pat[i] == 1) {
-        note_on_at(ready, 16 - i, i * pp);
-      }
     }
   }
 }
@@ -143,13 +163,11 @@ let hhblah_comp = comp()
   run()
   {
     for (let i = 0; i < 16; i++) {
-      let offz = 70;
+      let offz = 40;
       if (i % 2 == 0) {
         offz = 0;
       }
-      if (hatz[i] == 1) {
-        note_on_at(sbdrum, 3, i * pp + offz, dur = 30, vel = 40 + rand(40));
-      }
+      note_on_at(sbdrum, 3, i * pp + offz, dur = 30, vel = 60 + rand(40));
     }
     if (count % 4 == 3) {
       note_on_at(sbdrum, 4, 14 * pp);
@@ -168,25 +186,32 @@ let dx1blah_comp = comp()
     let mx = 0;
     let bjz = [3, 5, 7, 9, 11];
     let bx = 0;
+
+    let durz = [10000, 800, 300, 2000, 6000, 15000];
+    let drx = 0;
+    let velz = [90, 100, 120, 127, 127, 110];
+    let vx = 0;
   }
   run()
   {
 
     if (count % 2 == 0) {
-      note_on(dx, notes_in_chord(notz[nx], 61, modz[mx]), dur = 5000, vel = 90);
+      note_on(dx, notes_in_chord(notz[nx], 61, modz[mx]), dur = durz[drx], vel = velz[vx]);
       mx = incr(mx, 0, len(modz));
       nx = incr(nx, 0, len(notz));
+      drx = incr(drx, 0, len(durz));
+      vx = incr(vx, 0, len(velz));
     }
 
-    # if (count % 4 == 1) {
-      #   let pat = bjork(bjz[bx], 16);
-      #   bx = incr(bx, 0, len(bjz));
-      #   for (let i = 0; i < 16; i++) {
-        #     if (pat[i] == 1) {
-          #       note_on_at(dx3, notz[nx], i * pp, dur = 300, vel = 90);
-          #     }
-        #   }
-      # }
+    if (count % 4 == 3) {
+      let pat = bjork(bjz[bx], 16);
+      bx = incr(bx, 0, len(bjz));
+      for (let i = 0; i < 16; i++) {
+        if (pat[i] == 1) {
+          note_on_at(dx, notz[nx] + 24, i * pp, dur = 200);
+        }
+      }
+    }
   }
 }
 
@@ -295,32 +320,97 @@ let peshblah_comp = comp()
         }
         pix = incr(pix, 0, pmax);
       }
-      if (count % 4 == 3) {
-        pmax = incr(pmax, 3, 16);
-        set pesh:reverse 1;
-        set rock:reverse 1;
-      }
-      if (count % 6 == 2) {
-        print("pitch:", pitz[px]);
-        solo(pesh, at=10*pp);
-        set pesh:pitch pitz[px];
-        px = incr(px, 0, len(pitz));
-        set rock:pitch pitz[px];
-      }
+    }
+
+    if (count % 4 == 3) {
+      pmax = incr(pmax, 3, 16);
+      set pesh:reverse 1;
+      set rock:reverse 1;
+    }
+    if (count % 6 == 2) {
+      # print("pitch:", pitz[px]);
+      solo(pesh, at=12*pp);
+      set pesh:pitch pitz[px];
+      px = incr(px, 0, len(pitz));
+      set rock:pitch pitz[px];
+    }
+    if (count % 8 == 0) {
+      set rock:gate 1;
+      set pesh:stutter 1;
+    }
+    if (count % 8 == 3) {
+      set rock:octave_jump 1;
+      set pesh:strobe 1;
+    }
+    if (count % 8 == 4) {
+      set rock:strobe 1;
+      set pesh:octave_jump 1;
+    }
+    if (count % 8 == 5) {
+      set pesh:pitch_ramp 1;
+      set rock:pitch_ramp 1;
+    }
+    if (count % 8 == 6) {
+      set rock:slowdown 1;
+      set pesh:pitch_ramp 1;
+    }
+    if (count % 8 == 7) {
+      set pesh:gate 1;
+      set rock:reverse 1;
     }
   }
 }
 
-let wurker = comp()
+let chblah_comp = comp()
 {
   setup()
   {
-    let valz = [10, 34, 50, 77, 3];
+    let durz = [100, 400, 80, 500, 700, 200];
+    let drx = 0;
+    let velz = [127, 120, 100, 80, 120, 90, 50];
     let vx = 0;
+    # let chrdz = up([47, 45, 40], 12);
+    let chrdz = [47, 45, 40];
+    let chx = 0;
   }
   run()
   {
-    print("VAL IS:", valz[vx]);
-    vx = incr(vx, 0, len(valz));
+    if (count % 2 == 0) {
+      let riff = chord_riff(notes_in_chord(chrdz[chx], key));
+      for (let i = 0; i < 16; i++) {
+        if (riff[i] > 0) {
+          note_on_at(dx3, riff[i], i * pp * 2, dur =durz[drx] * 2, vel = velz[vx]);
+          drx = incr(drx, 0, len(durz));
+          vx = incr(vx, 0, len(velz));
+        }
+      }
+    }
+    if (count % 8 == 7) {
+      chx = incr(chx, 0, len(chrdz));
+    }
+  }
+}
+
+let wahblah_comp = comp()
+{
+  setup()
+  {
+    let lenz = [1, 2, 3, 4, 7, 2, 2];
+    let lx = 0;
+  }
+  run()
+  {
+    set wash:plooplen lenz[lx];
+    lx = incr(lx, 0, len(lenz));
+    set pesh:plooplen lenz[lx];
+    if (count % 16 == 0) {
+      note_on(wash, 0, dur = 0);
+    }
+    if (count % 14 == 13) {
+      let pat = rand_array(16, 0, 16);
+      for (let i = 0; i < 16; i++) {
+        note_on_at(wash, i, i * pp);
+      }
+    }
   }
 }

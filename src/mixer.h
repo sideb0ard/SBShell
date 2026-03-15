@@ -105,6 +105,12 @@ struct Mixer {
                                 // lock)
   std::array<StereoVal, MAX_NUM_SOUND_GENERATORS> soundgen_cur_val_{};
 
+  // Per-generator gain for solo fade-in/out. Ramps toward solo_gain_target_
+  // each sample to avoid clicks when soloing/unsoloing.
+  static constexpr double kSoloRampRate = 1.0 / 512.0;  // ~11ms at 44100Hz
+  std::array<double, MAX_NUM_SOUND_GENERATORS> solo_gain_;
+  std::array<double, MAX_NUM_SOUND_GENERATORS> solo_gain_target_;
+
   // Cached status info - updated by audio thread, read by UI thread
   struct CachedFxStatus {
     std::string status;
@@ -316,23 +322,23 @@ struct Mixer {
               : static_cast<int>(sound_generators_.size());
 
       for (int k = 0; k < safe_generators_count; k++) {
-        bool collect_value = false;
-        // if nothing is soloed, or this sg is in the solo group,
-        // collect its output value
-        if (soloed_sound_generator_idz.empty() ||
-            std::find(soloed_sound_generator_idz.begin(),
-                      soloed_sound_generator_idz.end(),
-                      k) != soloed_sound_generator_idz.end()) {
-          collect_value = true;
-        }
+        // Ramp solo gain toward target to avoid clicks on solo/unsolo
+        double &gain = solo_gain_[k];
+        const double target = solo_gain_target_[k];
+        if (gain < target)
+          gain = std::min(gain + kSoloRampRate, target);
+        else if (gain > target)
+          gain = std::max(gain - kSoloRampRate, target);
 
-        if (collect_value) {
-          output_left += soundgen_cur_val_[k].left * xfader_.GetValueFor(k);
-          output_right += soundgen_cur_val_[k].right * xfader_.GetValueFor(k);
+        if (gain > 0.0) {
+          output_left +=
+              soundgen_cur_val_[k].left * xfader_.GetValueFor(k) * gain;
+          output_right +=
+              soundgen_cur_val_[k].right * xfader_.GetValueFor(k) * gain;
 
-          fx_delay_send += soundgen_cur_val_[k] * fx_send_cache[k][0];
-          fx_reverb_send += soundgen_cur_val_[k] * fx_send_cache[k][1];
-          fx_distort_send += soundgen_cur_val_[k] * fx_send_cache[k][2];
+          fx_delay_send += soundgen_cur_val_[k] * fx_send_cache[k][0] * gain;
+          fx_reverb_send += soundgen_cur_val_[k] * fx_send_cache[k][1] * gain;
+          fx_distort_send += soundgen_cur_val_[k] * fx_send_cache[k][2] * gain;
         }
       }
 

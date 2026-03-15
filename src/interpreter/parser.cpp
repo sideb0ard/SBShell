@@ -193,7 +193,8 @@ std::shared_ptr<ast::Statement> Parser::ParseProcessSetStatement() {
     return nullptr;
   }
 
-  if (!ExpectPeek(token::SLANG_IDENT) && !ExpectPeek(token::SLANG_DURATION)) {
+  if (!ExpectPeek(token::SLANG_IDENT) && !ExpectPeek(token::SLANG_DURATION) &&
+      !ExpectPeekFxName()) {
     std::cerr << "NOT GOT PARAM ! Peek token is " << peek_token_ << std::endl;
     return nullptr;
   }
@@ -226,7 +227,7 @@ std::shared_ptr<ast::Statement> Parser::ParseSetStatement() {
   }
 
   if (!ExpectPeek(token::SLANG_IDENT) && !ExpectPeek(token::SLANG_VOLUME) &&
-      !ExpectPeek(token::SLANG_NUMBER)) {
+      !ExpectPeek(token::SLANG_NUMBER) && !ExpectPeekFxName()) {
     std::cerr << "NOT GOT PARAM ! Peek token is " << peek_token_ << std::endl;
     return nullptr;
   }
@@ -477,6 +478,21 @@ bool Parser::ExpectPeek(token::TokenType t) {
   }
 }
 
+bool Parser::ExpectPeekFxName() {
+  if (PeekTokenIs(token::SLANG_FX_DELAY) ||
+      PeekTokenIs(token::SLANG_FX_REVERB) ||
+      PeekTokenIs(token::SLANG_FX_DISTORT) ||
+      PeekTokenIs(token::SLANG_FX_LOFI) ||
+      PeekTokenIs(token::SLANG_FX_SCULPTOR) ||
+      PeekTokenIs(token::SLANG_FX_DIFFUSER) ||
+      PeekTokenIs(token::SLANG_FX_MODDELAY) ||
+      PeekTokenIs(token::SLANG_FX_COMPRESSOR)) {
+    NextToken();
+    return true;
+  }
+  return false;
+}
+
 void Parser::NextToken() {
   cur_token_ = peek_token_;
   peek_token_ = lexer_->NextToken();
@@ -603,6 +619,15 @@ std::shared_ptr<ast::Expression> Parser::ParseForPrefixExpression() {
   else if (cur_token_.type_ == token::SLANG_SAMPLE)
     return ParseSampleExpression();
   else if (cur_token_.type_ == token::SLANG_STRING)
+    return ParseStringLiteral();
+  else if (cur_token_.type_ == token::SLANG_FX_DELAY ||
+           cur_token_.type_ == token::SLANG_FX_REVERB ||
+           cur_token_.type_ == token::SLANG_FX_DISTORT ||
+           cur_token_.type_ == token::SLANG_FX_LOFI ||
+           cur_token_.type_ == token::SLANG_FX_SCULPTOR ||
+           cur_token_.type_ == token::SLANG_FX_DIFFUSER ||
+           cur_token_.type_ == token::SLANG_FX_MODDELAY ||
+           cur_token_.type_ == token::SLANG_FX_COMPRESSOR)
     return ParseStringLiteral();
   else if (cur_token_.type_ == token::SLANG_LBRACKET)
     return ParseArrayLiteral();

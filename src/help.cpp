@@ -146,6 +146,32 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  rand_preset(gen)       " << COOL_COLOR_ORANGE << "- Load random preset\n";
   ss << ANSI_COLOR_WHITE << "  save_preset(gen, name) " << COOL_COLOR_ORANGE << "- Save current settings\n\n";
 
+  ss << COOL_COLOR_GREEN << "GRANULAR LOOPER\n"
+     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << ANSI_COLOR_WHITE << "  let x = loop(file)       " << COOL_COLOR_ORANGE << "- Create granular looper from sample\n";
+  ss << ANSI_COLOR_WHITE << "  set x:len 2              " << COOL_COLOR_ORANGE << "- Loop length in bars (default 1)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:speed 0.5          " << COOL_COLOR_ORANGE << "- Playback speed multiplier\n";
+  ss << ANSI_COLOR_WHITE << "  set x:pitch 0.5          " << COOL_COLOR_ORANGE << "- Pitch ratio\n";
+  ss << ANSI_COLOR_WHITE << "  set x:mode 0             " << COOL_COLOR_ORANGE << "- Loop mode: 0=loop 1=static 2=smudge\n";
+  ss << ANSI_COLOR_WHITE << "  set x:reverse 1          " << COOL_COLOR_ORANGE << "- Reverse playback\n\n";
+  ss << COOL_COLOR_GREEN << "  Rhythmic FX (trigger on next bar):\n";
+  ss << ANSI_COLOR_WHITE << "  set x:scramble 1         " << COOL_COLOR_ORANGE << "- Randomly reorder 16 slices (keeps active beats)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:stutter 1          " << COOL_COLOR_ORANGE << "- Random stutter repeats\n";
+  ss << ANSI_COLOR_WHITE << "  set x:strobe 1           " << COOL_COLOR_ORANGE << "- Alternate between anchor slice and sequence\n";
+  ss << ANSI_COLOR_WHITE << "  set x:gate 1             " << COOL_COLOR_ORANGE << "- Rhythmic gating with envelope\n";
+  ss << ANSI_COLOR_WHITE << "  set x:speedulate 1       " << COOL_COLOR_ORANGE << "- Half/double speed slice remapping\n";
+  ss << ANSI_COLOR_WHITE << "  set x:slowdown 1         " << COOL_COLOR_ORANGE << "- Decelerate into stutter at end of bar\n";
+  ss << ANSI_COLOR_WHITE << "  set x:repeat 1           " << COOL_COLOR_ORANGE << "- Beat repeat: lock and loop a section\n\n";
+  ss << COOL_COLOR_GREEN << "  Pitch FX (trigger on next bar):\n";
+  ss << ANSI_COLOR_WHITE << "  set x:pitch_ramp 1       " << COOL_COLOR_ORANGE << "- Pitch ramps up/down across the bar\n";
+  ss << ANSI_COLOR_WHITE << "  set x:octave_jump 1      " << COOL_COLOR_ORANGE << "- Random octave shifts per slice\n";
+  ss << ANSI_COLOR_WHITE << "  set x:pitch_staircase 1  " << COOL_COLOR_ORANGE << "- Semitone steps across the bar\n\n";
+  ss << COOL_COLOR_GREEN << "  Granular controls:\n";
+  ss << ANSI_COLOR_WHITE << "  set x:grains_per_sec 15  " << COOL_COLOR_ORANGE << "- Grain density\n";
+  ss << ANSI_COLOR_WHITE << "  set x:grain_dur_ms 80    " << COOL_COLOR_ORANGE << "- Grain duration in ms\n";
+  ss << ANSI_COLOR_WHITE << "  set x:grain_spray_ms 10  " << COOL_COLOR_ORANGE << "- Random position spray in ms\n";
+  ss << ANSI_COLOR_WHITE << "  set x:quasi_grain_fudge 0 " << COOL_COLOR_ORANGE << "- Duration randomisation\n\n";
+
   ss << COOL_COLOR_GREEN << "MIXER/ROUTING FUNCTIONS\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  send(effect, gen)    " << COOL_COLOR_ORANGE << "- Send generator to effect\n";
