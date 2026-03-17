@@ -45,7 +45,7 @@ let init = fn()
 # p7 # twiblah_comp;
 # p9 # bounce_roll;
 # p8 # nested_tuplet_roll;
-# p10 # percblah_comp
+# p11 # percblah_comp
 
 let bd_comp = comp()
 {

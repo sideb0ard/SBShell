@@ -1,5 +1,12 @@
 # SBShell User Guide
 
+> **[⬇ Source Code on Codeberg](https://codeberg.org/sideb0ard/SBShell)**
+
+<iframe width="100%" height="315"
+  src="https://www.youtube.com/embed/CE3KD_9QHqI"
+  frameborder="0" allowfullscreen style="border:1px solid #1e1e1e; border-radius:4px; margin:16px 0;">
+</iframe>
+
 Soundb0ard Shell is my Unix shell inspired music making environment. Rather than being the shell around an operating system, it is a shell around an audio mixing desk with several music instruments - FM synth, subtractive synth, drum synth, granular looper, and one-shot sample player. You control the shell via a javascript-like programming language called Slang.
 
 Once launched from the command line, you enter an interactive shell where you can type commands. The color scheme is designed for a dark terminal.

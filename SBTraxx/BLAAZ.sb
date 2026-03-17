@@ -1,0 +1,130 @@
+
+let why = NULL;
+
+let init = fn()
+{
+  p4 < osc 13 "60 80" "set dx:op2out %";
+  why = loop(loops/whydyahavetomakearecordboutme.aiff);
+  send(delay, why);
+  p2 # sbblah_comp;
+  load_preset(dx, "MAWx");
+  load_preset(dx3, "flurpE");
+  p1 # dbblah_comp;
+}
+
+# p3 # dxblah_comp;
+
+let dbblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (i % 4 == 0) {
+        note_on_at(sbdrum, 0, i * pp);
+      }
+    }
+  }
+}
+
+let sbblah_comp = comp()
+{
+  setup()
+  {
+    let pat = [0, 0, 1, 0,  0, 0, 1, 0,  0, 0, 1, 0,  1, 0, 1, 0];
+    let px = 0;
+    let durz = [30, 50, 60, 100, 0, 200];
+    let drx = 0;
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (pat[i] == 1) {
+        note_on_at(why, px, i * pp, dur =durz[drx]);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+    px = incr(px, 0, 16);
+  }
+}
+
+
+# dx MAWx
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let pato = [0, 1, 0, 1,  1, 0, 0, 0,  0, 1, 0, 1,  0, 0, 0, 1];
+    let durz = [100, 100, 100, 200, 200, 400, 500, 500, 500];
+    let drx = 0;
+  }
+  run()
+  {
+    let chrd = down(notes_in_chord(32, 25, 1, 1), 12);
+
+    let pat = pato;
+
+    if (count % 8 == 7) {
+      pat = rand_array(16, 0, 1);
+    }
+    for (let i = 0; i < 16; i++) {
+      let off = 10;
+      if (i % 2 == 0) {
+        off = 0;
+      }
+      if (pat[i] == 1) {
+        note_on_at(dx, chrd, i * pp + off, dur = durz[drx]);
+      }
+    }
+    drx = incr(drx, 0, len(durz));
+  }
+}
+
+let hhblah_comp = comp()
+{
+  setup()
+  {
+    let hz = [0, 0, 0, 1,  1, 0, 0, 0,  1, 0, 0, 0,  0, 0, 1, 0];
+  }
+  run()
+  {
+    let hatz = hz;
+    if (count % 4 == 3) {
+      hatz = rand_array(16, 0, 1);
+    }
+    for (let i = 0; i < 16; i++) {
+      let off = 40;
+      if (i % 2 == 0) {
+        off = 0;
+      }
+      if (hatz[i] == 1) {
+        note_on_at(sb2, 3, i * pp + off, vel = 30 + rand(40));
+      }
+    }
+  }
+}
+
+# dx3 flurpE
+let dx3blah_comp = comp()
+{
+  setup()
+  {
+    let notz = [37, 34, 32];
+    let nx = 0;
+    let durz = [100, 300, 500, 600, 20, 100, 70];
+    let drx = 0;
+  }
+  run()
+  {
+    let rif = riff(notz[nx]);
+    nx = incr(nx, 0, len(notz));
+    for (let i = 0; i < 16; i++) {
+      if (rif[i] > 0) {
+        note_on_at(dx3, rif[i], i * pp, dur = durz[drx]);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}

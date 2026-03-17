@@ -130,11 +130,6 @@ let dxxxblah_comp = comp()
 {
   setup()
   {
-    let chrds = [1, 0, 5, 4];
-    let chx = 0;
-    let chrd_lenz = [2, 2, 1, 1];
-    let chlx = 0;
-    let nextchange = 0;
     let notes = notes_in_key(key);
   }
   run()
@@ -159,22 +154,64 @@ let dxxxblah_comp = comp()
   }
 }
 
-let dx3blah_comp = comp()
+let dx3xxblah_comp = comp()
 {
   setup()
   {
-    let notez = notes_in_key(60);
-    let mel = rand_array(16, 0, 64);
+    let notes = up(notes_in_key(key), 12);
+    let beato = [1, 0, 0, 0,  0, 0, 1, 0,  1, 0, 1, 0,  0, 1, 0, 0];
+    let chx = 0;
+    let cmx = 1;
   }
   run()
   {
-    if (count % 8 == 7) {
-      mel = rand_array(16, 0, 40);
+
+    if (count % 16 < 13) {
+      let nx = 1;
+      if (count % 8 == 4) {
+        nx = 0;
+      }
+      if (count % 8 == 6) {
+        nx = 5;
+      }
+      if (count % 8 == 7) {
+        nx = 4;
+      }
+      let chrd = notes_in_chord(notes[nx], key, 2);
+      let beat = beato;
+      if (count % 4 == 3) {
+        beat = rand_beat();
+      }
+      let pp = 3840 / 32;
+      for (let i = 0; i < 16; i++) {
+        let off = 50;
+        if (i % 2 == 0) {
+          off = 0;
+        }
+        if(beat[i] == 1) {
+          note_on_at(dx3, chrd[chx], 3840 / 2 + i * pp + off, dur =279);
+          chx = incr(chx, 0, cmx);
+        }
+      }
+      cmx = incr(cmx, 1, len(chrd));
     }
-    print(mel);
-    for (let i = 0; i < 16; i++) {
-      if (mel[i] < len(notez)) {
-        note_on_at(dx3, notez[mel[i]], i * pp, dur = 80);
+  }
+}
+
+let rvblah_comp = comp()
+{
+  setup()
+  {
+    let pat = rand_array(16, 0, 15);
+  }
+  run()
+  {
+    if (count % 4 == 3) {
+      pat = rand_array(16, 0, 15);
+    }
+    if (count % 3 == 2) {
+      for (let i = 0; i < 16; i++) {
+        note_on_at(ravey, pat[i], i * pp);
       }
     }
   }

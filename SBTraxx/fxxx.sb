@@ -6,6 +6,8 @@
 let scd = NULL;
 let rocka = NULL;
 let syncl = NULL;
+let leg1 = NULL;
+let leg2 = NULL;
 
 let init = fn()
 {
@@ -29,12 +31,24 @@ let init = fn()
   p1 # blah_comp;
   p3 # dx3blah_comp;
   p5 # playblah_comp;
+
+  leg1 = loop(legowelt/Synth-TechologicalWindChime.wav);
+  leg2 = loop(legowelt/Synth-TechologicalWindChime2.wav);
+  set leg2:len 2;
+  set leg1:pitch 2;
+  note_on(leg1, 8);
+  note_on_at(leg2, 0, 8 * pp, dur = 3840);
+  legoblah_comp();
+  send(reverb, leg1);
+  send(reverb, leg2);
+  send(delay, leg1);
+  send(delay, leg2);
+
+  p6 # legoblah_comp;
 }
 
-# p1 # blah_comp;
-# p2 # dxblah_comp;
-# p3 # dx3blah_comp;
 # p4 # moblah_comp;
+# p2 # dxblah_comp;
 let blah_comp = comp()
 {
   setup()
@@ -186,6 +200,29 @@ let moblah_comp = comp()
         }
       }
     }
+  }
+}
 
+let legoblah_comp = comp()
+{
+  setup()
+  {
+    let pat = rand_array(16, 0, 15);
+  }
+  run()
+  {
+    if (count % 8 == 7) {
+      pat = rand_array(16, 0, 15);
+    }
+    if (count % 4 == 3) {
+      for (let i = 0; i < 16; i++) {
+        note_on_at(leg1, pat[i], i * pp);
+      }
+    }
+    if (count % 6 == 4) {
+      for (let i = 0; i < 16; i++) {
+        note_on_at(leg2, pat[i], i * pp);
+      }
+    }
   }
 }
