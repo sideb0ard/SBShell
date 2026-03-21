@@ -493,9 +493,9 @@ load_preset(drums, "MY_KICKS");
 
 SoundB0ard runs on a global clock synced via Ableton Link.
 
-### MIDI Ticks — the lingua franca of SBShell
+### MIDI Ticks
 
-MIDI ticks are the universal unit of time in SBShell. One loop — one bar — is always **3840 MIDI ticks** long, regardless of BPM; the clock stretches or contracts to fit the tempo while your patterns stay locked to the musical grid. This tick count is the common currency across nearly every timing-aware function in the language. `note_on_at(inst, note, tick)` and `note_off_at(inst, note, tick)` schedule note events at an exact position within the bar. `sched(when, start_val, end_val, time_taken, "cmd")` fires a smoothly interpolated automation: `when` is the tick to start, `start_val` and `end_val` are the range to sweep, `time_taken` is how long the sweep lasts in ticks, and `"cmd"` is a command string where `%` is replaced with the current interpolated value on every tick — for example `sched(0, 0.8, 0.2, pp*16, "vol dx %")` fades `dx` out over one bar. When in doubt, think in ticks.
+MIDI ticks are the lingua franca of time in SBShell. One loop — one bar — is always **3840 MIDI ticks** long, regardless of BPM. . Ticks are used in all of the timing-aware functions in the language. `note_on_at(inst, note, tick)` and `note_off_at(inst, note, tick)` schedule note events at an exact offset from when they are evaluated (e.g. immediately from an interactive session, or at `count % 3840` when evaluated in a Computation). `sched(when, start_val, end_val, time_taken, "cmd")` fires a smoothly interpolated automation: `when` is the tick to start, `start_val` and `end_val` are the range to sweep, `time_taken` is how long the sweep lasts in ticks, and `"cmd"` is a command string where `%` is replaced with the current interpolated value on every tick — for example `sched(0, 0.8, 0.2, pp*16, "vol dx %")` schedules immediately (when==0) a `dx` fadeout out over one bar.
 
 ### BPM and Tempo
 
