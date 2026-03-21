@@ -29,7 +29,8 @@ let init = fn()
 }
 
 # sched(0, 0, 1, 3840*2, "vol hh %"); p12 # hhblah_comp
-# p13 # glopblah_comp
+# p13 # glopblah_comp;
+# p14 # dxxxblah_comp;
 
 let murkblah_comp = comp()
 {

@@ -443,7 +443,7 @@ note_on(<instrument_name>, <note_number>);
 // With velocity (0-127, default 100)
 note_on(dx, 20, vel = 80);
 
-// With duration in midi ticks (default 240, i.e. one 16th note)
+// With duration in milliseconds (default 100)
 note_on(dx, 20, dur = 1000);
 
 // With both
@@ -493,10 +493,6 @@ load_preset(drums, "MY_KICKS");
 
 SoundB0ard runs on a global clock synced via Ableton Link.
 
-### MIDI Ticks — the lingua franca of SBShell
-
-MIDI ticks are the universal unit of time in SBShell. One loop — one bar — is always **3840 MIDI ticks** long, regardless of BPM; the clock stretches or contracts to fit the tempo while your patterns stay locked to the musical grid. This tick count is the common currency across nearly every timing-aware function in the language. `note_on_at(inst, note, tick)` and `note_off_at(inst, note, tick)` schedule note events at an exact position within the bar. `sched(when, start_val, end_val, time_taken, "cmd")` fires a smoothly interpolated automation: `when` is the tick to start, `start_val` and `end_val` are the range to sweep, `time_taken` is how long the sweep lasts in ticks, and `"cmd"` is a command string where `%` is replaced with the current interpolated value on every tick — for example `sched(0, 0.8, 0.2, pp*16, "vol dx %")` fades `dx` out over one bar. When in doubt, think in ticks.
-
 ### BPM and Tempo
 
 ```javascript
@@ -513,11 +509,11 @@ One loop, i.e. one bar, is 3840 midi ticks long. No matter what the BPM is, the 
 The most commonly addressed time division is a 16th, and 3840 / 16 = 240. This value is used so often I have it saved as a variable `pp` - 'pulses per'. This variable is set within the `startup.sb` file, which you can view and adjust yourself.
 
 ```javascript
-// pp = 240 midi ticks (one 16th note)
-// pp * 2 = 8th note  (480 ticks)
-// pp * 4 = quarter note  (960 ticks)
-// pp * 16 = one bar  (3840 ticks)
-// (at 120 BPM, pp ≈ 125ms — but pp is always 240 ticks regardless of tempo)
+// At 120 BPM:
+// pp ≈ 125ms (one 16th note)
+// pp * 2 = 8th note
+// pp * 4 = quarter note
+// pp * 16 = one bar
 
 ### Scheduling Notes with note_on_at()
 
@@ -531,7 +527,7 @@ note_on_at(drums, 1, pp * 12);  // Beat 4
 While `note_on()` plays immediately, `note_on_at()` schedules notes at specific times:
 
 ```javascript
-// Syntax: note_on_at(instrument, note, time_in_midi_ticks, vel=, dur=)
+// Syntax: note_on_at(instrument, note, time_in_ms, vel, dur)
 note_on_at(drums, 0, 0);           // Now
 note_on_at(drums, 1, pp * 4);      // One beat later
 note_on_at(drums, 2, pp * 2);      // Half beat later
@@ -826,7 +822,7 @@ let evolving_comp = comp()
 
 ```javascript
 let drums = drum();
-let bass = fmsynth();
+let bass = dxsynth();
 let pad = minisynth();
 
 // Set volumes (0.0 to 1.0+)
@@ -1190,16 +1186,13 @@ rand(20) - 10;      // Random -10 to 9
 let x = 0;
 x = incr(x, 0, 5);  // Increments 0->1->2->3->4->0->1...
 
-// Decrement with wrapping
+// Random increment/decrement (drunk walk)
 let offset = 0;
-offset = rincr(offset, -40, 40);  // Decrements, wrapping at min
-
-// Drunk walk (+1 or -1 randomly, with wrapping)
-offset = dincr(offset, -40, 40);
+offset = rincr(offset, -40, 40);  // Randomly walk within range
 
 // Array operations
 len(array);         // Length
-push(arr, val);     // Add element
+append(arr, val);   // Add element
 min(a, b);          // Minimum
 max(a, b);          // Maximum
 

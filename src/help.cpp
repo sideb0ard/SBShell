@@ -85,7 +85,7 @@ std::string build_help() {
 
   ss << COOL_COLOR_GREEN << "RANDOM/GENERATIVE FUNCTIONS\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
-  ss << ANSI_COLOR_WHITE << "  rand(min, max)             " << COOL_COLOR_ORANGE << "- Random number in range\n";
+  ss << ANSI_COLOR_WHITE << "  rand(n)                    " << COOL_COLOR_ORANGE << "- Random integer 0 to n-1  (rand(arr) picks random element)\n";
   ss << ANSI_COLOR_WHITE << "  rand_array(size, min, max) " << COOL_COLOR_ORANGE << "- Array of random numbers\n";
   ss << ANSI_COLOR_WHITE << "  rand_sixteenthz(n)         " << COOL_COLOR_ORANGE << "- Array of n random unique 16th-note positions\n";
   ss << ANSI_COLOR_WHITE << "  perlin(x)                  " << COOL_COLOR_ORANGE << "- Perlin noise value (smooth random)\n";

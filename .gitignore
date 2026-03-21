@@ -6,6 +6,8 @@ calcy
 freakynotes
 chordie
 
+sbshell-site/firebase-debug.log
+
 # Ignore everything in wavs
 wavs/**/*
 
