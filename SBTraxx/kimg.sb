@@ -1,0 +1,193 @@
+
+let key = 15; # D#
+let key_mod = 1; # natural minor
+# let keys = note_in_key(key, key_mod);
+# [15, 17, 18, 20,  22, 23, 25, 27]
+
+let cpy = NULL;
+
+let init = fn()
+{
+  cpy = sample(cp/NYClap.aiff);
+}
+
+# p2 < osc 8 "40 4000" "set dx:e1dec %";
+
+# dx - FRAAZZ
+# elellelele // 2oppp
+# surgefizz2G
+let bsslah_comp = comp()
+{
+  setup()
+  {
+
+    let pat1 = [18, 18, 17, 0,  0, 15, 20, 0,  0, 0, 22, 0,  22, 0, 15, 0];
+    let pat2 = [0, 23, 20, 0,  15, 15, 15, 0,  18, 15, 27, 0,  15, 0, 17, 0];
+    let pat3 = [0, 0, 20, 0,  0, 0, 0, 0,  0, 0, 0, 0,  15, 0, 15, 0];
+
+    let durz = [500, 80, 110, 150, 200, 400, 800, 500, 1000, 700];
+    let drx = 0;
+    let velz = [90, 100, 110, 120, 120, 110, 70];
+    let vx = 0;
+
+    #let op1ratz = [0.7, 1.5, 7.7];
+    let op1ratz = [0.7, 1.5];
+    let op1x = 0;
+    let op2oz = [70, 75, 50, 80, 76];
+    let o2x = 0;
+  }
+  run()
+  {
+    let pat = pat1;
+    if (count % 4 == 3) {
+      pat = pat2;
+      # set dx:o1rat op1ratz[op1x];
+      # op1x = incr(op1x, 0, len(op1ratz));
+      set dx:op2out op2oz[o2x];
+      o2x = incr(o2x, 0, len(op2oz));
+    }
+    if (count % 16 == 15) {
+      pat = pat3;
+    }
+    if (count % 7 == 4) {
+      pat = stutter(pat);
+    }
+    if (count % 17 == 8) {
+      pat = reverse(pat);
+    }
+    if (count % 21 == 9) {
+      pat = scramble(pat);
+    }
+    for (let i = 0; i < 16; i++) {
+      let off = 50;
+      if (i % 2 == 0) {
+        off = 0;
+      }
+      if (pat[i] > 0) {
+        note_on_at(dx, pat[i], i * pp + off, dur = durz[drx], vel = velz[vx]);
+        vx = incr(vx, 0, len(velz));
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
+
+# timeLLy
+# [15, 17, 18, 20,  22, 23, 25, 27]
+let flowblah_comp = comp()
+{
+  setup()
+  {
+    let notez = [34, 27, 29, 27];
+    let nx = 0;
+    let lentz = [3480, 6000, 500, 3600, 1700];
+    let lx = 0;
+    let offz = [0, 0, 3480 * 0.5, 0, 3480 * 0.75];
+    let ox = 0;
+  }
+  run()
+  {
+    if (count % 2 == 0) {
+      note_on_at(dx2, notes_in_chord(notez[nx], key, 0, key_mod), 0 + offz[ox], dur = lentz[lx]);
+      nx = incr(nx, 0, len(notez));
+      lx = incr(lx, 0, len(lentz));
+      ox = incr(ox, 0, len(offz));
+    }
+  }
+}
+
+let dblah_comp = comp()
+{
+  setup()
+  {
+    let beat1 =  [1, 0, 0, 1,  0, 0, 1, 0,  1, 0, 1, 1,  0, 0, 0, 0];
+    let beat2 =  [0, 1, 0, 1,  0, 0, 0, 0,  0, 0, 0, 1,  0, 0, 0, 0];
+    let notz = [51, 54, 58, 61];
+    let nx = 0;
+  }
+  run()
+  {
+    let beat = beat1;
+    if (count % 4 == 3) {
+      beat = beat2;
+    }
+    if (count % 13 == 11) {
+      beat = scramble(beat);
+    }
+    for (let i = 0; i < 16; i++) {
+      if (beat[i] == 1) {
+        let v = 80 + rand(30);
+        if (i % 4 == 0) {
+          v = 127;
+        }
+        note_on_at(sbdrum, 0, i * pp, vel = v);
+        note_on_at(dx3, notz, i * pp, vel = v, dur = 100);
+      }
+    }
+  }
+}
+
+let cpblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    note_on_at(cpy, 1, 12 * pp);
+    # if (count % 2 == 1) {
+      #   cbeat(cpy);
+      # }
+  }
+}
+
+# dx WNARR ?
+let bssslah_comp = comp()
+{
+  setup()
+  {
+    let bz = [27, 30, 34, 37];
+    let bx = 0;
+    let durz = [100, 200, 300, 90, 100, 500] ;
+    let drx = 0;
+    let velz = [90, 100, 100, 110, 120, 127, 127, 127];
+    let vx = 0;
+    let lennz = [2, 2, 3, 1, 4, 6];
+    let lnx = 0;
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (i % lennz[lnx] == 1) {
+        note_on_at(dx, bz[bx], i * pp, dur = durz[drx], vel = velz[vx]);
+        drx = incr(drx, 0, len(durz));
+        vx = incr(vx, 0, len(velz));
+      }
+    }
+    if (count % 2 == 1) {
+      bx = incr(bx, 0, len(bz));
+      lnx = incr(lnx, 0, len(lennz));
+    }
+  }
+}
+
+let hhblah_comp = comp()
+{
+  setup()
+  {
+    let hhzl = [12, 32, 16, 6, 8];
+    let hx = 0;
+    let velz = [80, 60, 70, 80, 90];
+    l110et vx = 0;
+  }
+  run()
+  {
+    let pp = 3840 / hhzl[hx];
+    for (let i = 0; i < hhzl[hx]; i++) {
+      note_on_at(hh, 1, i * pp, vel = velz[vx]);
+      vx = incr(vx, 0, len(velz));
+    }
+    hx = incr(hx, 0, len(hhzl));
+
+  }
+}

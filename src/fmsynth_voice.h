@@ -25,6 +25,11 @@ struct FMSynthVoice : public Voice {
   double m_op3_feedback;
   double m_op4_feedback;
 
+  // previous-sample outputs for per-op self-feedback
+  double m_op1_last_out{0.0};
+  double m_op2_last_out{0.0};
+  double m_op3_last_out{0.0};
+
   unsigned int m_lfo_mod_dest;  // none, ampmod, or vibrato
 
   void InitializeModMatrix(ModulationMatrix *matrix) override;

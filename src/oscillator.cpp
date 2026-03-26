@@ -82,7 +82,7 @@ void Oscillator::Update() {
       m_osc_fo = global_oscillator_params->osc_fo;
 
     m_fo_ratio = global_oscillator_params->fo_ratio;
-    m_amplitude = global_oscillator_params->amplitude;
+    m_amplitude += 0.01 * (global_oscillator_params->amplitude - m_amplitude);
     m_pulse_width_control = global_oscillator_params->pulse_width_control;
     m_octave = global_oscillator_params->octave;
     m_semitones = global_oscillator_params->semitones;

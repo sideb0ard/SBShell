@@ -188,6 +188,23 @@ All the paramaters can be changed via the following syntax:
 `set <sound_generator_name>:<param_name> val`;
 e.g. `set dx:o2rat 4.7`
 
+How the operators are connected is controlled via the `algo`. You can view an ASCII diagram of them via the command `algoz()`:
+
+```javascript
+SB#> algoz()
+SB#> DX Algos:
+  0.    1.    2.      3.    4.     5.        6.        7.
+
+  4
+  |
+  3     3 4   3       4
+  |     \ |   |       |
+  2       2   2 4   2 3   2  4      4            4
+  |       |   |/    |/    |  |    / | \          |
+  1       1   1     1     1__3   1__2__3   1__2__3   1__2__3__4
+```
+
+The bottom row are the operators sent to the DCA. E.g. in `algo` 0, Op1 is being sent to the output, Op2 is modulating op1, op3 is modulating op2, op3 is mod'ing op4; whereas `algo` 7 all the operators are being sent to the output, i.e pure addictive synth.
 
 
 
@@ -432,6 +449,9 @@ info(mo);
 ---
 
 ## 3. Basic Interaction
+
+### Tell me more.
+
 
 ### Playing Notes
 

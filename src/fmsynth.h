@@ -70,6 +70,9 @@ typedef struct fmsynthsettings {
   double m_eg4_decay_ms;
   double m_eg4_sustain_lvl;
   double m_eg4_release_ms;
+  double m_op1_feedback{0};  // 0/70/0
+  double m_op2_feedback{0};  // 0/70/0
+  double m_op3_feedback{0};  // 0/70/0
   double m_op4_output_lvl;
   double m_op4_feedback;  // 0/70/0
   bool m_op4_sustain_override{false};
@@ -155,6 +158,9 @@ class FMSynth : public SoundGenerator {
   void SetEGSustainLevel(unsigned int eg, double val);
   void SetOpOutputLevel(unsigned int op, double val);
   void SetOpSustain(unsigned int op, bool val);
+  void SetOp1Feedback(double val);
+  void SetOp2Feedback(double val);
+  void SetOp3Feedback(double val);
   void SetOp4Feedback(double val);
 
   void SetPortamentoTimeMs(double val);

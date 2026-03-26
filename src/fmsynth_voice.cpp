@@ -180,6 +180,9 @@ void FMSynthVoice::Update() {
 void FMSynthVoice::Reset() {
   Voice::Reset();
   m_portamento_inc = 0.0;
+  m_op1_last_out = 0.0;
+  m_op2_last_out = 0.0;
+  m_op3_last_out = 0.0;
 }
 
 bool FMSynthVoice::CanNoteOff() {
@@ -357,20 +360,23 @@ bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
       m_op4.SetPhaseMod(out4 * m_op4_feedback);
       m_op4.Update();
 
-      m_op3.SetPhaseMod(out4);
+      m_op3.SetPhaseMod(out4 + m_op3_last_out * m_op3_feedback);
       m_op3.Update();
 
       out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3_last_out = out3;
 
-      m_op2.SetPhaseMod(out3);
+      m_op2.SetPhaseMod(out3 + m_op2_last_out * m_op2_feedback);
       m_op2.Update();
 
       out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2_last_out = out2;
 
-      m_op1.SetPhaseMod(out2);
+      m_op1.SetPhaseMod(out2 + m_op1_last_out * m_op1_feedback);
       m_op1.Update();
 
       out1 = IMAX * eg1 * m_op1.DoOscillate(NULL);
+      m_op1_last_out = out1;
 
       out = out1;
 
@@ -381,17 +387,23 @@ bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
       m_op4.SetPhaseMod(out4 * m_op4_feedback);
       m_op4.Update();
 
-      out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3.SetPhaseMod(m_op3_last_out * m_op3_feedback);
+      m_op3.Update();
 
-      m_op2.SetPhaseMod(out3 + out4);
+      out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3_last_out = out3;
+
+      m_op2.SetPhaseMod(out3 + out4 + m_op2_last_out * m_op2_feedback);
       m_op2.Update();
 
       out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2_last_out = out2;
 
-      m_op1.SetPhaseMod(out2);
+      m_op1.SetPhaseMod(out2 + m_op1_last_out * m_op1_feedback);
       m_op1.Update();
 
       out1 = IMAX * eg1 * m_op1.DoOscillate(NULL);
+      m_op1_last_out = out1;
 
       out = out1;
 
@@ -402,17 +414,23 @@ bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
       m_op4.SetPhaseMod(out4 * m_op4_feedback);
       m_op4.Update();
 
-      out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3.SetPhaseMod(m_op3_last_out * m_op3_feedback);
+      m_op3.Update();
 
-      m_op2.SetPhaseMod(out3);
+      out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3_last_out = out3;
+
+      m_op2.SetPhaseMod(out3 + m_op2_last_out * m_op2_feedback);
       m_op2.Update();
 
       out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2_last_out = out2;
 
-      m_op1.SetPhaseMod(out2 + out4);
+      m_op1.SetPhaseMod(out2 + out4 + m_op1_last_out * m_op1_feedback);
       m_op1.Update();
 
       out1 = IMAX * eg1 * m_op1.DoOscillate(NULL);
+      m_op1_last_out = out1;
 
       out = out1;
 
@@ -424,17 +442,23 @@ bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
       m_op4.SetPhaseMod(out4 * m_op4_feedback);
       m_op4.Update();
 
-      m_op3.SetPhaseMod(out4);
+      m_op3.SetPhaseMod(out4 + m_op3_last_out * m_op3_feedback);
       m_op3.Update();
 
       out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3_last_out = out3;
+
+      m_op2.SetPhaseMod(m_op2_last_out * m_op2_feedback);
+      m_op2.Update();
 
       out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2_last_out = out2;
 
-      m_op1.SetPhaseMod(out2 + out3);
+      m_op1.SetPhaseMod(out2 + out3 + m_op1_last_out * m_op1_feedback);
       m_op1.Update();
 
       out1 = IMAX * eg1 * m_op1.DoOscillate(NULL);
+      m_op1_last_out = out1;
 
       out = out1;
 
@@ -445,17 +469,23 @@ bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
       m_op4.SetPhaseMod(out4 * m_op4_feedback);
       m_op4.Update();
 
-      out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2.SetPhaseMod(m_op2_last_out * m_op2_feedback);
+      m_op2.Update();
 
-      m_op3.SetPhaseMod(out4);
+      out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2_last_out = out2;
+
+      m_op3.SetPhaseMod(out4 + m_op3_last_out * m_op3_feedback);
       m_op3.Update();
 
       out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3_last_out = out3;
 
-      m_op1.SetPhaseMod(out2);
+      m_op1.SetPhaseMod(out2 + m_op1_last_out * m_op1_feedback);
       m_op1.Update();
 
       out1 = IMAX * eg1 * m_op1.DoOscillate(NULL);
+      m_op1_last_out = out1;
 
       out = 0.5 * out1 + 0.5 * out3;
 
@@ -467,20 +497,23 @@ bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
       m_op4.SetPhaseMod(out4 * m_op4_feedback);
       m_op4.Update();
 
-      m_op3.SetPhaseMod(out4);
+      m_op3.SetPhaseMod(out4 + m_op3_last_out * m_op3_feedback);
       m_op3.Update();
 
       out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3_last_out = out3;
 
-      m_op2.SetPhaseMod(out4);
+      m_op2.SetPhaseMod(out4 + m_op2_last_out * m_op2_feedback);
       m_op2.Update();
 
       out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2_last_out = out2;
 
-      m_op1.SetPhaseMod(out4);
+      m_op1.SetPhaseMod(out4 + m_op1_last_out * m_op1_feedback);
       m_op1.Update();
 
       out1 = IMAX * eg1 * m_op1.DoOscillate(NULL);
+      m_op1_last_out = out1;
 
       out = 0.33 * out1 + 0.33 * out2 + 0.33 * out3;
 
@@ -491,14 +524,23 @@ bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
       m_op4.SetPhaseMod(out4 * m_op4_feedback);
       m_op4.Update();
 
-      m_op3.SetPhaseMod(out4);
+      m_op3.SetPhaseMod(out4 + m_op3_last_out * m_op3_feedback);
       m_op3.Update();
 
       out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3_last_out = out3;
+
+      m_op2.SetPhaseMod(m_op2_last_out * m_op2_feedback);
+      m_op2.Update();
 
       out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2_last_out = out2;
+
+      m_op1.SetPhaseMod(m_op1_last_out * m_op1_feedback);
+      m_op1.Update();
 
       out1 = IMAX * eg1 * m_op1.DoOscillate(NULL);
+      m_op1_last_out = out1;
 
       out = 0.33 * out1 + 0.33 * out2 + 0.33 * out3;
 
@@ -510,9 +552,23 @@ bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
       m_op4.SetPhaseMod(out4 * m_op4_feedback);
       m_op4.Update();
 
+      m_op3.SetPhaseMod(m_op3_last_out * m_op3_feedback);
+      m_op3.Update();
+
       out3 = IMAX * eg3 * m_op3.DoOscillate(NULL);
+      m_op3_last_out = out3;
+
+      m_op2.SetPhaseMod(m_op2_last_out * m_op2_feedback);
+      m_op2.Update();
+
       out2 = IMAX * eg2 * m_op2.DoOscillate(NULL);
+      m_op2_last_out = out2;
+
+      m_op1.SetPhaseMod(m_op1_last_out * m_op1_feedback);
+      m_op1.Update();
+
       out1 = IMAX * eg1 * m_op1.DoOscillate(NULL);
+      m_op1_last_out = out1;
 
       out = 0.25 * out1 + 0.25 * out2 + 0.25 * out3 + 0.25 * out4;
 

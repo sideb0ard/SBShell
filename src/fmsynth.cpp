@@ -105,7 +105,10 @@ std::string FMSynth::Info() {
 
   ss << "   midi_osc:" << active_midi_osc
      << " porta:" << m_settings.m_portamento_time_ms
-     << " pitchrange:" << m_settings.m_pitchbend_range
+     << " pitchrange:" << m_settings.m_pitchbend_range << "\n";
+  ss << "   op1fb:" << m_settings.m_op1_feedback
+     << " op2fb:" << m_settings.m_op2_feedback
+     << " op3fb:" << m_settings.m_op3_feedback
      << " op4fb:" << m_settings.m_op4_feedback << "\n";
 
   ss << "   vel2att:" << m_settings.m_velocity_to_attack_scaling
@@ -439,6 +442,12 @@ bool FMSynth::PrepareForPlay() {
 
 void FMSynth::Update() {
   global_synth_params.voice_params.voice_mode = m_settings.m_voice_mode;
+  global_synth_params.voice_params.op1_feedback =
+      m_settings.m_op1_feedback / 100.0;
+  global_synth_params.voice_params.op2_feedback =
+      m_settings.m_op2_feedback / 100.0;
+  global_synth_params.voice_params.op3_feedback =
+      m_settings.m_op3_feedback / 100.0;
   global_synth_params.voice_params.op4_feedback =
       m_settings.m_op4_feedback / 100.0;
   global_synth_params.voice_params.portamento_time_msec =
@@ -782,6 +791,12 @@ void FMSynth::Save(std::string preset) {
   settings_count++;
   fprintf(presetzzz, "::m_op4_output_lvl=%f", m_settings.m_op4_output_lvl);
   settings_count++;
+  fprintf(presetzzz, "::m_op1_feedback=%f", m_settings.m_op1_feedback);
+  settings_count++;
+  fprintf(presetzzz, "::m_op2_feedback=%f", m_settings.m_op2_feedback);
+  settings_count++;
+  fprintf(presetzzz, "::m_op3_feedback=%f", m_settings.m_op3_feedback);
+  settings_count++;
   fprintf(presetzzz, "::m_op4_feedback=%f", m_settings.m_op4_feedback);
   settings_count++;
 
@@ -925,6 +940,12 @@ void FMSynth::LoadPreset(std::string preset_name,
       m_settings.m_eg4_release_ms = val;
     else if (key == "m_op4_output_lvl")
       m_settings.m_op4_output_lvl = val;
+    else if (key == "m_op1_feedback")
+      m_settings.m_op1_feedback = val;
+    else if (key == "m_op2_feedback")
+      m_settings.m_op2_feedback = val;
+    else if (key == "m_op3_feedback")
+      m_settings.m_op3_feedback = val;
     else if (key == "m_op4_feedback")
       m_settings.m_op4_feedback = val;
     else if (key == "m_portamento_time_ms")
@@ -1229,6 +1250,18 @@ void FMSynth::SetLegatoMode(bool b) {
   m_settings.m_legato_mode = b;
 }
 
+void FMSynth::SetOp1Feedback(double val) {
+  if (val >= 0 && val <= 70) m_settings.m_op1_feedback = val;
+}
+
+void FMSynth::SetOp2Feedback(double val) {
+  if (val >= 0 && val <= 70) m_settings.m_op2_feedback = val;
+}
+
+void FMSynth::SetOp3Feedback(double val) {
+  if (val >= 0 && val <= 70) m_settings.m_op3_feedback = val;
+}
+
 void FMSynth::SetOp4Feedback(double val) {
   if (val >= 0 && val <= 70) m_settings.m_op4_feedback = val;
 }
@@ -1270,6 +1303,12 @@ void FMSynth::SetParam(std::string name, double val) {
     SetPitchbendRange(val);
   else if (name == "pitchbend")
     SetPitchbendFromREPL(val);
+  else if (name == "op1fb")
+    SetOp1Feedback(val);
+  else if (name == "op2fb")
+    SetOp2Feedback(val);
+  else if (name == "op3fb")
+    SetOp3Feedback(val);
   else if (name == "op4fb")
     SetOp4Feedback(val);
   else if (name == "vel2att")

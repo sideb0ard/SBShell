@@ -24,7 +24,10 @@ let init = fn()
   p10 # dblah_comp;
   p11 # murkblah_comp;
   load_preset(dx2, "datrx");
+  add_fx(dx2, "sculptor");
   add_fx(dx2, "sidechain", sbdrum);
+
+  load_preset(dx3, "v555");
 
 }
 
@@ -132,6 +135,9 @@ let dxxxblah_comp = comp()
   setup()
   {
     let notes = notes_in_key(key);
+
+    let interpz = [0, 4, 1, 3, 4, 4, 0];
+    let ix = 0;
   }
   run()
   {
@@ -152,17 +158,31 @@ let dxxxblah_comp = comp()
       let chrd = notes_in_chord(notes[4], key);
       note_on(dx2, chrd, dur = 3800);
     }
+    set dx2:fx1:interp interpz[ix];
+    ix = incr(ix, 0, len(interpz));
+
   }
 }
 
+# v555
 let dx3xxblah_comp = comp()
 {
   setup()
   {
     let notes = up(notes_in_key(key), 12);
+    if (count % 12 == 11) {
+      notes = down(notes_in_key(key), 12);
+    }
     let beato = [1, 0, 0, 0,  0, 0, 1, 0,  1, 0, 1, 0,  0, 1, 0, 0];
+    let beatb = [1, 1, 0, 1,  0, 1, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
     let chx = 0;
     let cmx = 1;
+    let durz = [30, 50, 100, 200, 400, 8000];
+    let drx = 0;
+    let velz = [100, 110, 120, 90, 90];
+    let vlx = 0;
+    let o4raz = [1, 2, 3, 4, 7, 13, 13];
+    let o4x = 0;
   }
   run()
   {
@@ -178,20 +198,30 @@ let dx3xxblah_comp = comp()
       if (count % 8 == 7) {
         nx = 4;
       }
-      let chrd = notes_in_chord(notes[nx], key, 2);
+      let chrd = notes_in_chord(notes[nx], key, 1);
       let beat = beato;
+      if (count % 7 == 6) {
+        set dx3:o4rat o4raz[o4x];
+        o4x = incr(o4x, 0, len(o4raz));
+      }
       if (count % 4 == 3) {
-        beat = rand_beat();
+        beat = beatb;
       }
       let pp = 3840 / 32;
       for (let i = 0; i < 16; i++) {
-        let off = 50;
+        let off = 90;
         if (i % 2 == 0) {
           off = 0;
         }
         if(beat[i] == 1) {
-          note_on_at(dx3, chrd[chx], 3840 / 2 + i * pp + off, dur =279);
+          let chr = chrd[chx];
+          if (rand(10) == 9) {
+            chr = up(chr, 12);
+          }
+          note_on_at(dx3, chrd[chx], 3840 / 2 + i * pp + off, dur =durz[drx], vel = velz[vlx]);
           chx = incr(chx, 0, cmx);
+          vlx = incr(vlx, 0, len(velz));
+          drx = incr(drx, 0, len(durz));
         }
       }
       cmx = incr(cmx, 1, len(chrd));

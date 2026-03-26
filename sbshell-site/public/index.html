@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,23 +10,29 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/tomorrow-night.min.css">
   <style>
     :root {
-      --bg:        #0a0a0a;
-      --surface:   #111111;
-      --border:    #1e1e1e;
-      --green:     #00ff87;
-      --orange:    #ff5f00;
-      --blue:      #00d7ff;
-      --mauve:     #af5fff;
-      --pink:      #ffafdf;
-      --yellow:    #ffff00;
-      --white:     #e0e0e0;
-      --dim:       #555;
-      --font:      'JetBrains Mono', monospace;
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1e1e1e;
+      --green: #00ff00;
+      --orange: #ff5f00;
+      --blue: #00d7ff;
+      --mauve: #af5fff;
+      --pink: #ffafdf;
+      --yellow: #ffff00;
+      --white: #e0e0e0;
+      --dim: #555;
+      --font: 'JetBrains Mono', monospace;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
       background: var(--bg);
@@ -65,7 +72,11 @@
       animation: blink 1s step-end infinite;
     }
 
-    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
 
     .site-title {
       color: var(--white);
@@ -100,8 +111,13 @@
       scrollbar-color: var(--border) transparent;
     }
 
-    nav::-webkit-scrollbar { width: 4px; }
-    nav::-webkit-scrollbar-thumb { background: var(--border); }
+    nav::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    nav::-webkit-scrollbar-thumb {
+      background: var(--border);
+    }
 
     .nav-section {
       font-size: 10px;
@@ -124,16 +140,32 @@
       text-overflow: ellipsis;
     }
 
-    nav a:hover, nav a.active {
+    nav a:hover,
+    nav a.active {
       color: var(--green);
       border-left-color: var(--green);
     }
 
-    nav a.h2 { padding-left: 8px; font-weight: 500; color: #888; }
-    nav a.h3 { padding-left: 18px; font-size: 11px; }
+    nav a.h2 {
+      padding-left: 8px;
+      font-weight: 500;
+      color: #888;
+    }
 
-    nav a.h2:hover, nav a.h2.active { color: var(--green); }
-    nav a.h3:hover, nav a.h3.active { color: var(--green); }
+    nav a.h3 {
+      padding-left: 18px;
+      font-size: 11px;
+    }
+
+    nav a.h2:hover,
+    nav a.h2.active {
+      color: var(--green);
+    }
+
+    nav a.h3:hover,
+    nav a.h3.active {
+      color: var(--green);
+    }
 
     /* ── Main content ── */
     main {
@@ -186,15 +218,30 @@
       border-bottom: 1px solid transparent;
       transition: border-color 0.15s;
     }
-    main a:hover { border-bottom-color: var(--blue); }
 
-    main ul, main ol {
+    main a:hover {
+      border-bottom-color: var(--blue);
+    }
+
+    main ul,
+    main ol {
       margin: 8px 0 14px 20px;
     }
-    main li { margin-bottom: 4px; }
 
-    main strong { color: var(--yellow); font-weight: 600; }
-    main em { color: var(--pink); font-style: normal; font-weight: 500; }
+    main li {
+      margin-bottom: 4px;
+    }
+
+    main strong {
+      color: var(--yellow);
+      font-weight: 600;
+    }
+
+    main em {
+      color: var(--pink);
+      font-style: normal;
+      font-weight: 500;
+    }
 
     main hr {
       border: none;
@@ -203,7 +250,7 @@
     }
 
     /* ── Inline code ── */
-    main :not(pre) > code {
+    main :not(pre)>code {
       background: #1a1a1a;
       color: var(--blue);
       padding: 1px 6px;
@@ -279,7 +326,9 @@
       border: 1px solid var(--border);
     }
 
-    main tr:nth-child(even) td { background: #0d0d0d; }
+    main tr:nth-child(even) td {
+      background: #0d0d0d;
+    }
 
     /* ── Footer ── */
     footer {
@@ -290,118 +339,141 @@
       border-top: 1px solid var(--border);
     }
 
-    footer span { color: var(--green); }
+    footer span {
+      color: var(--green);
+    }
 
     /* ── Mobile ── */
     @media (max-width: 768px) {
-      nav { display: none; }
-      main { padding: 24px 20px 60px; }
-      header { padding: 12px 20px; }
-      .site-sub { display: none; }
+      nav {
+        display: none;
+      }
+
+      main {
+        padding: 24px 20px 60px;
+      }
+
+      header {
+        padding: 12px 20px;
+      }
+
+      .site-sub {
+        display: none;
+      }
     }
   </style>
 </head>
+
 <body>
 
-<header>
-  <div class="prompt">SB#&gt;<span class="cursor"></span></div>
-  <div class="site-title">SBShell</div>
-  <div class="site-sub">Interactive Music Environment — User Guide</div>
-</header>
+  <header>
+    <div class="prompt">SB#&gt;<span class="cursor"></span></div>
+    <div class="site-title">SBShell</div>
+    <div class="site-sub">Interactive Music Environment — User Guide</div>
+  </header>
 
-<div class="layout">
-  <nav id="toc"></nav>
-  <main id="content"></main>
-</div>
+  <div class="layout">
+    <nav id="toc"></nav>
+    <main id="content"></main>
+  </div>
 
-<footer>
-  <span>SBShell</span> — built with Slang &amp; C++
-</footer>
+  <footer>
+    <span>SBShell</span> — built with Slang &amp; C++
+  </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script>
-  // Configure marked
-  marked.setOptions({
-    highlight: (code, lang) => {
-      if (lang && hljs.getLanguage(lang)) {
-        return hljs.highlight(code, { language: lang }).value;
-      }
-      // Treat unlabelled blocks as javascript
-      return hljs.highlight(code, { language: 'javascript' }).value;
-    },
-    breaks: false,
-    gfm: true,
-  });
-
-  // Load and render the guide
-  fetch('guide.md')
-    .then(r => r.text())
-    .then(md => {
-      document.getElementById('content').innerHTML = marked.parse(md);
-      buildTOC();
-      hljs.highlightAll();
-      highlightPromptLines();
-    })
-    .catch(() => {
-      document.getElementById('content').innerHTML =
-        '<p style="color:#ff5f00">Could not load guide.md</p>';
-    });
-
-  // Build sidebar table of contents
-  function buildTOC() {
-    const toc = document.getElementById('toc');
-    const headings = document.querySelectorAll('#content h1, #content h2, #content h3');
-
-    headings.forEach((h, i) => {
-      if (!h.id) h.id = 'h-' + i;
-
-      // Section label for h1
-      if (h.tagName === 'H1') {
-        const label = document.createElement('div');
-        label.className = 'nav-section';
-        label.textContent = h.textContent;
-        toc.appendChild(label);
-        return;
-      }
-
-      const a = document.createElement('a');
-      a.href = '#' + h.id;
-      a.textContent = h.textContent;
-      a.className = h.tagName.toLowerCase();
-      toc.appendChild(a);
-    });
-
-    // Highlight active section on scroll
-    const links = toc.querySelectorAll('a');
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          links.forEach(l => l.classList.remove('active'));
-          const active = toc.querySelector(`a[href="#${e.target.id}"]`);
-          if (active) {
-            active.classList.add('active');
-            active.scrollIntoView({ block: 'nearest' });
-          }
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>
+    // Configure marked
+    marked.setOptions({
+      highlight: (code, lang) => {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, {
+            language: lang
+          }).value;
         }
-      });
-    }, { rootMargin: '-10% 0px -80% 0px' });
-
-    headings.forEach(h => obs.observe(h));
-  }
-
-  // Colour SB#> prompt lines in code blocks
-  function highlightPromptLines() {
-    document.querySelectorAll('pre code').forEach(block => {
-      block.innerHTML = block.innerHTML
-        .split('\n')
-        .map(line => line.startsWith('SB#&gt;') || line.startsWith('SB#>')
-          ? `<span style="color:var(--green)">${line}</span>`
-          : line)
-        .join('\n');
+        // Treat unlabelled blocks as javascript
+        return hljs.highlight(code, {
+          language: 'javascript'
+        }).value;
+      },
+      breaks: false,
+      gfm: true,
     });
-  }
-</script>
+
+    // Load and render the guide
+    fetch('guide.md')
+      .then(r => r.text())
+      .then(md => {
+        document.getElementById('content').innerHTML = marked.parse(md);
+        buildTOC();
+        hljs.highlightAll();
+        highlightPromptLines();
+      })
+      .catch(() => {
+        document.getElementById('content').innerHTML =
+          '<p style="color:#ff5f00">Could not load guide.md</p>';
+      });
+
+    // Build sidebar table of contents
+    function buildTOC() {
+      const toc = document.getElementById('toc');
+      const headings = document.querySelectorAll('#content h1, #content h2, #content h3');
+
+      headings.forEach((h, i) => {
+        if (!h.id) h.id = 'h-' + i;
+
+        // Section label for h1
+        if (h.tagName === 'H1') {
+          const label = document.createElement('div');
+          label.className = 'nav-section';
+          label.textContent = h.textContent;
+          toc.appendChild(label);
+          return;
+        }
+
+        const a = document.createElement('a');
+        a.href = '#' + h.id;
+        a.textContent = h.textContent;
+        a.className = h.tagName.toLowerCase();
+        toc.appendChild(a);
+      });
+
+      // Highlight active section on scroll
+      const links = toc.querySelectorAll('a');
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            links.forEach(l => l.classList.remove('active'));
+            const active = toc.querySelector(`a[href="#${e.target.id}"]`);
+            if (active) {
+              active.classList.add('active');
+              active.scrollIntoView({
+                block: 'nearest'
+              });
+            }
+          }
+        });
+      }, {
+        rootMargin: '-10% 0px -80% 0px'
+      });
+
+      headings.forEach(h => obs.observe(h));
+    }
+
+    // Colour SB#> prompt lines in code blocks
+    function highlightPromptLines() {
+      document.querySelectorAll('pre code').forEach(block => {
+        block.innerHTML = block.innerHTML
+          .split('\n')
+          .map(line => line.startsWith('SB#&gt;') || line.startsWith('SB#>') ?
+            `<span style="color:var(--green)">${line}</span>` :
+            line)
+          .join('\n');
+      });
+    }
+  </script>
 
 </body>
+
 </html>
