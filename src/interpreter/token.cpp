@@ -25,6 +25,7 @@ const std::unordered_map<std::string, TokenType> keywords{
     {"false", SLANG_FALSE},
     {"fm", SLANG_FM_SYNTH},
     {"fmsynth", SLANG_FM_SYNTH},
+    {"lyria", SLANG_LYRIA},
     {"sbsynth", SLANG_SB_SYNTH},
     {"fn", SLANG_FUNCTION},
     {"for", SLANG_FOR},

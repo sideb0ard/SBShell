@@ -877,13 +877,25 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
     xfader_.Clear();
   } else if (action->type == AudioAction::UPDATE) {
     if (IsValidSoundgenNum(action->mixer_soundgen_idx)) {
-      double param_val = std::stod(action->param_val);
+      double param_val = 0.0;
+      bool is_string_param = false;
+      try {
+        param_val = std::stod(action->param_val);
+      } catch (const std::invalid_argument &) {
+        is_string_param = true;
+      }
 
       auto &sg = sound_generators_[action->mixer_soundgen_idx];
       if (!sg) {
         std::cerr << "WHOE NELLY! Naw SG! bailing out!\n";
         return;
       }
+
+      if (is_string_param) {
+        sg->SetStringParam(action->param_name, action->param_val);
+        return;
+      }
+
       if (action->param_name == "volume" || action->param_name == "vol")
         sg->SetVolume(param_val);
       else if (action->param_name == "pan")

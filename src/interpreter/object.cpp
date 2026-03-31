@@ -4,6 +4,7 @@
 #include <drumsampler.h>
 #include <fmsynth.h>
 #include <granular_looper.h>
+#include <lyria.h>
 #include <minisynth.h>
 #include <mixer.h>
 #include <sbsynth.h>
@@ -43,6 +44,9 @@ int AddSoundGenerator(unsigned int type, std::string filepath = "",
       break;
     case (SBSYNTH_TYPE):
       sg = std::make_unique<SBAudio::SBSynth>();
+      break;
+    case (LYRIA_TYPE):
+      sg = std::make_unique<SBAudio::LyriaGenerator>();
       break;
   }
   auto action = std::make_unique<AudioActionItem>(AudioAction::ADD);
@@ -228,6 +232,17 @@ std::string Granular::Inspect() {
 }
 ObjectType Granular::Type() {
   return GRANULAR_OBJ;
+}
+
+Lyria::Lyria() {
+  soundgen_id_ = AddSoundGenerator(LYRIA_TYPE);
+  soundgenerator_type = LYRIA_TYPE;
+}
+std::string Lyria::Inspect() {
+  return "Lyria generator.";
+}
+ObjectType Lyria::Type() {
+  return SYNTH_OBJ;
 }
 
 std::string ReturnValue::Inspect() {

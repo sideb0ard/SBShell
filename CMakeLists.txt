@@ -149,7 +149,14 @@ if(NOT SNDFILE_FOUND)
   endif()
 endif()
 
-# Use pkg-config for jsoncpp
+# Use pkg-config for jsoncpp Find OpenSSL for Lyria TLS WebSocket client
+find_package(OpenSSL)
+if(OPENSSL_FOUND)
+  message(STATUS "OpenSSL found: ${OPENSSL_VERSION}")
+else()
+  message(STATUS "OpenSSL not found - Lyria generator will output silence")
+endif()
+
 pkg_check_modules(JSONCPP jsoncpp)
 if(NOT JSONCPP_FOUND)
   find_library(
@@ -410,6 +417,13 @@ if(JSONCPP_FOUND)
   target_compile_options(sbsh_lib PUBLIC ${JSONCPP_CFLAGS_OTHER})
 else()
   target_link_libraries(sbsh_lib PUBLIC ${JSONCPP_LIB})
+endif()
+
+# Link OpenSSL for Lyria TLS WebSocket client
+if(OPENSSL_FOUND)
+  target_include_directories(sbsh_lib PUBLIC ${OPENSSL_INCLUDE_DIR})
+  target_link_libraries(sbsh_lib PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+  target_compile_definitions(sbsh_lib PUBLIC HAVE_OPENSSL=1)
 endif()
 
 # macOS frameworks

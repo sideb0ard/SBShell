@@ -618,6 +618,8 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
       return std::make_shared<object::SBSynth>();
     else if (synth->token_.type_ == token::SLANG_DRUM_SYNTH)
       return std::make_shared<object::DrumSynth>();
+    else if (synth->token_.type_ == token::SLANG_LYRIA)
+      return std::make_shared<object::Lyria>();
   }
 
   std::shared_ptr<ast::SynthPresetExpression> synth_preset =

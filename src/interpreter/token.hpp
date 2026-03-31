@@ -112,6 +112,7 @@ const TokenType SLANG_SB_SYNTH = "SB_SYNTH";
 const TokenType SLANG_MOOG_SYNTH = "MOOG_SYNTH";
 const TokenType SLANG_DRUM_SYNTH = "DRUM_SYNTH";
 const TokenType SLANG_DIGI_SYNTH = "DIGI_SYNTH";
+const TokenType SLANG_LYRIA = "LYRIA";
 
 const TokenType SLANG_MIDI_ARRAY = "MIDI_ARRAY";
 

@@ -453,6 +453,14 @@ class SBSynth : public SoundGenerator {
   std::string Inspect() override;
 };
 
+class Lyria : public SoundGenerator {
+ public:
+  Lyria();
+  ~Lyria() = default;
+  ObjectType Type() override;
+  std::string Inspect() override;
+};
+
 /////////////////////////////////////////////////
 
 class HashPair {
