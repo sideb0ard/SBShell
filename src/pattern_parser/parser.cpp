@@ -40,6 +40,7 @@ std::shared_ptr<pattern_parser::PatternNode> Parser::ParsePatternNode() {
   else if (cur_token_.type_.compare(
                pattern_parser::PATTERN_SQUARE_BRACKET_LEFT) == 0)
     return_node = ParsePatternGroup();
+  // uzu cat
   else if (cur_token_.type_.compare(
                pattern_parser::PATTERN_OPEN_ANGLE_BRACKET) == 0)
     return_node = ParsePatternMultiStep();

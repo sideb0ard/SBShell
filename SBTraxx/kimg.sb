@@ -121,7 +121,7 @@ let dblah_comp = comp()
           v = 127;
         }
         note_on_at(sbdrum, 0, i * pp, vel = v);
-        note_on_at(dx3, notz, i * pp, vel = v, dur = 100);
+        #//note_on_at(dx3, notz, i * pp, vel = v, dur = 100);
       }
     }
   }
@@ -177,17 +177,19 @@ let hhblah_comp = comp()
   {
     let hhzl = [12, 32, 16, 6, 8];
     let hx = 0;
-    let velz = [80, 60, 70, 80, 90];
-    l110et vx = 0;
+    let velz = [20, 60, 80, 90];
+    let vx = 0;
   }
   run()
   {
-    let pp = 3840 / hhzl[hx];
-    for (let i = 0; i < hhzl[hx]; i++) {
-      note_on_at(hh, 1, i * pp, vel = velz[vx]);
-      vx = incr(vx, 0, len(velz));
+    if (count % 4 < 3) {
+      let pp = 3840 / hhzl[hx];
+      for (let i = 0; i < hhzl[hx]; i++) {
+        note_on_at(hh, 1, i * pp, vel = velz[vx]);
+        vx = incr(vx, 0, len(velz));
+      }
+      hx = incr(hx, 0, len(hhzl));
     }
-    hx = incr(hx, 0, len(hhzl));
 
   }
 }

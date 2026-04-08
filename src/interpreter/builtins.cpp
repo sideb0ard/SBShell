@@ -3092,6 +3092,34 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            }
            return evaluator::NULLL;
          })},
+    {"change_steps",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           int args_size = args.size();
+           if (args_size == 2) {
+             auto phasor = std::dynamic_pointer_cast<object::Phasor>(args[0]);
+             auto num_steps =
+                 std::dynamic_pointer_cast<object::Number>(args[1]);
+             if (phasor && num_steps) {
+               phasor->ChangeSteps(num_steps->value_);
+             }
+           }
+           return evaluator::NULLL;
+         })},
+    {"reset", std::make_shared<object::BuiltIn>(
+                  [](const std::vector<std::shared_ptr<object::Object>>& args)
+                      -> std::shared_ptr<object::Object> {
+                    int args_size = args.size();
+                    if (args_size == 1) {
+                      auto signal_generator =
+                          std::dynamic_pointer_cast<object::Phasor>(args[0]);
+                      if (signal_generator) {
+                        signal_generator->Reset();
+                      }
+                    }
+                    return evaluator::NULLL;
+                  })},
 };
 
 // Aliases

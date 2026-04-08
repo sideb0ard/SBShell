@@ -1526,6 +1526,7 @@ std::shared_ptr<object::Object> EvalProcessStatement(
 
   switch (ev.process_type) {
     case (ProcessType::TidalPattern):
+      std::cout << "YO UZU!\n";
       ev.tidal_target_type = proc->tidal_target_type_;
       ev.tidal_pattern = proc->tidal_pattern_;
       ev.tidal_targets = proc->tidal_targets_;

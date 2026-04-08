@@ -246,9 +246,9 @@ ObjectType Error::Type() {
 }
 
 double Phasor::Generate() {
-  signal_ = scale(counter_, 0, frequency_, 0, 1);
+  signal_ = scale(counter_, 0, steps_, 0, 1);
   counter_++;
-  if (counter_ == frequency_) counter_ = 0;
+  if (counter_ == steps_) counter_ = 0;
   return signal_;
 }
 
@@ -257,9 +257,19 @@ ObjectType Phasor::Type() {
 }
 std::string Phasor::Inspect() {
   std::stringstream reply;
-  reply << "phasor. freq:" << frequency_;
+  reply << "phasor. freq:" << steps_;
   return reply.str();
 }
+
+void Phasor::Reset() {
+  counter_ = 0;
+}
+
+void Phasor::ChangeSteps(int num_steps) {
+  steps_ = num_steps;
+  Reset();
+}
+
 ObjectType Function::Type() {
   return FUNCTION_OBJ;
 }

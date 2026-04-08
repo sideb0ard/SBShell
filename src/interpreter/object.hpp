@@ -233,13 +233,15 @@ class Environment {
 
 class Phasor : public Object {
  public:
-  Phasor(int frequency) : frequency_{frequency} {};
+  Phasor(int steps) : steps_{steps} {};
   ~Phasor() = default;
   ObjectType Type() override;
   std::string Inspect() override;
+  void Reset();
+  void ChangeSteps(int num_steps);
 
  private:
-  int frequency_{0};  // how often this will be called
+  int steps_{0};      // how often this will be called
   double signal_{0};  // return value
   int counter_{0};    // internal counter
 
