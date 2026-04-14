@@ -1,0 +1,225 @@
+
+# let backz = loop(qebo/QEBO-LOCKDOWNFM-23FMPERCUSSION1.wav); set backz:len 4;
+# sbdrum SNDX3
+#  send(delay, backz);
+# add_fx(backz, sculptor);
+
+let granblah_comp = comp()
+{
+  setup()
+  {
+    let offz = [2, 4, 7, 12];
+    let ox = 0;
+    let lenz = [2, 4, 6, 7, 10, 16];
+    let lx = 0;
+    let incz = [1, 3, 5];
+    let ix = 0;
+    let fbz = [40, 60, 70, 90, 10];
+    let fbx = 0;
+    let fblenz = [100, 400, 100, 1000, 12];
+    let fblx = 0;
+    let interpz = [0, 2, 3, 1, 2, 5];
+    let inx = 0;
+  }
+  run()
+  {
+    if (count % 2 == 0) {
+      set backz:pinc incz[ix];
+      ix = incr(ix, 0, len(incz));
+      set backz:fx0:interp interpz[inx];
+      inx = incr(inx, 0, len(interpz));
+
+    }
+    if (count % 3 == 0) {
+      set backz:plooplen lenz[lx];
+      lx = incr(lx, 0, len(lenz));
+      set mixer:delay:ms fblenz[fblx];
+      fblx = incr(fblx, 0, len(fblenz));
+    }
+    if (count % 4 == 0) {
+      set backz:poffset offz[ox];
+      ox = incr(ox, 0, len(offz));
+      set mixer:delay:fb fbz[fbx];
+      fbx = incr(fbx, 0, len(fbz));
+    }
+  }
+}
+
+let dkickblah_comp = comp()
+{
+  setup()
+  {
+    #let bdz1 =  [1, 0, 0, 1,  0, 0, 1, 0,  1, 0, 1, 0,  0, 1, 0, 0];
+    let bdz1 =  [1, 0, 0, 0,  0, 0, 1, 0,  1, 0, 1, 0,  0, 1, 0, 0];
+    let bdz2 =  [0, 0, 1, 0,  0, 1, 1, 0,  0, 0, 1, 0,  0, 0, 0, 0];
+    let sdtonz = [300, 3000];
+    let sdx = 0;
+    let sdecz = [150, 100, 150, 250, 350, 450, 650];
+    let scx = 0;
+    let sdelz = [14, 140, 40, 240];
+    let sdlx = 0;
+  }
+  run()
+  {
+    if (count % 15 < 14) {
+      let bdz = bdz1;
+      if (count % 7 == 0) {
+        bdz = bdz2;
+      }
+      for (let i = 0; i < 16; i++) {
+        let offz = 20;
+        if (i % 2 == 0) {
+          offz = 0;
+        }
+        if (bdz[i] == 1) {
+          note_on_at(sbdrum, 0, i * pp + offz);
+        }
+      }
+    }
+    if (count % 8 < 6) {
+      note_on_at(sbdrum, 1, 12 * pp + 50);
+      if (count % 2 == 1) {
+        set sbdrum:sd_tone sdtonz[sdx];
+        sdx = incr(sdx, 0, len(sdtonz));
+      }
+      if (count % 3 == 1) {
+        set sbdrum:sd_decay sdecz[scx];
+        scx = incr(scx, 0, len(sdecz));
+      }
+      if (count % 4 == 1) {
+        set sbdrum:sd_delay_ms sdelz[sdlx];
+        sdlx = incr(sdlx, 0, len(sdelz));
+      }
+    }
+  }
+}
+
+# p3 < osc 15 "-0.2 0.4" "set sbdrum:cp_pan %"
+
+let cpblah_comp = comp()
+{
+  setup()
+  {
+    let half = 3840 / 2;
+    let quart = 3840 / 4;
+    let ppq = quart / 16;
+    let runz = [3, 5, 7, 9, 11];
+    let rx = 0;
+
+    let tonz = [130, 13000, 300, 500, 2500];
+    let tx = 0;
+
+    let attz = [20, 200, 2, 12];
+    let ax = 0;
+  }
+  run()
+  {
+    if (count % 4 < 3) {
+      let pat = bjork(runz[rx], 16);
+      rx = incr(rx, 0, len(runz));
+      for (let i = 0; i < 16; i++) {
+        let offz = 20;
+        if (i % 2 == 0) {
+          offz = 0;
+        }
+        if (pat[i] == 1) {
+          note_on_at(sbdrum, 2, quart * 3 + ppq * i + offz);
+        }
+      }
+      if (count % 3 == 1) {
+        set sbdrum:cp_tone tonz[tx];
+        tx = incr(tx, 0, len(tonz));
+      }
+      if (count % 2 == 1) {
+        set sbdrum:cp_eg_attack attz[ax];
+        ax = incr(ax, 0, len(attz));
+      }
+    }
+  }
+}
+
+# p4 < osc 11 "1 100" "set sbdrum:hh_attack %"
+# p6 < osc 17 "-0.3 0.4" "set sbdrum:hh_pan %"
+let hhblah_comp = comp()
+{
+  setup()
+  {
+    let hhz1= [0, 1, 0, 0,  1, 0, 1, 0,  0, 1, 0, 0,  0, 1, 1, 1];
+    let hhz2= [0, 0, 0, 1,  0, 0, 1, 1,  0, 0, 1, 0,  0, 0, 1, 0];
+  }
+  run()
+  {
+    let hhz = hhz1;
+    if (count % 6 == 5) {
+      hhz = hhz2;
+    }
+    for (let i = 0; i < 16; i++) {
+      let offz = 20;
+      if (i % 2 == 0) {
+        offz = 0;
+      }
+      if (hhz[i] == 1) {
+        note_on_at(sbdrum, 3, i * pp + offz);
+      }
+    }
+    if (count % 4 == 3) {
+      note_on_at(sbdrum, 4, 12 * pp);
+    }
+  }
+}
+
+# p8 < osc 8 "5 50" "set sbdrum:fm1_car_eg_attack %"
+# p9 < osc 10 "10 800" "set sbdrum:fm2_car_eg_release %"
+let perblah_comp = comp()
+{
+  setup()
+  {
+    let patb = [2, 0, 0, 3,  1, 0, 1, 2,  0, 3, 3, 1,  4, 0, 0, 1];
+    let playmap = [5, 6, 7];
+  }
+  run()
+  {
+
+    let pat = patb;
+    if (count % 2 == 1) {
+      pat = rand_array(16, 0, 8);
+    }
+    for (let i = 0; i < 16; i++) {
+      let offz = 30;
+      if (i % 2 == 0) {
+        offz = 0;
+      }
+      if (pat[i] < len(playmap)) {
+        note_on_at(sbdrum, playmap[pat[i]], i * pp + offz);
+      }
+    }
+  }
+}
+
+# p11 < osc 4 "10 95" "set dx3:op2out %";
+# p12 < osc 7 "3 95" "set dx3:e2att %";
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let F = [65, 69, 72];
+    let B = [71, 74, 77];
+    let D = [74, 77, 81];
+
+  }
+  run()
+  {
+    if (count % 4 == 0) {
+      note_on_at(dx3, F, 0, dur = 3820 * 2);
+    }
+    if (count % 4 == 2) {
+      note_on_at(dx3, B, 0, dur = 3800);
+    }
+    if (count % 4 == 3) {
+      note_on_at(dx3, D, 0, dur = 3800);
+    }
+  }
+}
+
+# backz = SBPlayer // qebo/QEBO-LOCKDOWNFM-23FMPERCUSSION1.wav
+# vol:1 pan:0 pitch:4 idx:38 mode:SMUDGE(2) len:4

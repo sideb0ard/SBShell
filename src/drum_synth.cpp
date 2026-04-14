@@ -627,6 +627,7 @@ void DrumSynth::Save(std::string new_preset_name) {
   presetzzz << "bd_pan=" << settings_.bd_pan << kSEP;
   presetzzz << "bd_tone=" << settings_.bd_tone << kSEP;
   presetzzz << "bd_q=" << settings_.bd_q << kSEP;
+  presetzzz << "bd_noise_enabled=" << settings_.bd_noise_enabled << kSEP;
   presetzzz << "bd_noise_vol=" << settings_.bd_noise_vol << kSEP;
   presetzzz << "bd_ntone=" << settings_.bd_ntone << kSEP;
   presetzzz << "bd_nq=" << settings_.bd_nq << kSEP;

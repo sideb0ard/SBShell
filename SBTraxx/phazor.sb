@@ -1,0 +1,132 @@
+
+# load_preset(sbdrum, "CRAKZ");
+
+let basephs = 3840 / 4;
+#let phazzz = [1, 0.25, 0.5, 0.75, 2.5];
+let pentz = [1.0, 1.125, 1.25, 1.5, 1.667, 2.0, 3.0];
+#let harmz = [1.0, 0.5, 0.333, 0.25, 0.2, 0.167, 0.143, 0.125];
+let harmz = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+let lastvalz = [0, 0, 0, 0, 0];
+let phzz = NULL;
+let drumz = [0, 2, 3, 5, 6, 7];
+let drmax = 2;
+
+# p1 $ "34 [<34 57> 44 66 77]" dx2
+# note_on(dx, 12, dur = 0)
+# p3 < osc 0.6 "0.1 90" "set dx:op2out %"
+
+
+let init = fn()
+{
+  phzz = [];
+  for (let i = 0; i < len(pentz); i++) {
+    push(phzz, phasor(basephs * pentz[i]));
+  }
+  load_preset(sbdrum, "CRAKZ");
+  load_preset(dx, "SMOOUTH2");
+}
+
+let resetPhaz = fn()
+{
+  basephs = 3840 / 4;
+  for (let i = 0; i < len(pentz); i++) {
+    if (rand(100) > 50) {
+      change_steps(phzz[i], basephs * rand(harmz));
+    } else {
+      change_steps(phzz[i], basephs * rand(pentz));
+    }
+  }
+}
+let resetOrigPhaz = fn()
+{
+  basephs = 3840 / 4;
+  for (let i = 0; i < len(pentz); i++) {
+    change_steps(phzz[i], basephs * pentz[i]);
+  }
+}
+
+let check_wrap = fn(last_val, cur_val)
+{
+  if (cur_val < last_val) {
+    return true;
+  }
+  return false;
+}
+
+let stop = sample(noises/soulIIsoulSTOP.wav);
+# p2 < osc 11 "1 10" "set sbdrum:cp_fq %";
+let phblah_comp = comp()
+{
+  setup()
+  {
+    let cptz = [180, 80, 200, 1680];
+    let cx = 0;
+  }
+  run()
+  {
+    unsolo();
+    if (count % 8 == 0) {
+      resetOrigPhaz();
+    }
+    if (count % 8 == 6) {
+      resetPhaz();
+    }
+    if (count % 4 == 3) {
+      set sbdrum:cp_tone cptz[cx];
+      cx = incr(cx, 0, len(cptz));
+    }
+    if (count % 16 < 15) {
+      for (let i = 0; i < pplooplen; i++) {
+        for (let j = 0; j < len(phzz); j++) {
+          let phval = signal_from(phzz[j]);
+          if (check_wrap(lastvalz[j], phval)) {
+            if (j < drmax) {
+              note_on_at(sbdrum, drumz[j], i);
+            }
+          }
+          lastvalz[j] = phval;
+        }
+      }
+    } else {
+      solo(stop);
+      note_on(stop, 1, dur = 0);
+    }
+    drmax = incr(drmax, 2, len(drumz));
+  }
+}
+
+let key = 54;
+
+# brokecomputa
+# SMOOUTH2
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let dif = 0.7;
+    let num_hitz=   [3, 7, 8, 6, 9];
+    let nx = 0;
+    let notez = notes_in_key(key);
+    let chrdz = [4, 4, 1, 0];
+    let chx = 0;
+    let durz = [700, 250, 400, 60, 100, 300];
+    let drx = 0;
+  }
+  run()
+  {
+    if (count % 2 == 0) {
+      let num_hit = num_hitz[nx];
+      nx = incr(nx, 0, len(num_hitz));
+      let chrd = notes_in_chord(notez[chrdz[chx]], key, 1);
+      let pos = 0;
+      let gap = pp * 4;
+      for (let i = 0; i < num_hit; i++) {
+        note_on_at(dx,  chrd, pos, dur = durz[drx]);
+        drx = incr(drx, 0, len(durz));
+        pos = pos + gap;
+        gap = gap * dif;
+      }
+      chx = incr(chx, 0, len(chrdz));
+    }
+  }
+}
