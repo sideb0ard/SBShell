@@ -51,15 +51,6 @@ struct file_monitor {
   bool init_called{false};  // Track if init() was actually executed
 };
 
-struct DelayedMidiEvent {
-  DelayedMidiEvent() = default;
-  DelayedMidiEvent(int target_tick, midi_event event, int sg_idx)
-      : target_tick{target_tick}, event{event}, sg_idx{sg_idx} {}
-  int target_tick{0};
-  midi_event event{};
-  int sg_idx{-1};
-};
-
 struct Action {
   Action(double start_val, double end_val, int time_taken_ticks,
          std::string action_to_take);
@@ -131,8 +122,6 @@ struct Mixer {
 
   std::array<std::shared_ptr<Fx>, kMixerNumSendFx> fx_;
 
-  std::vector<DelayedMidiEvent> _action_items =
-      {};  // TODO get rid of this version
   std::vector<std::unique_ptr<AudioActionItem>> delayed_action_items_ = {};
 
   XFader xfader_;

@@ -22,6 +22,7 @@
 #include <utils.h>
 
 #include <cmath>
+#include <deque>
 #include <filereader.hpp>
 #include <interpreter/object.hpp>
 #include <interpreter/sound_cmds.hpp>
@@ -767,61 +768,107 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
     Now();
   } else if (action->type == AudioAction::VOLUME) {
     VolChange(action->new_volume);
-  } else if (action->type == AudioAction::MIDI_NOTE_ON ||
-             action->type == AudioAction::MIDI_NOTE_ON_DELAYED) {
+  } else if (action->type == AudioAction::MIDI_NOTE_ON_DELAYED) {
+    // Schedule note on via delayed_action_items_
+    int on_tick = timing_info.midi_tick + action->note_start_time;
+    auto note_on = std::make_unique<AudioActionItem>(AudioAction::MIDI_NOTE_ON);
+    note_on->soundgen_num = action->soundgen_num;
+    note_on->notes = action->notes;
+    note_on->velocity = action->velocity;
+    note_on->duration = 0;  // prevent recursive scheduling
+    note_on->start_at = on_tick;
+    delayed_action_items_.push_back(std::move(note_on));
+    if (action->duration) {
+      auto note_off =
+          std::make_unique<AudioActionItem>(AudioAction::MIDI_NOTE_OFF);
+      note_off->soundgen_num = action->soundgen_num;
+      note_off->notes = action->notes;
+      note_off->velocity = action->velocity;
+      note_off->start_at = on_tick + action->duration;
+      delayed_action_items_.push_back(std::move(note_off));
+    }
+  } else if (action->type == AudioAction::MIDI_NOTE_ON) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];
-
       for (auto midinum : action->notes) {
         midi_event event_on =
             new_midi_event(MIDI_ON, midinum, action->velocity);
         event_on.source = EXTERNAL_OSC;
         event_on.dur = action->duration;
-
-        // used later for MIDI OFF MESSAGE
-        int midi_note_on_time = timing_info.midi_tick;
-
-        if (action->type == AudioAction::MIDI_NOTE_ON_DELAYED) {
-          midi_note_on_time += action->note_start_time;
-          auto ev = DelayedMidiEvent(midi_note_on_time, event_on,
-                                     action->soundgen_num);
-          _action_items.push_back(ev);
-        } else {
-          sg->NoteOn(event_on);
-        }
-        if (action->duration) {
-          int midi_off_tick = midi_note_on_time + action->duration;
-          midi_event event_off =
-              new_midi_event(MIDI_OFF, midinum, action->velocity);
-          auto ev =
-              DelayedMidiEvent(midi_off_tick, event_off, action->soundgen_num);
-          _action_items.push_back(ev);
-        }
+        sg->NoteOn(event_on);
+      }
+      if (action->duration) {
+        auto note_off =
+            std::make_unique<AudioActionItem>(AudioAction::MIDI_NOTE_OFF);
+        note_off->soundgen_num = action->soundgen_num;
+        note_off->notes = action->notes;
+        note_off->velocity = action->velocity;
+        note_off->start_at = timing_info.midi_tick + action->duration;
+        delayed_action_items_.push_back(std::move(note_off));
       }
     }
-  } else if (action->type == AudioAction::MIDI_NOTE_OFF ||
-             action->type == AudioAction::MIDI_NOTE_OFF_DELAYED) {
+  } else if (action->type == AudioAction::MIDI_NOTE_OFF_DELAYED) {
+    auto note_off =
+        std::make_unique<AudioActionItem>(AudioAction::MIDI_NOTE_OFF);
+    note_off->soundgen_num = action->soundgen_num;
+    note_off->notes = action->notes;
+    note_off->velocity = 0;
+    note_off->start_at = timing_info.midi_tick + action->note_start_time;
+    delayed_action_items_.push_back(std::move(note_off));
+  } else if (action->type == AudioAction::MIDI_NOTE_OFF) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];
-
       for (auto midinum : action->notes) {
         midi_event event_off = new_midi_event(MIDI_OFF, midinum, 0);
-
-        if (action->type == AudioAction::MIDI_NOTE_OFF_DELAYED) {
-          int midi_note_off_time =
-              timing_info.midi_tick + action->note_start_time;
-          auto ev = DelayedMidiEvent(midi_note_off_time, event_off,
-                                     action->soundgen_num);
-          _action_items.push_back(ev);
+        if (event_off.data1 == 0) {
+          sg->AllNotesOff();
         } else {
-          if (event_off.data1 == 0) {
-            sg->AllNotesOff();
-          } else {
-            sg->NoteOff(event_off);
-          }
+          sg->NoteOff(event_off);
         }
       }
     }
+  } else if (action->type == AudioAction::DRAW_BAR) {
+    if (action->note_start_time > 0) {
+      action->start_at = timing_info.midi_tick + action->note_start_time;
+      action->note_start_time = 0;
+      delayed_action_items_.push_back(std::move(action));
+      return;
+    }
+    // Format and send to REPL thread - never print on audio thread
+    double val = action->draw_val;
+    if (val < 0.0) val = 0.0;
+    if (val > 1.0) val = 1.0;
+    int filled = (int)(val * action->draw_width);
+    const char *color = val < 0.5   ? COOL_COLOR_GREEN
+                        : val < 0.8 ? COOL_COLOR_YELLOW
+                                    : ANSI_COLOR_RED;
+    std::stringstream ss;
+    if (!action->draw_label.empty()) ss << action->draw_label << " ";
+    ss << "[" << color;
+    for (int i = 0; i < action->draw_width; i++) ss << (i < filled ? "█" : " ");
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%.3f", val);
+    ss << ANSI_COLOR_RESET << "] " << color << buf << ANSI_COLOR_RESET;
+    repl_queue.push(ss.str() + "\r");
+  } else if (action->type == AudioAction::DRAW_PLOT) {
+    if (action->note_start_time > 0) {
+      action->start_at = timing_info.midi_tick + action->note_start_time;
+      action->note_start_time = 0;
+      delayed_action_items_.push_back(std::move(action));
+      return;
+    }
+    static std::unordered_map<std::string, std::deque<double>> plot_bufs;
+    auto &buf = plot_bufs[action->draw_label];
+    buf.push_back(action->draw_val);
+    while ((int)buf.size() > action->draw_width) buf.pop_front();
+    static const char *sparks[] = {" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
+    std::stringstream ss;
+    if (!action->draw_label.empty()) ss << action->draw_label << " ";
+    ss << COOL_COLOR_GREEN << "[";
+    for (double v : buf)
+      ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
+    ss << "]" << ANSI_COLOR_RESET;
+    repl_queue.push(ss.str() + "\r");
   } else if (action->type == AudioAction::SOLO) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       soloed_sound_generator_idz.push_back(action->soundgen_num);
@@ -1038,23 +1085,6 @@ void Mixer::AddFileToMonitor(std::string filepath) {
 }
 
 void Mixer::CheckForDelayedEvents() {
-  auto it = _action_items.begin();
-  while (it != _action_items.end()) {
-    if (it->target_tick == timing_info.midi_tick) {
-      // TODO - push to action queue not call function
-      if (IsValidSoundgenNum(it->sg_idx)) {
-        auto &sg = sound_generators_[it->sg_idx];
-        sg->ParseMidiEvent(it->event, timing_info);
-      } else if (it->event.event_type == MIDI_CONTROL) {
-        HandleMidiControlMessage(it->event.data1, it->event.data2);
-      }
-      // `erase()` invalidates the iterator, use returned iterator
-      it = _action_items.erase(it);
-    } else {
-      ++it;
-    }
-  }
-
   std::vector<std::unique_ptr<AudioActionItem>> delayed_buffer;
   auto dit = delayed_action_items_.begin();
   while (dit != delayed_action_items_.end()) {

@@ -6,9 +6,9 @@ let basephs = 3840 / 4;
 let pentz = [1.0, 1.125, 1.25, 1.5, 1.667, 2.0, 3.0];
 #let harmz = [1.0, 0.5, 0.333, 0.25, 0.2, 0.167, 0.143, 0.125];
 let harmz = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
-let lastvalz = [0, 0, 0, 0, 0];
+let lastvalz = [0, 0, 0, 0, 0, 0, 0];
 let phzz = NULL;
-let drumz = [0, 2, 3, 5, 6, 7];
+let drumz = [0, 5, 2, 3, 2, 6, 7];
 let drmax = 2;
 
 # p1 $ "34 [<34 57> 44 66 77]" dx2
@@ -16,14 +16,20 @@ let drmax = 2;
 # p3 < osc 0.6 "0.1 90" "set dx:op2out %"
 
 
+let stop = NULL;
+
 let init = fn()
 {
   phzz = [];
   for (let i = 0; i < len(pentz); i++) {
     push(phzz, phasor(basephs * pentz[i]));
   }
-  load_preset(sbdrum, "CRAKZ");
-  load_preset(dx, "SMOOUTH2");
+  load_preset(sbdrum, "CRAKZ2");
+  # load_preset(dx, "SMOOUTH2");
+  stop = sample(noises/soulIIsoulSTOP.wav);
+  set stop:pitch 4;
+  send(delay, stop);
+  add_fx(stop, "distort");
 }
 
 let resetPhaz = fn()
@@ -53,7 +59,6 @@ let check_wrap = fn(last_val, cur_val)
   return false;
 }
 
-let stop = sample(noises/soulIIsoulSTOP.wav);
 # p2 < osc 11 "1 10" "set sbdrum:cp_fq %";
 let phblah_comp = comp()
 {
@@ -61,12 +66,16 @@ let phblah_comp = comp()
   {
     let cptz = [180, 80, 200, 1680];
     let cx = 0;
+    let freqz = [11, 2];
+    let frx = 0;
   }
   run()
   {
     unsolo();
     if (count % 8 == 0) {
       resetOrigPhaz();
+      set sbdrum:fm1_mod_freq_rat freqz[frx];
+      frx = incr(frx, 0, len(freqz));
     }
     if (count % 8 == 6) {
       resetPhaz();
@@ -75,11 +84,14 @@ let phblah_comp = comp()
       set sbdrum:cp_tone cptz[cx];
       cx = incr(cx, 0, len(cptz));
     }
+
     if (count % 16 < 15) {
       for (let i = 0; i < pplooplen; i++) {
         for (let j = 0; j < len(phzz); j++) {
           let phval = signal_from(phzz[j]);
+          #print("LASTV:", lastvalz[j], " pHAL:", phval);
           if (check_wrap(lastvalz[j], phval)) {
+            #print("J:", j, " DRMAX:", drmax);
             if (j < drmax) {
               note_on_at(sbdrum, drumz[j], i);
             }
@@ -99,7 +111,7 @@ let key = 54;
 
 # brokecomputa
 # SMOOUTH2
-let dxblah_comp = comp()
+let dx2blah_comp = comp()
 {
   setup()
   {
@@ -127,6 +139,27 @@ let dxblah_comp = comp()
         gap = gap * dif;
       }
       chx = incr(chx, 0, len(chrdz));
+    }
+  }
+}
+
+let newphasor = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(3840);
+    let steps = 8;
+    let modr = 3;
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let sig = signal_from(fullramp);
+      let sig_mult = sig * steps;
+      sig_mult = sig_mult % modr;
+      let out_sig = sig_mult / modr;
+      draw_bar(out_sig, at = i);
+      #print("OUTSIG:", out_sig);
     }
   }
 }

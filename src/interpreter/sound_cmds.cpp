@@ -2,6 +2,7 @@
 #include <fx/basicfilterpass.h>
 #include <fx/diffuser.h>
 #include <fx/distortion.h>
+#include <fx/djeq.h>
 #include <fx/dynamics_processor.h>
 #include <fx/fx.h>
 #include <fx/genz.h>
@@ -47,6 +48,8 @@ std::vector<std::shared_ptr<Fx>> ParseFXCmd(
         } else if (str_obj->value_ == "distort") {
           std::cout << "BOOYA! Distortion all up in this kittycat!\n";
           fx.push_back(std::make_shared<Distortion>());
+        } else if (str_obj->value_ == "djeq") {
+          fx.push_back(std::make_shared<DjEq>());
         } else if (str_obj->value_ == "filter") {
           fx.push_back(std::make_shared<FilterPass>());
         } else if (str_obj->value_ == "genz") {

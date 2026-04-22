@@ -104,9 +104,16 @@ int event_hook() {
           }
         }
       } else {
-        std::cout << reply->data();
-        rl_line_buffer[0] = '\0';
-        rl_done = 1;
+        const std::string &msg = *reply;
+        if (!msg.empty() && msg.back() == '\r') {
+          // In-place display (e.g. draw_bar) — write directly, no readline
+          // redraw
+          std::cout << msg << std::flush;
+        } else {
+          std::cout << msg;
+          rl_line_buffer[0] = '\0';
+          rl_done = 1;
+        }
       }
     }
   }

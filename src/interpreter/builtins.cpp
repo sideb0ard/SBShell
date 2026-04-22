@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <deque>
 #include <filesystem>
 #include <interpreter/builtins.hpp>
 #include <interpreter/evaluator.hpp>
@@ -1024,6 +1025,123 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
 
                     return evaluator::NULLL;
                   })},
+    {"draw_bar",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.empty()) return evaluator::NULLL;
+
+           auto val_obj = std::dynamic_pointer_cast<object::Number>(args[0]);
+           if (!val_obj) return evaluator::NULLL;
+
+           double val = val_obj->value_;
+           int width = 40;
+           std::string label = "";
+           int row = -1;  // -1 = no positioning, use \r in place
+
+           // scan remaining args - positional and named (at=)
+           int at_tick = -1;
+           for (int i = 1; i < (int)args.size(); i++) {
+             auto at_obj = std::dynamic_pointer_cast<object::At>(args[i]);
+             if (at_obj) {
+               at_tick = (int)at_obj->value_;
+               continue;
+             }
+             auto w = std::dynamic_pointer_cast<object::Number>(args[i]);
+             if (w && width == 40) {
+               width = (int)w->value_;
+               continue;
+             }
+             auto l = std::dynamic_pointer_cast<object::String>(args[i]);
+             if (l) label = l->value_;
+           }
+
+           // schedule via audio queue so it fires at the right tick
+           if (at_tick >= 0) {
+             auto action =
+                 std::make_unique<AudioActionItem>(AudioAction::DRAW_BAR);
+             action->draw_val = val;
+             action->draw_width = width;
+             action->draw_label = label;
+             action->note_start_time = at_tick;
+             audio_queue.push(std::move(action));
+             return evaluator::NULLL;
+           }
+
+           // no at= - draw immediately
+           if (val < 0.0) val = 0.0;
+           if (val > 1.0) val = 1.0;
+           int filled = (int)(val * width);
+           const char* color = val < 0.5   ? COOL_COLOR_GREEN
+                               : val < 0.8 ? COOL_COLOR_YELLOW
+                                           : ANSI_COLOR_RED;
+           std::stringstream ss;
+           if (!label.empty()) ss << label << " ";
+           ss << "[" << color;
+           for (int i = 0; i < width; i++) ss << (i < filled ? "█" : " ");
+           char buf[16];
+           snprintf(buf, sizeof(buf), "%.3f", val);
+           ss << ANSI_COLOR_RESET << "] " << color << buf << ANSI_COLOR_RESET;
+           std::cout << ss.str() << "\r" << std::flush;
+
+           return evaluator::NULLL;
+         })},
+    {"draw_plot",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.empty()) return evaluator::NULLL;
+           auto val_obj = std::dynamic_pointer_cast<object::Number>(args[0]);
+           if (!val_obj) return evaluator::NULLL;
+
+           double val = val_obj->value_;
+           int width = 40;
+           std::string label = "";
+           int at_tick = -1;
+
+           for (int i = 1; i < (int)args.size(); i++) {
+             auto at_obj = std::dynamic_pointer_cast<object::At>(args[i]);
+             if (at_obj) {
+               at_tick = (int)at_obj->value_;
+               continue;
+             }
+             auto w = std::dynamic_pointer_cast<object::Number>(args[i]);
+             if (w && width == 40) {
+               width = (int)w->value_;
+               continue;
+             }
+             auto l = std::dynamic_pointer_cast<object::String>(args[i]);
+             if (l) label = l->value_;
+           }
+
+           if (at_tick >= 0) {
+             auto action =
+                 std::make_unique<AudioActionItem>(AudioAction::DRAW_PLOT);
+             action->draw_val = val;
+             action->draw_width = width;
+             action->draw_label = label;
+             action->note_start_time = at_tick;
+             audio_queue.push(std::move(action));
+             return evaluator::NULLL;
+           }
+
+           static std::unordered_map<std::string, std::deque<double>> plot_bufs;
+           auto& buf = plot_bufs[label];
+           buf.push_back(val);
+           while ((int)buf.size() > width) buf.pop_front();
+
+           static const char* sparks[] = {" ", "▁", "▂", "▃", "▄",
+                                          "▅", "▆", "▇", "█"};
+           std::stringstream ss;
+           if (!label.empty()) ss << label << " ";
+           ss << COOL_COLOR_GREEN << "[";
+           for (double v : buf)
+             ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
+           ss << "]" << ANSI_COLOR_RESET;
+           std::cout << ss.str() << "\r" << std::flush;
+
+           return evaluator::NULLL;
+         })},
     {"funcz", std::make_shared<object::BuiltIn>(
                   [](const std::vector<std::shared_ptr<object::Object>>& args)
                       -> std::shared_ptr<object::Object> {

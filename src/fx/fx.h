@@ -34,6 +34,7 @@ enum class fx_type {
   BASICFILTER,
   MODFILTER,
   RESONANTLPF,
+  DJEQ,
 
   // === OTHER ===
   ENVELOPE,
