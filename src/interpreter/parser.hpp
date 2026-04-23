@@ -103,6 +103,7 @@ class Parser {
   std::shared_ptr<ast::Expression> ParseAtExpression();
   std::shared_ptr<ast::Expression> ParseDurationExpression();
   std::shared_ptr<ast::Expression> ParseVelocityExpression();
+  std::shared_ptr<ast::Expression> ParseRowExpression();
 
   std::shared_ptr<ast::Expression> ParseIndexExpression(
       std::shared_ptr<ast::Expression> left);

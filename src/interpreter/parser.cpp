@@ -590,6 +590,8 @@ std::shared_ptr<ast::Expression> Parser::ParseForPrefixExpression() {
     return ParseDurationExpression();
   else if (cur_token_.type_ == token::SLANG_VELOCITY)
     return ParseVelocityExpression();
+  else if (cur_token_.type_ == token::SLANG_ROW)
+    return ParseRowExpression();
   else if (cur_token_.type_ == token::SLANG_FALSE)
     return ParseBoolean();
   else if (cur_token_.type_ == token::SLANG_NULL)
@@ -745,6 +747,15 @@ std::shared_ptr<ast::Expression> Parser::ParseVelocityExpression() {
   NextToken();
   vel->velocity_val = ParseExpression(Precedence::LOWEST);
   return vel;
+}
+
+std::shared_ptr<ast::Expression> Parser::ParseRowExpression() {
+  auto row = std::make_shared<ast::RowExpression>(cur_token_);
+  if (!ExpectPeek(token::SLANG_ASSIGN)) return nullptr;
+
+  NextToken();
+  row->row_val = ParseExpression(Precedence::LOWEST);
+  return row;
 }
 
 std::shared_ptr<ast::Statement> Parser::ParseIfStatement() {

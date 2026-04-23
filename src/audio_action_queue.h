@@ -119,8 +119,9 @@ struct AudioActionItem {
   double new_bpm{0};
   double new_volume{0};
 
-  // DRAW_BAR varz
+  // DRAW_BAR / DRAW_PLOT varz
   double draw_val{0};
   int draw_width{40};
   std::string draw_label{};
+  int draw_row{-1};  // -1 = current line, N = N lines above prompt
 };

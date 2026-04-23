@@ -61,6 +61,7 @@ const std::unordered_map<std::string, TokenType> keywords{
     {"strategy", SLANG_STRATEGY},
     {"true", SLANG_TRUE},
     {"vel", SLANG_VELOCITY},
+    {"row", SLANG_ROW},
     {"vol", SLANG_VOLUME},
 };
 

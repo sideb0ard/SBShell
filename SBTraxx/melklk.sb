@@ -1,0 +1,169 @@
+
+let init = fn()
+{
+  #load_preset(dx3, "SMOOUTH2");
+  load_preset(dx3, "ZApzz");
+  load_preset(dx, "MELK");
+  add_fx(dx2, delay);
+}
+# dx3 SMOOUTH2
+let dblah_comp = comp()
+{
+  setup()
+  {
+    # let chord1 =  [45, 48, 52, 56];
+    # let chord2 =  [45, 50, 55];
+    let chord1 =  [48];
+    let chord2 = [41];
+    let chrdz = [chord1, chord1, chord2];
+    let cx = 0;
+    let durz = [500, 1000, 1840, 3000, 6000];
+    let drx = 0;
+    let chrdcntr = 0;
+  }
+  run()
+  {
+
+    if (count % 2 == 0) {
+      note_on(sbdrum, 0);
+    }
+    if (count % 3 == 2) {
+      let chord = chrdz[cx];
+      if (chrdcntr % 6 == 5) {
+        chord = down(chord, 12);
+      }
+      cx = incr(cx, 0, len(chrdz));
+      note_on(dx3, chord, dur = durz[drx]);
+      drx = incr(drx, 0, len(durz));
+      chrdcntr++;
+    }
+  }
+}
+
+
+# 'MELK'
+let basslah_comp = comp()
+{
+  setup()
+  {
+    let minbass =  [0, 0, 0, 0,  0, 0, 0, 0,  45, 0, 0, 0,  0, 0, 0, 0];
+
+    let bass1 = [0,  0,  0,  0, 0,  0,  45, 0, 45, 0,  0,  43, 0,  0,  45, 0];
+    let bass1_vel  = [0,  0,  0,  0,   0,  0,  80, 0,   110, 0,  0,  70,  0,  0,  85, 0];
+    let bass1_dur  = [0,  0,  0,  0,   0,  0,  1,  0,   2,   0,  0,  1,   0,  0,  1,  0];
+
+    let bass2      = [0,  0,  0,  45,  0,  0,  45, 0,   52,  0,  45, 0,   0,  43, 0,  0];
+    let bass2_vel  = [0,  0,  0,  75,  0,  0,  85, 0,   115, 0,  80, 0,   0,  65, 0,  0];
+    let bass2_dur  = [0,  0,  0,  1,   0,  0,  1,  0,   2,   0,  1,  0,   0,  1,  0,  0];
+  }
+  run()
+  {
+    let bass = bass1;
+    let bassvel = bass1_vel;
+    let bassdur = bass1_dur;
+    if (count % 2 == 1) {
+      bass = bass2;
+      bassvel = bass2_vel;
+      bassdur = bass2_dur;
+    }
+
+    if (count % 16 == 13) {
+      bass = minbass;
+    }
+
+    if (count % 12 == 11) {
+      bass = up(bass, 12);
+    }
+
+    let intensity = (count % 16) * 6;
+
+    #let bass = if (count % 2 == 0) { bass1 } else { bass2 };
+
+    for (let i = 0; i < 16; i++) {
+      if (bass[i] > 0) {
+        note_on_at(dx, bass[i], i * pp, dur = bassdur[i] * pp, vel = bassvel[i] + intensity);
+      }
+    }
+  }
+}
+
+let snblah_comp = comp()
+{
+  setup()
+  {
+    let reducer = 0.75;
+    let num_steps = [3, 5, 7, 11];
+    let nx = 0;
+    let percz = [6, 6, 5, 1, 7];
+    let px = 0;
+  }
+  run()
+  {
+    if (count % 3 == 2) {
+      let startpl = 3840 * 0.75;
+      let pos = startpl;
+      let gap = pp * 3;
+      let v = 127;
+      for (let i = 0; i < num_steps[nx]; i++) {
+        note_on_at(sbdrum, percz[px], startpl + pos, vel = v);
+        px = incr(px, 0, len(percz));
+        gap = gap * reducer;
+        pos = pos + gap;
+        v = v * reducer;
+      }
+      nx = incr(nx, 0, len(num_steps));
+    }
+  }
+}
+
+let dx2blah_comp = comp()
+{
+  setup()
+  {
+    let chrd1 = [48, 52, 45];
+    let chrd2 = [41, 45, 48];
+    let chrd3 = [41, 47, 50];
+    let l1ratz = [2, 4, 7, 11, 13];
+    let rx = 0;
+    let delz = [2, 20, 200, 50];
+    let dlx = 0;
+    let dfb = [10, 56, 70, 2, 45];
+    let dfx = 0;
+  }
+  run()
+  {
+    if (count % 16 < 12) {
+      set dx2:l1_rate l1ratz[rx];
+      rx = incr(rx, 0, len(l1ratz));
+      set dx2:fx0:fb dfb[dfx];
+      set dx2:fx0:ms delz[dlx];
+      dfx = incr(dfx, 0, len(dfb));
+      dlx = incr(dlx, 0, len(delz));
+      let chrd = chrd1;
+      let durr = 3800 *2;
+      if (count % 4 == 2) {
+        chrd = chrd2;
+        durr = 3800;
+      }
+      if (count % 4 == 3) {
+        chrd = chrd3;
+        durr = 3800;
+      }
+      if (count % 16 == 11) {
+        chrd = up(chrd, 12);
+        durr = 3800 * 3;
+      }
+      note_on(dx2, chrd, dur = durr);
+    }
+  }
+}
+
+let llooblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+  }
+}

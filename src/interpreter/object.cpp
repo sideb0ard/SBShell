@@ -337,6 +337,15 @@ ObjectType Velocity::Type() {
   return VELOCITY_OBJ;
 }
 
+std::string Row::Inspect() {
+  std::stringstream val;
+  val << value_;
+  return val.str();
+}
+ObjectType Row::Type() {
+  return ROW_OBJ;
+}
+
 ObjectType ForLoop::Type() {
   return FORLOOP_OBJ;
 }

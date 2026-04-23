@@ -843,13 +843,19 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
                         : val < 0.8 ? COOL_COLOR_YELLOW
                                     : ANSI_COLOR_RED;
     std::stringstream ss;
+    if (action->draw_row >= 0)
+      ss << "\0337\033[" << (action->draw_row + 1) << "A";
     if (!action->draw_label.empty()) ss << action->draw_label << " ";
     ss << "[" << color;
     for (int i = 0; i < action->draw_width; i++) ss << (i < filled ? "█" : " ");
     char buf[16];
     snprintf(buf, sizeof(buf), "%.3f", val);
     ss << ANSI_COLOR_RESET << "] " << color << buf << ANSI_COLOR_RESET;
-    repl_queue.push(ss.str() + "\r");
+    if (action->draw_row >= 0)
+      ss << "\0338";
+    else
+      ss << "\r";
+    repl_queue.push(ss.str());
   } else if (action->type == AudioAction::DRAW_PLOT) {
     if (action->note_start_time > 0) {
       action->start_at = timing_info.midi_tick + action->note_start_time;
@@ -863,12 +869,18 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
     while ((int)buf.size() > action->draw_width) buf.pop_front();
     static const char *sparks[] = {" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
     std::stringstream ss;
+    if (action->draw_row >= 0)
+      ss << "\0337\033[" << (action->draw_row + 1) << "A";
     if (!action->draw_label.empty()) ss << action->draw_label << " ";
     ss << COOL_COLOR_GREEN << "[";
     for (double v : buf)
       ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
     ss << "]" << ANSI_COLOR_RESET;
-    repl_queue.push(ss.str() + "\r");
+    if (action->draw_row >= 0)
+      ss << "\0338";
+    else
+      ss << "\r";
+    repl_queue.push(ss.str());
   } else if (action->type == AudioAction::SOLO) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       soloed_sound_generator_idz.push_back(action->soundgen_num);

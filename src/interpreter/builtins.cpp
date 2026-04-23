@@ -1037,14 +1037,18 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            double val = val_obj->value_;
            int width = 40;
            std::string label = "";
-           int row = -1;  // -1 = no positioning, use \r in place
-
-           // scan remaining args - positional and named (at=)
            int at_tick = -1;
+           int row = -1;
+
            for (int i = 1; i < (int)args.size(); i++) {
              auto at_obj = std::dynamic_pointer_cast<object::At>(args[i]);
              if (at_obj) {
                at_tick = (int)at_obj->value_;
+               continue;
+             }
+             auto row_obj = std::dynamic_pointer_cast<object::Row>(args[i]);
+             if (row_obj) {
+               row = (int)row_obj->value_;
                continue;
              }
              auto w = std::dynamic_pointer_cast<object::Number>(args[i]);
@@ -1056,19 +1060,18 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
              if (l) label = l->value_;
            }
 
-           // schedule via audio queue so it fires at the right tick
            if (at_tick >= 0) {
              auto action =
                  std::make_unique<AudioActionItem>(AudioAction::DRAW_BAR);
              action->draw_val = val;
              action->draw_width = width;
              action->draw_label = label;
+             action->draw_row = row;
              action->note_start_time = at_tick;
              audio_queue.push(std::move(action));
              return evaluator::NULLL;
            }
 
-           // no at= - draw immediately
            if (val < 0.0) val = 0.0;
            if (val > 1.0) val = 1.0;
            int filled = (int)(val * width);
@@ -1076,13 +1079,18 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                                : val < 0.8 ? COOL_COLOR_YELLOW
                                            : ANSI_COLOR_RED;
            std::stringstream ss;
+           if (row >= 0) ss << "\0337\033[" << (row + 1) << "A";
            if (!label.empty()) ss << label << " ";
            ss << "[" << color;
            for (int i = 0; i < width; i++) ss << (i < filled ? "█" : " ");
            char buf[16];
            snprintf(buf, sizeof(buf), "%.3f", val);
            ss << ANSI_COLOR_RESET << "] " << color << buf << ANSI_COLOR_RESET;
-           std::cout << ss.str() << "\r" << std::flush;
+           if (row >= 0)
+             ss << "\0338";
+           else
+             ss << "\r";
+           std::cout << ss.str() << std::flush;
 
            return evaluator::NULLL;
          })},
@@ -1098,11 +1106,17 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            int width = 40;
            std::string label = "";
            int at_tick = -1;
+           int row = -1;
 
            for (int i = 1; i < (int)args.size(); i++) {
              auto at_obj = std::dynamic_pointer_cast<object::At>(args[i]);
              if (at_obj) {
                at_tick = (int)at_obj->value_;
+               continue;
+             }
+             auto row_obj = std::dynamic_pointer_cast<object::Row>(args[i]);
+             if (row_obj) {
+               row = (int)row_obj->value_;
                continue;
              }
              auto w = std::dynamic_pointer_cast<object::Number>(args[i]);
@@ -1120,6 +1134,7 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
              action->draw_val = val;
              action->draw_width = width;
              action->draw_label = label;
+             action->draw_row = row;
              action->note_start_time = at_tick;
              audio_queue.push(std::move(action));
              return evaluator::NULLL;
@@ -1133,12 +1148,17 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            static const char* sparks[] = {" ", "▁", "▂", "▃", "▄",
                                           "▅", "▆", "▇", "█"};
            std::stringstream ss;
+           if (row >= 0) ss << "\0337\033[" << (row + 1) << "A";
            if (!label.empty()) ss << label << " ";
            ss << COOL_COLOR_GREEN << "[";
            for (double v : buf)
              ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
            ss << "]" << ANSI_COLOR_RESET;
-           std::cout << ss.str() << "\r" << std::flush;
+           if (row >= 0)
+             ss << "\0338";
+           else
+             ss << "\r";
+           std::cout << ss.str() << std::flush;
 
            return evaluator::NULLL;
          })},

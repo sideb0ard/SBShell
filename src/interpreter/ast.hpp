@@ -379,6 +379,15 @@ class VelocityExpression : public Expression {
   std::shared_ptr<Expression> velocity_val{nullptr};
 };
 
+class RowExpression : public Expression {
+ public:
+  explicit RowExpression(Token toke) : Expression(toke) {}
+  std::string String() const override;
+
+ public:
+  std::shared_ptr<Expression> row_val{nullptr};
+};
+
 ///////////////////////////////////////////////////////////////
 //////////////////////// STATEMENTS............. //////////////
 

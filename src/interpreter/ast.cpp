@@ -37,6 +37,15 @@ std::string VelocityExpression::String() const {
   return ss.str();
 }
 
+std::string RowExpression::String() const {
+  std::stringstream ss;
+
+  if (row_val) ss << row_val->String();
+  ss << ";";
+
+  return ss.str();
+}
+
 std::string AtExpression::String() const {
   std::stringstream ss;
 

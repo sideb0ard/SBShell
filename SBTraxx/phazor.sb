@@ -143,6 +143,60 @@ let dx2blah_comp = comp()
   }
 }
 
+let ramp2slope_factory = fn()
+{
+  let history_val = 0;
+  fn(newval) {
+    let oldval = history_val;
+    history_val = newval;
+    let delta = newval - oldval;
+    if (delta < -0.5) {
+      return 1 + delta;
+    }
+    if (delta > 0.5) {
+      return 1 - delta;
+    }
+    return delta;
+  }
+}
+
+let ramp_div_factory = fn()
+{
+  let normalize_ramp = ramp2slope_factory();
+  let accum = 0;
+
+  return fn(sig_val, ratio) {
+    let val = normalize_ramp(sig_val) / ratio;
+    #print("SIG:", sig_val, " NORMAL:", val);
+    accum = accum + val;
+    if (accum >= 1) {
+      accum = accum - 1;
+    }
+    if (accum < 0) {
+      accum = accum + 1;
+    }
+    return accum;
+  }
+
+  # let sig_mult = sig_val * steps;
+  # sig_mult = sig_mult % modr;
+  # return sig_mult / modr;
+}
+
+let ramp2trigger_factory = fn()
+{
+  let history_val = 0;
+  fn(newval) {
+    let oldval = history_val;
+    history_val = newval;
+    let delta = abs(newval - oldval);
+    if (delta > 0.5) {
+      return true;
+    }
+    return false;
+  }
+}
+
 let newphasor = comp()
 {
   setup()
@@ -150,16 +204,63 @@ let newphasor = comp()
     let fullramp = phasor(3840);
     let steps = 8;
     let modr = 3;
+    let divz = [16, 12, 8, 4, 6, 3];
+    let dvx = 0;
+    let sincr = TWO_PI / 3840;
+    let sinidx = 0;
   }
   run()
   {
+    let plot_width = 120;
+    let stride = 3840 / plot_width;
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
     for (let i = 0; i < 3840; i++) {
-      let sig = signal_from(fullramp);
-      let sig_mult = sig * steps;
-      sig_mult = sig_mult % modr;
-      let out_sig = sig_mult / modr;
-      draw_bar(out_sig, at = i);
+      let ramp_sig = signal_from(fullramp);
+      #let out_sig2 = ramp_div(ramp_sig, 1/2);
+      #let out_sig = ramp_sig * 0.5;
+      #print("RAMPSIG:", ramp_sig, " OUTSIG:", out_sig);
+      let out_sig1 = ramp_div1(ramp_sig, 1 / 6);
+      let out_sig2 = ramp_div2(ramp_sig, 3 / 8);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      # let sin_sig = sin(sinidx) / 2 + 0.5;
+      # sinidx = (sinidx + sincr) % TWO_PI;
+      #let sig_mult = ramp_sig * 8;
+      #sig_mult = sig_mult % 3;
+      #let out_sig = sig_mult / 3;
+      #print("OUTSIG:", out_sig1, " OUT2:", out_sig2, " OUT3:", out_sig3);
+      #let out_sig = (sig * divz[dvx]) % 1;
+      if (i % stride == 0) {
+        #draw_plot(sin_sig, plot_width, at = i);
+        #draw_plot(ramp_sig, plot_width, at = i);
+        draw_plot(out_sig3, plot_width, at = i);
+      }
       #print("OUTSIG:", out_sig);
+    }
+    dvx = incr(dvx, 0, len(divz));
+  }
+}
+
+let osamploffblah_comp = comp()
+{
+  setup()
+  {
+    let offz = [0, 4, 2, 6, 8, 1, 15, 14, 13];
+    let ofx = 0;
+    let looplenz = [1, 1, 2, 3, 4, 6, 8, 11, 12];
+    let lx = 0;
+  }
+  run()
+  {
+    if (count % 2 == 0) {
+      set thunk:poffset offz[ofx];
+      ofx = incr(ofx, 0, len(offz));
+    }
+    if (count % 3 == 0) {
+      set thunk:plooplen looplenz[lx];
+      lx = incr(lx, 0, len(looplenz));
     }
   }
 }

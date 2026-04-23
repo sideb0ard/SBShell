@@ -694,6 +694,16 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
     }
   }
 
+  std::shared_ptr<ast::RowExpression> row_exp =
+      std::dynamic_pointer_cast<ast::RowExpression>(node);
+  if (row_exp) {
+    auto val = Eval(row_exp->row_val, env);
+    auto int_obj = std::dynamic_pointer_cast<object::Number>(val);
+    if (int_obj) {
+      return std::make_shared<object::Row>(int_obj->value_);
+    }
+  }
+
   auto midi_array_exp =
       std::dynamic_pointer_cast<ast::MidiArrayExpression>(node);
   if (midi_array_exp) {

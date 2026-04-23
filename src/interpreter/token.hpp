@@ -100,6 +100,7 @@ const TokenType SLANG_RAMP = "RAMP";
 const TokenType SLANG_SET = "SET";
 const TokenType SLANG_STRATEGY = "STRATEGY";
 const TokenType SLANG_VELOCITY = "VELOCITY";
+const TokenType SLANG_ROW = "ROW";
 const TokenType SLANG_VOLUME = "VOLUME";
 
 // instruments

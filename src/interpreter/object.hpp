@@ -52,6 +52,7 @@ constexpr char MIDI_ARRAY[] = "MIDI_ARRAY";
 constexpr char AT_OBJ[] = "AT";
 constexpr char DURATION_OBJ[] = "DURATION";
 constexpr char VELOCITY_OBJ[] = "VELOCITY";
+constexpr char ROW_OBJ[] = "ROW";
 
 using ObjectType = std::string;
 
@@ -137,6 +138,16 @@ class Duration : public Object {
 class Velocity : public Object {
  public:
   explicit Velocity(double val) : value_{val} {};
+  ObjectType Type() override;
+  std::string Inspect() override;
+
+ public:
+  double value_;
+};
+
+class Row : public Object {
+ public:
+  explicit Row(double val) : value_{val} {};
   ObjectType Type() override;
   std::string Inspect() override;
 
