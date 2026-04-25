@@ -11,13 +11,20 @@ let phzz = NULL;
 let drumz = [0, 5, 2, 3, 2, 6, 7];
 let drmax = 2;
 
+let walkin = NULL;
+let stop = NULL;
+
 # p1 $ "34 [<34 57> 44 66 77]" dx2
 # note_on(dx, 12, dur = 0)
 # p3 < osc 0.6 "0.1 90" "set dx:op2out %"
 
 
-let stop = NULL;
+# p1 # newphasor
 
+
+# note_on(dx, notes_in_chord(52, 47, 1), dur = 0);
+#note_off(dx, 0); note_on_at(dx, notes_in_chord(47, 47, 1), 300, dur = 0);
+#[47, 51, 54, 58]
 let init = fn()
 {
   phzz = [];
@@ -30,7 +37,13 @@ let init = fn()
   set stop:pitch 4;
   send(delay, stop);
   add_fx(stop, "distort");
+
+  add_fx(dx, "djeq");
+  walkin = loop(noises/walkinRain.aiff);
+  add_fx(walkin, "distort");
+  add_fx(walkin, "djeq");
 }
+
 
 let resetPhaz = fn()
 {
@@ -197,6 +210,15 @@ let ramp2trigger_factory = fn()
   }
 }
 
+# dx OCWARF2
+# add_fx(dx, "djeq");
+# note_on(dx, notes_in_chord(52, 47, 1), dur = 0);
+#note_off(dx, 0);
+# note_on(dx, notes_in_chord(47, 47, 1), dur = 0);
+#[47, 51, 54, 58]
+# let walkin = loop(noises/walkinRain.aiff);
+# add_fx(walkin, "distort");
+# add_fx(walkin, "djeq");
 let newphasor = comp()
 {
   setup()
@@ -208,14 +230,18 @@ let newphasor = comp()
     let dvx = 0;
     let sincr = TWO_PI / 3840;
     let sinidx = 0;
+
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+
+    let ramp2tri = ramp2trigger_factory();
+
   }
   run()
   {
     let plot_width = 120;
     let stride = 3840 / plot_width;
-    let ramp_div1 = ramp_div_factory();
-    let ramp_div2 = ramp_div_factory();
-    let ramp_div3 = ramp_div_factory();
     for (let i = 0; i < 3840; i++) {
       let ramp_sig = signal_from(fullramp);
       #let out_sig2 = ramp_div(ramp_sig, 1/2);
@@ -225,17 +251,24 @@ let newphasor = comp()
       let out_sig2 = ramp_div2(ramp_sig, 3 / 8);
       let mod_ratio = max(out_sig2, 0.001);
       let out_sig3 = ramp_div3(out_sig1, mod_ratio);
-      # let sin_sig = sin(sinidx) / 2 + 0.5;
-      # sinidx = (sinidx + sincr) % TWO_PI;
-      #let sig_mult = ramp_sig * 8;
-      #sig_mult = sig_mult % 3;
-      #let out_sig = sig_mult / 3;
+      let sin_sig = sin(sinidx) / 2 + 0.5;
+      sinidx = (sinidx + sincr) % TWO_PI;
+      let sig_mult = ramp_sig * 8;
+      sig_mult = sig_mult % 3;
+      let out_sig = sig_mult / 3;
       #print("OUTSIG:", out_sig1, " OUT2:", out_sig2, " OUT3:", out_sig3);
       #let out_sig = (sig * divz[dvx]) % 1;
       if (i % stride == 0) {
-        #draw_plot(sin_sig, plot_width, at = i);
-        #draw_plot(ramp_sig, plot_width, at = i);
-        draw_plot(out_sig3, plot_width, at = i);
+        if (ramp2tri(out_sig3)) {
+          #print("TRIG:", i);
+          #note_on_at(dx, 203, i, dur = 180);
+        }
+        #draw_plot(sin_sig * out_sig3, plot_width, at = i);
+        #draw_plot(out_sig3, plot_width, at = i);
+        set dx:fx0:lo scale(out_sig3, 0, 1, 80, 3000) at=i;
+        set dx:op2out scale(out_sig3, 0, 1, 40, 90) at=i;
+
+        set walkin:fx1:lo scale(out_sig3, 0, 1, 80, 3000) at=i;
       }
       #print("OUTSIG:", out_sig);
     }
@@ -243,24 +276,74 @@ let newphasor = comp()
   }
 }
 
-let osamploffblah_comp = comp()
+let FXblah_comp = comp()
 {
   setup()
   {
-    let offz = [0, 4, 2, 6, 8, 1, 15, 14, 13];
-    let ofx = 0;
-    let looplenz = [1, 1, 2, 3, 4, 6, 8, 11, 12];
-    let lx = 0;
+    let chrd1 = notes_in_chord(47, 47, 1);
+    let chrd2 = notes_in_chord(52, 47, 1);
   }
   run()
   {
-    if (count % 2 == 0) {
-      set thunk:poffset offz[ofx];
-      ofx = incr(ofx, 0, len(offz));
+    if (count % 8 == 0) {
+      note_off(dx, 0);
+      note_on_at(dx, chrd2, 300, dur = 0);
+      note_on_at(dx, chrd2, 300, dur = 0);
     }
-    if (count % 3 == 0) {
-      set thunk:plooplen looplenz[lx];
-      lx = incr(lx, 0, len(looplenz));
+    if (count % 8 == 6) {
+      note_off(dx, 0);
+      note_on_at(dx, chrd1, 300, dur = 0);
+      note_on_at(dx, chrd1, 300, dur = 0);
+    }
+  }
+}
+
+let drumblah_comp = comp()
+{
+  setup()
+  {
+    let steps = 8;
+    let modr = 3;
+    let divz = [16, 12, 8, 4, 6, 3];
+    let dvx = 0;
+    let sincr = TWO_PI / 3840 ;
+    let sinidx = 0;
+
+    let ramplenz = [1, 2, 3, 4, 6, 8, 12, 16, 24, 30, 32];
+    let rx = 0;
+
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+
+    let ramp2tri = ramp2trigger_factory();
+  }
+  run()
+  {
+    let plot_width = 120;
+    let stride = 3840 / plot_width;
+    let fullramp = phasor(3840 / ramplenz[rx]);
+    rx = incr(rx, 0, len(ramplenz));
+    for (let i = 0; i < 3840; i++) {
+      let ramp_sig = signal_from(fullramp);
+      let out_sig1 = ramp_div1(ramp_sig, 2 / 3);
+      let out_sig2 = ramp_div2(ramp_sig, 3 / 4);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      if (i % stride == 0) {
+        if (ramp2tri(out_sig3)) {
+          if (i % 2 == 0) {
+            note_on_at(sbdrum, 0, i);
+          } else {
+          }
+          if (i % 3 == 0) {
+            note_on_at(sbdrum, 2, 4);
+          }
+        }
+        #draw_plot(sin_sig * out_sig3, plot_width, at = i);
+        #draw_plot(out_sig3, plot_width, at = i);
+      }
+      #print("OUTSIG:", out_sig);
     }
   }
 }

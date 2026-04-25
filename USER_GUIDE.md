@@ -1137,6 +1137,61 @@ set inst:modfilter_mod_depth 0-5000;      // Modulation depth (Hz)
 set inst:modfilter_mod_rate 0.0-20.0;     // Modulation rate (Hz)
 ```
 
+### djeq - DJ-Style 2-Band EQ
+
+A classic DJ mixer EQ: a high-pass filter on the low end and a low-pass filter on the high end. Both bands start fully open (no filtering). Raise `lo` to cut bass; lower `hi` to cut treble. Useful for live filtering, transitions, and layering.
+
+```javascript
+add_fx(inst, "djeq");
+
+// lo: HPF cutoff — default 80Hz (wide open, bass passes through)
+// Raise this to roll off bass:
+set inst:fx0:lo 500;    // Cut sub and bass frequencies
+set inst:fx0:lo 2000;   // Aggressive bass cut
+
+// hi: LPF cutoff — default 18000Hz (wide open, treble passes through)
+// Lower this to roll off treble:
+set inst:fx0:hi 8000;   // Gentle treble cut
+set inst:fx0:hi 2000;   // Dark/filtered sound
+```
+
+**Examples:**
+
+```javascript
+// Filter a drum bus for a build-up/drop
+add_fx(sbdrum, "djeq");
+set sbdrum:fx0:lo 80;      // Open (full bass)
+set sbdrum:fx0:hi 18000;   // Open (full treble)
+
+// Automate a low cut sweeping in over 4 bars for a breakdown
+sched(0, 80, 2000, pp*64, "set sbdrum:fx0:lo %");
+
+// Quick mid-only filter (cut both bass and treble)
+set sbdrum:fx0:lo 400;
+set sbdrum:fx0:hi 6000;
+
+// Use from a comp to filter on specific bars
+let eq_comp = comp()
+{
+  setup()
+  {
+    add_fx(sbdrum, "djeq");
+  }
+  run()
+  {
+    // Open on bar 1, filtered breakdown on bar 5
+    if (count % 8 == 0) {
+      set sbdrum:fx0:lo 80;
+      set sbdrum:fx0:hi 18000;
+    }
+    if (count % 8 == 4) {
+      set sbdrum:fx0:lo 600;
+      set sbdrum:fx0:hi 5000;
+    }
+  }
+}
+```
+
 ---
 
 ## Effect Chains
@@ -1244,7 +1299,102 @@ info(drums);
 
 ---
 
-## 11. File-Based Workflow
+## 11. Signal Visualization
+
+SoundB0ard has two built-in functions for visualizing signals and values in the terminal in real time: `draw_bar` (horizontal bar graph) and `draw_plot` (rolling sparkline). Both update in-place without scrolling, and can be scheduled tick-accurately inside for loops using `at=`.
+
+### draw_bar — Horizontal Bar Graph
+
+Renders a coloured bar proportional to a value between 0.0 and 1.0. Green below 0.5, yellow below 0.8, red at 0.8+.
+
+```javascript
+// Immediate — updates in place on the current line
+draw_bar(val);                             // Minimal
+draw_bar(val, 60, "vol");                  // Width 60, labelled "vol"
+
+// Scheduled — fire at tick i inside a for loop
+for (let i = 0; i < pplooplen; i++) {
+  let v = signal_from(my_phasor);
+  draw_bar(v, 80, "ramp", at = i);
+}
+```
+
+### draw_plot — Rolling Sparkline
+
+Maintains a rolling buffer per label and renders it as a Unicode sparkline (`▁▂▃▄▅▆▇█`). Each call appends the latest value; old values scroll left off the edge.
+
+```javascript
+// Immediate
+draw_plot(val, 80, "lfo");
+
+// Scheduled — visualize a signal at every stride tick across a bar
+let plot_width = 120;
+let stride = 3840 / plot_width;
+for (let i = 0; i < 3840; i++) {
+  let sig = signal_from(my_phasor);
+  if (i % stride == 0) {
+    draw_plot(sig, plot_width, "phasor", at = i);
+  }
+}
+```
+
+### row= — Multi-Row Stacked Display
+
+Both functions accept a `row=N` keyword argument that pins the output to N lines above the cursor. This lets you stack multiple visualizations without them overwriting each other.
+
+```javascript
+// Three signals displayed simultaneously on separate rows
+for (let i = 0; i < 3840; i++) {
+  let sig1 = signal_from(ph1);
+  let sig2 = signal_from(ph2);
+  let sig3 = ramp_div1(sig1, 1/4);
+  if (i % stride == 0) {
+    draw_plot(sig1, plot_width, "raw",  at = i, row = 1);
+    draw_plot(sig2, plot_width, "div2", at = i, row = 2);
+    draw_plot(sig3, plot_width, "div4", at = i, row = 3);
+  }
+}
+```
+
+### Full Example — Monitoring a Signal Chain
+
+```javascript
+let vis_comp = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(3840);
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let plot_width = 100;
+    let stride = 3840 / plot_width;
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let ramp_sig  = signal_from(fullramp);
+      let out_slow  = ramp_div1(ramp_sig, 1/4);
+      let out_fast  = ramp_div2(ramp_sig, 3/8);
+
+      if (i % stride == 0) {
+        draw_plot(ramp_sig, plot_width, "ramp ", at = i, row = 1);
+        draw_plot(out_slow, plot_width, "slow ", at = i, row = 2);
+        draw_plot(out_fast, plot_width, "fast ", at = i, row = 3);
+      }
+    }
+  }
+}
+p5 # vis_comp;
+```
+
+**Tips:**
+- Leave at least `row=` + 1 blank lines at the bottom of your terminal before the prompt so the display doesn't overlap it
+- Labels are included in the sparkline line so keep them the same length (pad with spaces) for alignment
+- `draw_bar` is ideal for slow-changing values (volume, filter cutoff); `draw_plot` is better for signals that evolve over a bar
+
+---
+
+## 12. File-Based Workflow
 
 Move beyond the REPL and write reusable scripts.
 
@@ -1329,7 +1479,7 @@ load_preset(drums, "TR808");
 
 ---
 
-## 12. Reference
+## 13. Reference
 
 ### Quick Command Cheat Sheet
 

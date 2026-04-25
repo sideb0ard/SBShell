@@ -497,11 +497,9 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
   std::shared_ptr<ast::PhasorLiteral> ph =
       std::dynamic_pointer_cast<ast::PhasorLiteral>(node);
   if (ph) {
-    std::cout << "GOT A PHASOR!\n";
     auto val = Eval(ph->frequency_, env);
     auto int_obj = std::dynamic_pointer_cast<object::Number>(val);
     if (int_obj) {
-      std::cout << "Oh, we good!- freq is " << int_obj->value_ << "\n";
       return std::make_shared<object::Phasor>(int_obj->value_);
     }
   }
@@ -944,7 +942,8 @@ std::shared_ptr<object::Object> EvalForLoop(
     if (result->Type() == object::BREAK_OBJ) {
       return NULLL;
     }
-    if (result->Type() == object::RETURN_VALUE_OBJ) {
+    if (result->Type() == object::RETURN_VALUE_OBJ ||
+        result->Type() == object::ERROR_OBJ) {
       return result;
     }
 

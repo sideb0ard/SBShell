@@ -2,6 +2,7 @@
 #include <audioutils.h>
 #include <cmdloop.h>
 #include <defjams.h>
+#include <display_queue.h>
 #include <event_queue.h>
 #include <midimaaan.h>
 #include <mixer.h>
@@ -35,6 +36,7 @@ Tsqueue<int> audio_reply_queue;  // for reply from adding SoundGenerator
 Tsqueue<std::string> eval_command_queue;
 Tsqueue<std::string> repl_queue;
 Tsqueue<event_queue_item> process_event_queue;
+Tsqueue<ScheduledDisplayItem> display_queue;
 
 siv::PerlinNoise perlinGenerator;  // only for use by eval thread
 

@@ -1,4 +1,5 @@
 #include <cmdloop.h>
+#include <display_queue.h>
 #include <locale.h>
 #include <midi_cmds.h>
 #include <mixer.h>
@@ -13,17 +14,23 @@
 #include <sys/select.h>
 #include <utils.h>
 
+#include <algorithm>
+#include <deque>
 #include <filereader.hpp>
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <tsqueue.hpp>
+#include <unordered_map>
+#include <vector>
 
 namespace fs = std::filesystem;
 
 extern std::unique_ptr<Mixer> global_mixr;
 extern Tsqueue<std::string> eval_command_queue;
 extern Tsqueue<std::string> repl_queue;
+extern Tsqueue<ScheduledDisplayItem> display_queue;
 
 #define READLINE_SAFE_MAGENTA "\001\x1b[35m\002"
 #define READLINE_SAFE_RESET "\001\x1b[0m\002"
@@ -49,20 +56,84 @@ static std::string strip_line_comment(const std::string &line) {
   return line;
 }
 static bool active{true};
-const std::string tick("tick");
 constexpr int kFileCheckInterval = 960;  // Check once per beat (PPQN)
+
+static void RenderDisplayItem(
+    const ScheduledDisplayItem &item,
+    std::unordered_map<std::string, std::deque<double>> &plot_bufs) {
+  std::stringstream ss;
+  if (item.type == DisplayType::BAR) {
+    double val = item.val;
+    if (val < 0.0) val = 0.0;
+    if (val > 1.0) val = 1.0;
+    int filled = (int)(val * item.width);
+    const char *color = val < 0.5   ? COOL_COLOR_GREEN
+                        : val < 0.8 ? COOL_COLOR_YELLOW
+                                    : ANSI_COLOR_RED;
+    if (item.row >= 0) ss << "\0337\033[" << (item.row + 1) << "A";
+    if (!item.label.empty()) ss << item.label << " ";
+    ss << "[" << color;
+    for (int i = 0; i < item.width; i++) ss << (i < filled ? "█" : " ");
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%.3f", val);
+    ss << ANSI_COLOR_RESET << "] " << color << buf << ANSI_COLOR_RESET;
+    if (item.row >= 0)
+      ss << "\0338";
+    else
+      ss << "\r";
+  } else {  // PLOT
+    static const char *sparks[] = {" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
+    auto &buf = plot_bufs[item.label];
+    buf.push_back(item.val);
+    while ((int)buf.size() > item.width) buf.pop_front();
+    if (item.row >= 0) ss << "\0337\033[" << (item.row + 1) << "A";
+    if (!item.label.empty()) ss << item.label << " ";
+    ss << COOL_COLOR_GREEN << "[";
+    for (double v : buf)
+      ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
+    ss << "]" << ANSI_COLOR_RESET;
+    if (item.row >= 0)
+      ss << "\0338";
+    else
+      ss << "\r";
+  }
+  std::cout << ss.str() << std::flush;
+}
 
 int event_hook() {
   static int tick_counter = 0;
+  static int current_midi_tick = 0;
+  static std::vector<ScheduledDisplayItem> pending_items;
+  static std::unordered_map<std::string, std::deque<double>> plot_bufs;
+
+  // Drain display_queue into pending list
+  while (auto item = display_queue.try_pop()) {
+    if (item) pending_items.push_back(std::move(*item));
+  }
+
   while (auto reply = repl_queue.try_pop()) {
     if (reply) {
-      // TODO - this is a bit of a fudged way to signal a midi tick
-      if (tick.compare(reply->data()) == 0) {
+      const std::string &msg = *reply;
+      // Check for tick message ("tick:N")
+      if (msg.size() > 5 && msg.compare(0, 5, "tick:") == 0) {
+        current_midi_tick = std::stoi(msg.substr(5));
+
+        // Fire any pending display items whose time has come
+        auto it = pending_items.begin();
+        while (it != pending_items.end()) {
+          if (it->target_tick <= current_midi_tick) {
+            RenderDisplayItem(*it, plot_bufs);
+            it = pending_items.erase(it);
+          } else {
+            ++it;
+          }
+        }
+
+        // Periodic file monitoring
         if (++tick_counter < kFileCheckInterval) continue;
         tick_counter = 0;
         for (auto &f : global_mixr->file_monitors) {
           if (!f.function_file_filepath.empty()) {
-            //    // std::cout << "GOT A FILE TO MONITOR!\n";
             fs::path func_path = f.function_file_filepath;
             if (fs::exists(func_path)) {
               std::error_code ec;
@@ -104,7 +175,6 @@ int event_hook() {
           }
         }
       } else {
-        const std::string &msg = *reply;
         // In-place display messages end with \r (current line) or ESC-8
         // (save/restore cursor for row= positioning) — skip readline redraw
         bool is_inplace = !msg.empty() &&

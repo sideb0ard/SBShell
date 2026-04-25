@@ -89,6 +89,8 @@ struct Mixer {
   bool proc_initialized_{false};
 
   std::atomic<int> sound_generators_idx_{0};
+  std::atomic<int> midi_tick_{
+      0};  // updated each MidiTick, readable by any thread
   std::array<std::unique_ptr<SBAudio::SoundGenerator>, MAX_NUM_SOUND_GENERATORS>
       sound_generators_ = {};
   mutable std::shared_mutex

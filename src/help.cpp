@@ -35,7 +35,8 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE  << "  reverb     " << COOL_COLOR_ORANGE << "- Reverb\n";
   ss << ANSI_COLOR_WHITE  << "  delay      " << COOL_COLOR_ORANGE << "- Stereo delay\n";
   ss << ANSI_COLOR_WHITE  << "  moddelay   " << COOL_COLOR_ORANGE << "- Modulated delay (chorus/flanger)\n";
-  ss << ANSI_COLOR_WHITE  << "  compressor " << COOL_COLOR_ORANGE << "- Dynamics compression\n\n";
+  ss << ANSI_COLOR_WHITE  << "  compressor " << COOL_COLOR_ORANGE << "- Dynamics compression\n";
+  ss << ANSI_COLOR_WHITE  << "  djeq       " << COOL_COLOR_ORANGE << "- DJ-style 2-band EQ (lo/hi cut)\n\n";
 
   ss << COOL_COLOR_GREEN << "Commands:\n";
   ss << ANSI_COLOR_WHITE  << "  bpm <tempo>        " << COOL_COLOR_ORANGE << "- Set tempo\n";
@@ -202,6 +203,24 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  midi2array(midi)      " << COOL_COLOR_ORANGE << "- Convert MidiArray to 16-step note array\n";
   ss << ANSI_COLOR_WHITE << "  midi_at(midi, n)      " << COOL_COLOR_ORANGE << "- Get notes at beat n from MidiArray\n";
   ss << ANSI_COLOR_WHITE << "  midi_fix(midi)        " << COOL_COLOR_ORANGE << "- Quantize MidiArray timing to 8th-note grid\n\n";
+
+  ss << COOL_COLOR_GREEN << "FILTERS / EQ\n"
+            << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << ANSI_COLOR_WHITE << "  add_fx(inst, \"djeq\")           " << COOL_COLOR_ORANGE << "- Add DJ-style 2-band EQ\n";
+  ss << ANSI_COLOR_WHITE << "  set inst:fx0:lo <hz>           " << COOL_COLOR_ORANGE << "- HPF cutoff (bass cut). Default 80hz (open). Raise to cut bass e.g. 500\n";
+  ss << ANSI_COLOR_WHITE << "  set inst:fx0:hi <hz>           " << COOL_COLOR_ORANGE << "- LPF cutoff (treble cut). Default 18000hz (open). Lower to cut treble e.g. 4000\n\n";
+
+  ss << COOL_COLOR_GREEN << "VISUALIZATION\n"
+            << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << ANSI_COLOR_WHITE << "  draw_bar(val, width, label, at=, row=)   " << COOL_COLOR_ORANGE << "- Render a live bar graph (val: 0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  draw_plot(val, width, label, at=, row=)  " << COOL_COLOR_ORANGE << "- Render a rolling sparkline of a signal\n";
+  ss << ANSI_COLOR_WHITE << "    at=<ticks>    " << COOL_COLOR_ORANGE << "- Schedule display at a future tick (e.g. at=i inside a for loop)\n";
+  ss << ANSI_COLOR_WHITE << "    row=<n>       " << COOL_COLOR_ORANGE << "- Pin to screen row n (for multi-row display without scrolling)\n\n";
+  ss << ANSI_COLOR_WHITE << "  Examples:\n";
+  ss << COOL_COLOR_ORANGE << "    draw_bar(vol, 40, \"vol\")           " << ANSI_COLOR_WHITE << "// Immediate bar at current line\n";
+  ss << COOL_COLOR_ORANGE << "    draw_plot(sig, 80, \"lfo\", at=i)    " << ANSI_COLOR_WHITE << "// Scheduled sparkline inside a for loop\n";
+  ss << COOL_COLOR_ORANGE << "    draw_bar(v, 40, \"A\", row=1)        " << ANSI_COLOR_WHITE << "// Pinned to row 1 above cursor\n";
+  ss << COOL_COLOR_ORANGE << "    draw_plot(v, 80, \"B\", row=2)       " << ANSI_COLOR_WHITE << "// Pinned to row 2 (stacked with row=1)\n\n";
 
   ss << COOL_COLOR_GREEN << "UTILITY\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";

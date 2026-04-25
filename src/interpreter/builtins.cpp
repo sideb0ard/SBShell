@@ -1,5 +1,6 @@
 #include <audio_action_queue.h>
 #include <audioutils.h>
+#include <display_queue.h>
 #include <help.h>
 #include <midi_cmds.h>
 #include <mixer.h>
@@ -29,6 +30,7 @@ namespace fs = std::filesystem;
 
 extern std::unique_ptr<Mixer> global_mixr;
 extern Tsqueue<std::unique_ptr<AudioActionItem>> audio_queue;
+extern Tsqueue<ScheduledDisplayItem> display_queue;
 extern Tsqueue<std::string> eval_command_queue;
 extern Tsqueue<std::string> repl_queue;
 extern Tsqueue<int> audio_reply_queue;
@@ -1061,14 +1063,14 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            }
 
            if (at_tick >= 0) {
-             auto action =
-                 std::make_unique<AudioActionItem>(AudioAction::DRAW_BAR);
-             action->draw_val = val;
-             action->draw_width = width;
-             action->draw_label = label;
-             action->draw_row = row;
-             action->note_start_time = at_tick;
-             audio_queue.push(std::move(action));
+             ScheduledDisplayItem item;
+             item.target_tick = global_mixr->midi_tick_.load() + at_tick;
+             item.val = val;
+             item.width = width;
+             item.label = label;
+             item.row = row;
+             item.type = DisplayType::BAR;
+             display_queue.push(std::move(item));
              return evaluator::NULLL;
            }
 
@@ -1129,14 +1131,14 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            }
 
            if (at_tick >= 0) {
-             auto action =
-                 std::make_unique<AudioActionItem>(AudioAction::DRAW_PLOT);
-             action->draw_val = val;
-             action->draw_width = width;
-             action->draw_label = label;
-             action->draw_row = row;
-             action->note_start_time = at_tick;
-             audio_queue.push(std::move(action));
+             ScheduledDisplayItem item;
+             item.target_tick = global_mixr->midi_tick_.load() + at_tick;
+             item.val = val;
+             item.width = width;
+             item.label = label;
+             item.row = row;
+             item.type = DisplayType::PLOT;
+             display_queue.push(std::move(item));
              return evaluator::NULLL;
            }
 

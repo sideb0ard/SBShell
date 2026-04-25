@@ -21,6 +21,7 @@
 
 extern std::unique_ptr<Mixer> global_mixr;
 extern Tsqueue<std::string> eval_command_queue;
+extern Tsqueue<std::string> repl_queue;
 extern std::shared_ptr<object::Environment> global_env;
 
 namespace {
@@ -159,8 +160,11 @@ void Computation::EventNotify(mixer_timing_info tinfo) {
       auto comp_obj =
           std::dynamic_pointer_cast<object::Computation>(computation_obj);
       if (comp_obj) {
-        evaluator::ApplyComputationRun(
+        auto result = evaluator::ApplyComputationRun(
             comp_obj, std::vector<std::shared_ptr<object::Object>>());
+        if (result && result->Type() == object::ERROR_OBJ) {
+          repl_queue.push("[comp error] " + result->Inspect() + "\n");
+        }
       }
     }
   }
