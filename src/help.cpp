@@ -24,6 +24,7 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE  << "  drum()       " << COOL_COLOR_ORANGE << "- Drum synthesizer (9 voices)\n";
   ss << ANSI_COLOR_WHITE  << "  minisynth()  " << COOL_COLOR_ORANGE << "- Subtractive synthesizer\n";
   ss << ANSI_COLOR_WHITE  << "  fmsynth()    " << COOL_COLOR_ORANGE << "- FM synthesizer (4 operators)\n";
+  ss << ANSI_COLOR_WHITE  << "  sbsynth()    " << COOL_COLOR_ORANGE << "- Wavetable/sample synth (8-voice poly)\n";
   ss << ANSI_COLOR_WHITE  << "  loop(<sample_name>)   " << COOL_COLOR_ORANGE << "- Granular sampler\n";
   ss << ANSI_COLOR_WHITE  << "  sample(path) " << COOL_COLOR_ORANGE << "- Load audio sample\n\n";
 
@@ -147,8 +148,35 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  rand_preset(gen)       " << COOL_COLOR_ORANGE << "- Load random preset\n";
   ss << ANSI_COLOR_WHITE << "  save_preset(gen, name) " << COOL_COLOR_ORANGE << "- Save current settings\n\n";
 
+  ss << COOL_COLOR_GREEN << "SBSYNTH — WAVETABLE / SAMPLE SYNTH\n"
+            << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << ANSI_COLOR_WHITE << "  let s = sbsynth()            " << COOL_COLOR_ORANGE << "- Create synth (8-voice polyphonic)\n";
+  ss << ANSI_COLOR_WHITE << "  add_buf(s, \"waves/sine.wav\") " << COOL_COLOR_ORANGE << "- Load waveform or sample into buffer\n\n";
+  ss << COOL_COLOR_GREEN << "  Modes:\n";
+  ss << ANSI_COLOR_WHITE << "  set s:mode 0  " << COOL_COLOR_ORANGE << "- Wavetable: cycles through buffer at note frequency (default)\n";
+  ss << ANSI_COLOR_WHITE << "  set s:mode 1  " << COOL_COLOR_ORANGE << "- Sample: plays buffer at pitches relative to root note\n\n";
+  ss << COOL_COLOR_GREEN << "  ADSR:\n";
+  ss << ANSI_COLOR_WHITE << "  set s:attack  10   " << COOL_COLOR_ORANGE << "- Attack  (ms)\n";
+  ss << ANSI_COLOR_WHITE << "  set s:decay   200  " << COOL_COLOR_ORANGE << "- Decay   (ms)\n";
+  ss << ANSI_COLOR_WHITE << "  set s:sustain 0.7  " << COOL_COLOR_ORANGE << "- Sustain (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  set s:release 300  " << COOL_COLOR_ORANGE << "- Release (ms)\n\n";
+  ss << COOL_COLOR_GREEN << "  Filter (Moog ladder):\n";
+  ss << ANSI_COLOR_WHITE << "  set s:cutoff 4000  " << COOL_COLOR_ORANGE << "- Filter cutoff (Hz, default 18000 = open)\n";
+  ss << ANSI_COLOR_WHITE << "  set s:q      3.0   " << COOL_COLOR_ORANGE << "- Resonance (1.0-10.0, default 1.0)\n\n";
+  ss << COOL_COLOR_GREEN << "  Sample mode:\n";
+  ss << ANSI_COLOR_WHITE << "  set s:root 60  " << COOL_COLOR_ORANGE << "- MIDI note that plays at 1x speed (default 60 = C4)\n";
+  ss << ANSI_COLOR_WHITE << "  set s:loop 0   " << COOL_COLOR_ORANGE << "- 0=one-shot, 1=loop (default: 1 for wavetable, 0 for sample)\n\n";
+  ss << COOL_COLOR_GREEN << "  Wavetable morphing (multiple buffers):\n";
+  ss << ANSI_COLOR_WHITE << "  add_buf(s, \"waves/saw.wav\")   " << COOL_COLOR_ORANGE << "- Add a second buffer\n";
+  ss << ANSI_COLOR_WHITE << "  set s:morph 0.5              " << COOL_COLOR_ORANGE << "- Crossfade between buffers (0.0=first, 1.0=last)\n\n";
+  ss << COOL_COLOR_GREEN << "  Example:\n";
+  ss << COOL_COLOR_ORANGE << "    let s = sbsynth();\n";
+  ss << COOL_COLOR_ORANGE << "    add_buf(s, \"perc/vocal.wav\");    " << ANSI_COLOR_WHITE << "// sample mode\n";
+  ss << COOL_COLOR_ORANGE << "    set s:mode 1; set s:root 60;\n";
+  ss << COOL_COLOR_ORANGE << "    note_on(s, 60); note_on(s, 64); note_on(s, 67);  " << ANSI_COLOR_WHITE << "// chord\n\n";
+
   ss << COOL_COLOR_GREEN << "GRANULAR LOOPER\n"
-     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+            << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  let x = loop(file)       " << COOL_COLOR_ORANGE << "- Create granular looper from sample\n";
   ss << ANSI_COLOR_WHITE << "  set x:len 2              " << COOL_COLOR_ORANGE << "- Loop length in bars (default 1)\n";
   ss << ANSI_COLOR_WHITE << "  set x:speed 0.5          " << COOL_COLOR_ORANGE << "- Playback speed multiplier\n";

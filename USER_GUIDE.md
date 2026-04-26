@@ -433,6 +433,107 @@ set kick:pitch 0.5;   // 0.5x speed (lower pitch)
 ```
 
 ---
+### SBSynth — Wavetable / Sample Synth
+
+SBSynth is an 8-voice polyphonic synth with two modes: **wavetable** (cycles a loaded audio file as a waveform at note frequency) and **sample** (plays a file at different pitches relative to a root note, rompler-style). Both modes share the same ADSR envelope and Moog ladder filter.
+
+#### Creating and loading
+
+```javascript
+let s = sbsynth();
+
+// Load one or more buffers (wavs/ prefix is implicit)
+add_buf(s, "waves/sine.wav");       // wavetable mode — best with single-cycle waveforms
+add_buf(s, "perc/vocal.wav");       // sample mode — loads any audio file
+```
+
+#### Modes
+
+```javascript
+set s:mode 0;   // Wavetable: loops the buffer at the note's frequency (default)
+set s:mode 1;   // Sample: plays the file at pitches relative to root note
+```
+
+#### ADSR Envelope
+
+```javascript
+set s:attack  10;    // ms (default 10)
+set s:decay   200;   // ms (default 100)
+set s:sustain 0.7;   // 0.0–1.0 (default 0.8)
+set s:release 300;   // ms (default 200)
+```
+
+#### Filter (Moog ladder)
+
+```javascript
+set s:cutoff 4000;   // Hz — 18000 = open (default)
+set s:q      3.0;    // resonance 1.0–10.0 (default 1.0)
+```
+
+#### Sample mode settings
+
+```javascript
+set s:root 60;   // MIDI note that plays at 1x speed (default 60 = C4)
+set s:loop 0;    // 0 = one-shot (default in sample mode), 1 = loop
+```
+
+#### Playing notes
+
+SBSynth is fully polyphonic — trigger chords, arpeggios, or anything:
+
+```javascript
+// Single note
+note_on(s, 60);
+
+// Chord
+note_on(s, 60); note_on(s, 64); note_on(s, 67);
+
+// Scheduled arpeggio over 4 beats
+let ref = midi_ref();
+let arp = [ref["C4"], ref["E4"], ref["G4"], ref["B4"]];
+play_array(s, arp);
+```
+
+#### Wavetable morphing (multiple buffers)
+
+Load multiple waveforms and blend between them with `morph`:
+
+```javascript
+let s = sbsynth();
+add_buf(s, "waves/sine.wav");
+add_buf(s, "waves/saw.wav");
+add_buf(s, "waves/square.wav");
+
+set s:morph 0.0;   // pure sine
+set s:morph 0.5;   // blend sine→saw
+set s:morph 1.0;   // pure saw  (when 2 bufs) or square (when 3)
+
+// Automate morph with a slow LFO in a comp
+let morph_comp = comp() {
+  for {} {
+    set s:morph (lfo(0.05));
+  }
+};
+```
+
+#### Sample mode example — vocal stab played chromatically
+
+```javascript
+let s = sbsynth();
+add_buf(s, "perc/vocal.wav");
+set s:mode 1;
+set s:root 60;      // sample was recorded at C4
+set s:loop 0;       // one-shot
+set s:attack  5;
+set s:release 400;
+
+// Play a minor chord rooted at the sample's original pitch
+note_on(s, 60);
+note_on(s, 63);
+note_on(s, 67);
+```
+
+---
 ### More information
 When you use `ps` you only see an overview of a sound generator. In order to view all parameters and their settings use `info(<sound_generator_name>)` e.g.
 ```javascript

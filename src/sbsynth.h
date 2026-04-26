@@ -1,47 +1,115 @@
 #pragma once
 
-#include <dca.h>
 #include <defjams.h>
 #include <envelope_generator.h>
-#include <filter_moogladder.h>
-#include <fx/envelope.h>
-#include <fx/fx.h>
-#include <qblimited_oscillator.h>
 #include <soundgenerator.h>
-#include <stdbool.h>
 
-#include <atomic>
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "filebuffer.h"
+#include "filters/filter_moogladder.h"
 
 namespace SBAudio {
+
+constexpr int kSBSynthNumVoices = 8;
+
+// One voice: a read position into the shared buffer + its own envelope.
+struct SBSynthVoice {
+  bool active{false};
+  int note{-1};
+  int velocity{100};
+  double read_pos{0.0};
+  double increment{1.0};
+  EnvelopeGenerator eg;
+};
+
+// SBSynth — dual-mode polyphonic synth
+//
+// WAVETABLE mode (default):
+//   Loads any audio file as a waveform and cycles through it at the
+//   frequency corresponding to each MIDI note.  Works best with
+//   single-cycle waveforms but will work with anything.
+//
+// SAMPLE mode:
+//   Plays a sample at different pitches relative to a configurable root
+//   note.  Classic rompler behaviour — load a vocal stab, a chord, or any
+//   one-shot and play it chromatically.
+//
+// Usage:
+//   let s = sbsynth();
+//   add_buf(s, "perc/vocal.wav");
+//   set s:mode 1;        // 0=wavetable (default), 1=sample
+//   set s:root 60;       // root note for sample mode (default C4)
+//   set s:loop 0;        // 0=one-shot, 1=loop
+//   set s:attack  10;    // ms
+//   set s:decay   200;   // ms
+//   set s:sustain 0.7;
+//   set s:release 300;   // ms
+//   set s:cutoff  8000;  // filter cutoff Hz
+//   set s:q       0.7;   // filter resonance
+//   note_on(s, 60);
 class SBSynth : public SoundGenerator {
  public:
+  enum class Mode { WAVETABLE, SAMPLE };
+
   SBSynth();
   virtual ~SBSynth() = default;
 
   StereoVal GenNext(mixer_timing_info tinfo) override;
-
   std::string Info() override;
   std::string Status() override;
-
   void SetParam(std::string name, double val) override;
-
   void Start() override;
   void Stop() override;
-
   void NoteOn(midi_event ev) override;
   void NoteOff(midi_event ev) override;
+  void AllNotesOff() override;
+  void AddBuffer(std::unique_ptr<FileBuffer> fb) override;
 
  private:
-  QBLimitedOscillator m_car_osc;
-  QBLimitedOscillator m_mod_osc;
+  Mode mode_{Mode::WAVETABLE};
 
-  float m_car_amp{1};
-  float m_mod_amp{1};
+  std::vector<std::unique_ptr<FileBuffer>> file_buffers_;
 
-  float cm_ratio{0.5};
+  std::array<SBSynthVoice, kSBSynthNumVoices> voices_{};
 
-  EnvelopeGenerator m_eg1;
-  DCA m_dca;
+  // ADSR params shared across all voices (applied on NoteOn)
+  double attack_ms_{10.0};
+  double decay_ms_{100.0};
+  double sustain_lvl_{0.8};
+  double release_ms_{200.0};
+
+  // Global Moog ladder filter on the mixed output
+  MoogLadder filter_;
+  double filter_cutoff_{18000.0};
+  double filter_q_{1.0};  // SetQControlGUI range is 1..10
+
+  // Sample mode: MIDI note that plays the sample at 1x speed
+  int root_note_{60};
+
+  // Wavetable mode: morph position across loaded buffers (0.0 = first, 1.0 =
+  // last)
+  double morph_{0.0};
+
+  // Phase distortion: warps the sampling position within each cycle
+  double pd_amt_{0.0};  // 0.0 = none, 1.0 = full
+  int pd_type_{0};      // 0 = sine warp, 1 = power curve
+
+  // Frame skipping / scrubbing
+  double scatter_{
+      0.0};  // randomise note-on start position (0=always 0, 1=fully random)
+  double skip_{
+      0.0};  // per-sample probability of a random forward position jump
+
+  // Wavetable loops by default; sample is one-shot by default
+  bool loop_{true};
+
+  int FindFreeVoice(int note) const;
+  double CalcIncrement(int note) const;
+  void InitVoice(SBSynthVoice &v, int note, int velocity);
 };
 
 }  // namespace SBAudio

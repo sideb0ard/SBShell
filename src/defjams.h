@@ -33,8 +33,8 @@ static const char DRUM_PRESET_FILENAME[] = "settings/drumpresets.dat";
 
 #define MAX_STATIC_STRING_SZ 4096  // arbitrary
 
-#define ENVIRONMENT_ARRAY_SIZE 128
-#define ENVIRONMENT_KEY_SIZE 128
+#define ENVIRONMENT_ARRAY_SIZE 1024
+#define ENVIRONMENT_KEY_SIZE 1024
 
 #define PPQN 960  // Pulses Per Quarter Note // one beat
 #define PPSIXTEENTH (PPQN / 4)
@@ -92,6 +92,7 @@ const std::string kStartupConfigFile = "startup.sb";
 #define COOL_COLOR_YELLOW_MELLOW "\x1b[38;5;190m"
 #define COOL_COLOR_BLUE "\x1b[38;5;45m"
 #define COOL_COLOR_PINK2 "\x1b[38;5;219m"
+#define COOL_COLOR_BLUE_BLUEPINK2 "\x1b[38;5;33m"
 
 #define NADA -999
 

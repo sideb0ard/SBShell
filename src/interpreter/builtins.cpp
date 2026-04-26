@@ -1894,14 +1894,11 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
              -> std::shared_ptr<object::Object> {
            int args_size = args.size();
            if (args_size >= 2) {
-             std::cout << "YO ADD BUFFER!\n";
              auto soundgen =
                  std::dynamic_pointer_cast<object::SoundGenerator>(args[0]);
              if (soundgen &&
                  global_mixr->IsValidSoundgenNum(soundgen->soundgen_id_)) {
                if (args[1]->Type() == "STRING") {
-                 std::cout << args[1]->Inspect() << " " << args[1]->Type()
-                           << std::endl;
                  auto fb =
                      std::make_unique<SBAudio::FileBuffer>(args[1]->Inspect());
                  auto action =

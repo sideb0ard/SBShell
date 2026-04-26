@@ -14,12 +14,14 @@ let drmax = 2;
 let walkin = NULL;
 let stop = NULL;
 
+let sbs = NULL;
+
 # p1 $ "34 [<34 57> 44 66 77]" dx2
 # note_on(dx, 12, dur = 0)
 # p3 < osc 0.6 "0.1 90" "set dx:op2out %"
 
 
-# p1 # newphasor
+# p1 # newphasor; p2 # FXblah_comp;
 
 
 # note_on(dx, notes_in_chord(52, 47, 1), dur = 0);
@@ -42,6 +44,10 @@ let init = fn()
   walkin = loop(noises/walkinRain.aiff);
   add_fx(walkin, "distort");
   add_fx(walkin, "djeq");
+
+  sbs = sbsynth();
+  add_buf(sbs, "notes/slaveChord3.aiff");
+  add_buf(sbs, "notes/garageyChord.aiff");
 }
 
 
@@ -317,6 +323,13 @@ let drumblah_comp = comp()
     let ramp_div3 = ramp_div_factory();
 
     let ramp2tri = ramp2trigger_factory();
+
+    let notez = [23, 27, 30, 34, 11, 15, 18, 22];
+    #let notez = [20];
+    let nx = 0;
+
+    let durz = [30, 50, 60, 100, 200, 300];
+    let drx = 0;
   }
   run()
   {
@@ -330,14 +343,16 @@ let drumblah_comp = comp()
       let out_sig2 = ramp_div2(ramp_sig, 3 / 4);
       let mod_ratio = max(out_sig2, 0.001);
       let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      set sbs:morph out_sig3;
+      set sbs:pd out_sig2;
       if (i % stride == 0) {
         if (ramp2tri(out_sig3)) {
           if (i % 2 == 0) {
-            note_on_at(sbdrum, 0, i);
-          } else {
+            note_on_at(sbs, notez[nx], i, dur = durz[drx]);
+            nx = incr(nx, 0, len(notez));
           }
           if (i % 3 == 0) {
-            note_on_at(sbdrum, 2, 4);
+            note_on_at(sbs, notez[nx], i, dur = durz[drx]);
           }
         }
         #draw_plot(sin_sig * out_sig3, plot_width, at = i);
@@ -345,5 +360,19 @@ let drumblah_comp = comp()
       }
       #print("OUTSIG:", out_sig);
     }
+    drx = incr(drx, 0, len(durz));
+  }
+}
+
+let blah_comp = comp()
+{
+  setup()
+  {
+    let ramp_div1 = ramp_div_factory();
+    let ramp2tri = ramp2trigger_factory();
+    let fullramp = phasor(3840);
+  }
+  run()
+  {
   }
 }

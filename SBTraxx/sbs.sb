@@ -1,0 +1,19 @@
+
+let sbs = NULL;
+
+let init = fn()
+{
+  sbs = sbsynth();
+  add_buf(sbs, "notes/slaveChord3.aiff");
+  add_buf(sbs, "notes/garageyChord.aiff");
+}
+
+let sbsynblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+  }
+}

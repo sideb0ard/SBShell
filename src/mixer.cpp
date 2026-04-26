@@ -759,7 +759,7 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
   } else if (action->type == AudioAction::ADD_BUFFER) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];
-      if (sg && sg->type == LOOPER_TYPE) {
+      if (sg && (sg->type == LOOPER_TYPE || sg->type == SBSYNTH_TYPE)) {
         sg->AddBuffer(std::move(action->fb));
       }
     }
