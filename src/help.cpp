@@ -114,7 +114,9 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  stop(gen)                            " << COOL_COLOR_ORANGE << "- Stop all notes\n";
   ss << ANSI_COLOR_WHITE << "  solo(gen), unsolo()                  " << COOL_COLOR_ORANGE << "- Solo/unsolo generator\n";
   ss << ANSI_COLOR_WHITE << "  stepn(seq)                           " << COOL_COLOR_ORANGE << "- Advance step sequencer and return next value\n";
-  ss << ANSI_COLOR_WHITE << "  signal_from(phasor)                  " << COOL_COLOR_ORANGE << "- Get current signal value from a phasor\n\n";
+  ss << ANSI_COLOR_WHITE << "  signal_from(phasor)                  " << COOL_COLOR_ORANGE << "- Get current signal value from a phasor\n";
+  ss << ANSI_COLOR_WHITE << "  change_steps(phasor, steps)          " << COOL_COLOR_ORANGE << "- Retune phasor cycle length (in MIDI ticks)\n";
+  ss << ANSI_COLOR_WHITE << "  reset(phasor)                        " << COOL_COLOR_ORANGE << "- Reset phasor phase to 0\n\n";
 
   ss << COOL_COLOR_GREEN << "PLAYBACK FUNCTIONS\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
@@ -174,6 +176,32 @@ std::string build_help() {
   ss << COOL_COLOR_ORANGE << "    add_buf(s, \"perc/vocal.wav\");    " << ANSI_COLOR_WHITE << "// sample mode\n";
   ss << COOL_COLOR_ORANGE << "    set s:mode 1; set s:root 60;\n";
   ss << COOL_COLOR_ORANGE << "    note_on(s, 60); note_on(s, 64); note_on(s, 67);  " << ANSI_COLOR_WHITE << "// chord\n\n";
+
+  ss << COOL_COLOR_GREEN << "PHASOR — CYCLIC RAMP SIGNAL\n"
+            << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << ANSI_COLOR_WHITE << "  let p = phasor(steps)    " << COOL_COLOR_ORANGE << "- Create phasor cycling 0.0→1.0 over 'steps' MIDI ticks\n";
+  ss << ANSI_COLOR_WHITE << "                           " << COOL_COLOR_ORANGE << "  (e.g. phasor(3840) = one bar at default ppq)\n";
+  ss << ANSI_COLOR_WHITE << "  signal_from(p)           " << COOL_COLOR_ORANGE << "- Read current phase value (0.0–1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  change_steps(p, steps)   " << COOL_COLOR_ORANGE << "- Retune phasor cycle length live\n";
+  ss << ANSI_COLOR_WHITE << "  reset(p)                 " << COOL_COLOR_ORANGE << "- Reset phase to 0\n\n";
+  ss << COOL_COLOR_GREEN << "  Factory functions (user-defined, see phazor.sb):\n";
+  ss << ANSI_COLOR_WHITE << "  ramp_div_factory()       " << COOL_COLOR_ORANGE << "- Returns fn(sig, ratio): sub-ramp at fractional speed\n";
+  ss << ANSI_COLOR_WHITE << "  ramp2slope_factory()     " << COOL_COLOR_ORANGE << "- Returns fn(sig): instantaneous slope (derivative)\n";
+  ss << ANSI_COLOR_WHITE << "  ramp2trigger_factory()   " << COOL_COLOR_ORANGE << "- Returns fn(sig): true on wrap-around (cycle complete)\n\n";
+  ss << COOL_COLOR_GREEN << "  Example — automate morph from phasor:\n";
+  ss << COOL_COLOR_ORANGE << "    comp my_synth {\n";
+  ss << COOL_COLOR_ORANGE << "      setup() {\n";
+  ss << COOL_COLOR_ORANGE << "        let ph = phasor(3840);           " << ANSI_COLOR_WHITE << "// one bar\n";
+  ss << COOL_COLOR_ORANGE << "        let trig = ramp2trigger_factory();\n";
+  ss << COOL_COLOR_ORANGE << "      }\n";
+  ss << COOL_COLOR_ORANGE << "      run() {\n";
+  ss << COOL_COLOR_ORANGE << "        for i in range(0, pplooplen) {\n";
+  ss << COOL_COLOR_ORANGE << "          let sig = signal_from(ph);\n";
+  ss << COOL_COLOR_ORANGE << "          set sbs:morph sig at=i;\n";
+  ss << COOL_COLOR_ORANGE << "          if (trig(sig)) { note_on_at(sbs, 60, i); }\n";
+  ss << COOL_COLOR_ORANGE << "        }\n";
+  ss << COOL_COLOR_ORANGE << "      }\n";
+  ss << COOL_COLOR_ORANGE << "    }\n\n";
 
   ss << COOL_COLOR_GREEN << "GRANULAR LOOPER\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";

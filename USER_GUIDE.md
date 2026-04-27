@@ -1400,7 +1400,166 @@ info(drums);
 
 ---
 
-## 11. Signal Visualization
+## 11. Phasors & Signal Routing
+
+A **phasor** is a cyclic ramp signal that counts from 0.0 to 1.0 over a fixed number of MIDI ticks, then wraps back to 0 and repeats. It's the core primitive for LFO-style automation, sub-oscillators, and rhythmically synced parameter sweeps.
+
+### Creating a Phasor
+
+```
+let ph = phasor(steps);
+```
+
+`steps` is the cycle length in MIDI ticks. At the default resolution (PPBAR = 3840 ticks per bar):
+
+| `steps` | Speed |
+|---------|-------|
+| `3840`  | One bar |
+| `1920`  | Half bar |
+| `960`   | Quarter bar (one beat at 120 bpm) |
+| `7680`  | Two bars |
+| `3840 * 1.5` | Dotted bar |
+
+Phasors created in `setup()` persist for the lifetime of the comp. Phasors created in `run()` reset each bar.
+
+### Reading a Phasor
+
+Call `signal_from(ph)` inside a scheduled for loop to read the phase value at each tick:
+
+```
+comp my_comp {
+  setup() {
+    let ph = phasor(3840);
+  }
+  run() {
+    for i in range(0, pplooplen) {
+      let sig = signal_from(ph);
+      set sbs:morph sig at=i;         // automate morph from 0→1 each bar
+    }
+  }
+}
+```
+
+### Retuning a Phasor
+
+```
+change_steps(ph, new_steps);
+```
+
+Changes the cycle length without resetting the phase — useful for live tempo changes or harmonic retuning:
+
+```
+change_steps(ph, 3840 * 2);    // slow to 2-bar cycle
+change_steps(ph, 3840 / 3);    // speed up to 1/3 bar
+```
+
+### Resetting a Phasor
+
+```
+reset(ph);                      // snap phase back to 0.0
+```
+
+### Factory Functions
+
+These are user-defined closures (from `SBTraxx/phazor.sb`) that wrap common phasor transformations. Each call to the factory returns a new stateful function.
+
+#### `ramp_div_factory()` — Sub-Ramp / Fractional Speed
+
+Returns a function `fn(sig, ratio)` that scales a 0→1 ramp to cycle at `ratio` of the input speed. Used to create sub-oscillators or slow LFOs derived from a master phasor.
+
+```
+comp sub_osc {
+  setup() {
+    let master = phasor(3840);
+    let div1 = ramp_div_factory();
+    let div2 = ramp_div_factory();
+  }
+  run() {
+    for i in range(0, pplooplen) {
+      let sig     = signal_from(master);
+      let slow    = div1(sig, 1/4);    // quarter speed — ramps over 4 bars
+      let medium  = div2(sig, 3/8);    // 3/8 speed
+      set sbs:morph slow at=i;
+      set sbs2:morph medium at=i;
+    }
+  }
+}
+```
+
+#### `ramp2slope_factory()` — Derivative / Slope Detector
+
+Returns a function `fn(sig)` that computes the instantaneous rate of change of the ramp signal, with correct wrap-around handling at the 1→0 boundary. Returns a value near 0 most of the time, and spikes on rapid changes.
+
+```
+let slope = ramp2slope_factory();
+// inside for loop:
+let ds = slope(sig);
+```
+
+#### `ramp2trigger_factory()` — Wrap-Around / Cycle Trigger
+
+Returns a function `fn(sig)` that returns `true` exactly once per phasor cycle — at the moment the ramp wraps from ~1.0 back to 0. Use it to fire `note_on_at` or other events once per cycle.
+
+```
+comp trigger_example {
+  setup() {
+    let ph   = phasor(3840);
+    let trig = ramp2trigger_factory();
+  }
+  run() {
+    for i in range(0, pplooplen) {
+      let sig = signal_from(ph);
+      if (trig(sig)) {
+        note_on_at(sbs, 60, i);        // trigger note at cycle start
+      }
+    }
+  }
+}
+```
+
+### Multiple Harmonic Phasors
+
+Phasors at integer ratios of a base period create harmonic relationships. Pass the ratio as a multiplier to `phasor()`:
+
+```
+let base = 3840;
+let ph1 = phasor(base);              // fundamental
+let ph2 = phasor(base * 2/3);        // 3/2 ratio (perfect fifth relationship)
+let ph3 = phasor(base / 2);          // octave (double speed)
+```
+
+### Using Phasors for Panning
+
+Read multiple phasors in a for loop and fan notes across the stereo field:
+
+```
+comp stereo_spread {
+  setup() {
+    let phs = [phasor(3840), phasor(1920), phasor(960)];
+  }
+  run() {
+    for i in range(0, pplooplen) {
+      let sig = signal_from(phs[0]);
+      pan sbs sig * 2 - 1 at=i;       // -1.0 to +1.0
+    }
+  }
+}
+```
+
+### Phasor Visualization
+
+Combine with `draw_plot` to see the signal live:
+
+```
+for i in range(0, pplooplen) {
+  let sig = signal_from(ph);
+  draw_plot(sig, 80, "ph", at=i, row=1);
+}
+```
+
+---
+
+## 12. Signal Visualization
 
 SoundB0ard has two built-in functions for visualizing signals and values in the terminal in real time: `draw_bar` (horizontal bar graph) and `draw_plot` (rolling sparkline). Both update in-place without scrolling, and can be scheduled tick-accurately inside for loops using `at=`.
 
@@ -1495,7 +1654,7 @@ p5 # vis_comp;
 
 ---
 
-## 12. File-Based Workflow
+## 13. File-Based Workflow
 
 Move beyond the REPL and write reusable scripts.
 
@@ -1580,7 +1739,7 @@ load_preset(drums, "TR808");
 
 ---
 
-## 13. Reference
+## 14. Reference
 
 ### Quick Command Cheat Sheet
 

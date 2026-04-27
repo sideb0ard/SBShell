@@ -2,7 +2,6 @@
 #pragma once
 
 #include <atomic>
-#include <cassert>
 #include <condition_variable>
 #include <optional>
 #include <queue>
@@ -35,7 +34,7 @@ template <typename T>
 void Tsqueue<T>::push(T &&t) {
   std::unique_lock<std::mutex> lck(mutex_);
   while (queue_.size() == max_size_ && !end_) cv_full_.wait(lck);
-  assert(!end_);
+  if (end_) return;  // silently discard after close
   queue_.push(std::move(t));
   cv_empty_.notify_one();
 }
@@ -55,7 +54,7 @@ template <typename T>
 void Tsqueue<T>::push(T const &t) {
   std::unique_lock<std::mutex> lck(mutex_);
   while (queue_.size() == max_size_ && !end_) cv_full_.wait(lck);
-  assert(!end_);
+  if (end_) return;  // silently discard after close
   queue_.push(std::move(t));
   cv_empty_.notify_one();
 }
@@ -75,7 +74,7 @@ template <typename T>
 std::optional<T> Tsqueue<T>::pop() {
   std::unique_lock<std::mutex> lck(mutex_);
   while (queue_.empty() && !end_) cv_empty_.wait(lck);
-  if (queue_.empty()) return std::nullopt;  // Queue was closed while empty
+  if (queue_.empty() || end_) return std::nullopt;  // exit immediately on close
   T t = std::move(queue_.front());
   queue_.pop();
   cv_full_.notify_one();

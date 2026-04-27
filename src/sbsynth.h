@@ -24,6 +24,7 @@ struct SBSynthVoice {
   double read_pos{0.0};
   double increment{1.0};
   EnvelopeGenerator eg;
+  EnvelopeGenerator morph_eg;  // per-voice timbral sweep
 };
 
 // SBSynth — dual-mode polyphonic synth
@@ -93,6 +94,13 @@ class SBSynth : public SoundGenerator {
   // Wavetable mode: morph position across loaded buffers (0.0 = first, 1.0 =
   // last)
   double morph_{0.0};
+
+  // Per-voice morph envelope: sweeps each voice's morph independently on NoteOn
+  double morph_env_amt_{0.0};  // depth: 0=off, 1=full sweep added to morph_
+  double morph_attack_ms_{10.0};
+  double morph_decay_ms_{500.0};
+  double morph_sustain_lvl_{0.0};  // 0 = one-shot sweep, decays to morph_ base
+  double morph_release_ms_{200.0};
 
   // Phase distortion: warps the sampling position within each cycle
   double pd_amt_{0.0};  // 0.0 = none, 1.0 = full

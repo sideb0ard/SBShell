@@ -16,12 +16,13 @@ let stop = NULL;
 
 let sbs = NULL;
 
-# p1 $ "34 [<34 57> 44 66 77]" dx2
-# note_on(dx, 12, dur = 0)
-# p3 < osc 0.6 "0.1 90" "set dx:op2out %"
 
+# p1 # newphasor; p2 # FXblah_comp; sched(0, 0, 1, 3840, "vol dx %");
+# p3 # drumblah_comp;
 
-# p1 # newphasor; p2 # FXblah_comp;
+# p4 # simplerampblah_comp; sched(0, 1, 0, 3840*8, "vol dx %");
+
+# p5 # xblah_comp
 
 
 # note_on(dx, notes_in_chord(52, 47, 1), dur = 0);
@@ -46,8 +47,11 @@ let init = fn()
   add_fx(walkin, "djeq");
 
   sbs = sbsynth();
-  add_buf(sbs, "notes/slaveChord3.aiff");
-  add_buf(sbs, "notes/garageyChord.aiff");
+  # add_buf(sbs, "notes/slaveChord3.aiff");
+  # add_buf(sbs, "notes/garageyChord.aiff");
+  # add_buf(sbs, "notes/noteWitMAWWelp.aiff");
+
+  load_preset(dx3, "WAFFLE");
 }
 
 
@@ -345,6 +349,10 @@ let drumblah_comp = comp()
       let out_sig3 = ramp_div3(out_sig1, mod_ratio);
       set sbs:morph out_sig3;
       set sbs:pd out_sig2;
+
+      let pan_val = scale(out_sig3, 0, 1, -1, 1);
+      pan sbs pan_val at=i;
+
       if (i % stride == 0) {
         if (ramp2tri(out_sig3)) {
           if (i % 2 == 0) {
@@ -364,15 +372,166 @@ let drumblah_comp = comp()
   }
 }
 
-let blah_comp = comp()
+# dx3 flopiano // soft_harp_ // basss // SMOOUTH // WAFFLE
+let simplerampblah_comp = comp()
 {
   setup()
   {
     let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
     let ramp2tri = ramp2trigger_factory();
+
+    let plot_width = 120;
+    let stride = 3840 / plot_width;
+    #let fullramp = phasor(3840 * 2);
     let fullramp = phasor(3840);
+
+    let chrd1 = notes_in_chord(47, 47, 1);
+    let chrd2 = notes_in_chord(52, 47, 1);
+
+    let durz = [100, 200, 300, 450, 600];
+    let drx = 0;
   }
   run()
   {
+    let chrd = chrd1;
+    if (count % 8 == 7) {
+      chrd = chrd2;
+    }
+    if (count % 13 == 0) {
+      chrd = up(chrd, 24);
+    }
+    for (let i = 0; i < 3840; i++) {
+      let rampval = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 3 / 8);
+      let out_sig2 = ramp_div2(rampval, 7 / 4);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      set dx3:op2out scale(out_sig2, 0, 1, 0, 99) at = i;
+      if (ramp2tri(out_sig3)) {
+        #print("NOTEON:", i);
+        note_on_at(dx3, chrd, i, dur = durz[drx]);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
+
+let xblah_comp = comp()
+{
+  setup()
+  {
+    xassign(0, dx);
+    xassign(1, dx3);
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri = ramp2trigger_factory();
+
+    let plot_width = 120;
+    let stride = 3840 / plot_width;
+    #let fullramp = phasor(3840 * 2);
+    let fullramp = phasor(3840);
+
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let rampval = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 3 / 8);
+      let out_sig2 = ramp_div2(rampval, 2 / 4);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      let xmix = scale(out_sig3, 0, 1, -1, 1);
+      set mixer:xfader:xpos xmix at = i;
+      # if (i % stride == 0) {
+        #   draw_plot(out_sig3, plot_width, at = i);
+        # }
+    }
+  }
+}
+
+# let bomb = loop(glitchedVinyl/bombbomwaom.wav); set bomb:len 2;
+let osloblah_comp = comp()
+{
+  setup()
+  {
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri = ramp2trigger_factory();
+
+    let plot_width = 120;
+    let stride = 3840 / plot_width;
+    #let fullramp = phasor(3840 * 2);
+    let fullramp = phasor(3840);
+    let sincr = TWO_PI / 3840;
+    let sinidx = 0;
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let rampval = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 2 / 1);
+      let out_sig2 = ramp_div2(rampval, 3 / 7);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      set bomb:fx0:fb scale(out_sig2, 0, 1, 0, 99) at = i;
+      pan bomb scale(out_sig3, 0, 1, -1, 1) at = i;
+
+      if (ramp2tri(out_sig3)) {
+        #print("NOTEON:", i);
+        note_on_at(bomb, floor(16 * out_sig1), i, dur = 0);
+
+        # note_on_at(dx3, chrd, i, dur = durz[drx]);
+        # drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
+
+let dummmosloblah_comp = comp()
+{
+  setup()
+  {
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+
+    let plot_width = 120;
+    let stride = 3840 / plot_width;
+    #let fullramp = phasor(3840 * 2);
+    let fullramp = phasor(3840);
+    let sincr = TWO_PI / 3840;
+    let sinidx = 0;
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let rampval = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 2 / 7);
+      let out_sig2 = ramp_div2(rampval, 3 / 4);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+
+      #if (i % stride == 0) {
+        #  draw_plot(out_sig1, plot_width, at = i);
+        #}
+      if (ramp2tri1(out_sig1)) {
+        #print("NOTEON:", i);
+        note_on_at(sbdrum, 0, i);
+        # note_on_at(dx3, chrd, i, dur = durz[drx]);
+        # drx = incr(drx, 0, len(durz));
+      }
+      if (ramp2tri2(out_sig3)) {
+        note_on_at(sbdrum, 3, i);
+        # note_on_at(dx3, chrd, i, dur = durz[drx]);
+        # drx = incr(drx, 0, len(durz));
+      }
+    }
   }
 }

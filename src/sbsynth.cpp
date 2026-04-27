@@ -88,6 +88,15 @@ void SBSynth::InitVoice(SBSynthVoice &v, int note, int velocity) {
   v.eg.m_output_eg = true;
   v.eg.m_reset_to_zero = true;
   v.eg.StartEg();
+
+  v.morph_eg.SetEgMode(ANALOG);
+  v.morph_eg.SetAttackTimeMsec(morph_attack_ms_);
+  v.morph_eg.SetDecayTimeMsec(morph_decay_ms_);
+  v.morph_eg.SetSustainLevel(morph_sustain_lvl_);
+  v.morph_eg.SetReleaseTimeMsec(morph_release_ms_);
+  v.morph_eg.m_output_eg = true;
+  v.morph_eg.m_reset_to_zero = true;
+  v.morph_eg.StartEg();
 }
 
 void SBSynth::NoteOn(midi_event ev) {
@@ -100,13 +109,17 @@ void SBSynth::NoteOff(midi_event ev) {
   for (auto &v : voices_)
     if (v.active && v.note == ev.data1) {
       v.eg.NoteOff();
+      v.morph_eg.NoteOff();
       break;
     }
 }
 
 void SBSynth::AllNotesOff() {
   for (auto &v : voices_)
-    if (v.active) v.eg.NoteOff();
+    if (v.active) {
+      v.eg.NoteOff();
+      v.morph_eg.NoteOff();
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,21 +161,13 @@ StereoVal SBSynth::GenNext(mixer_timing_info tinfo) {
   int num_ch = ref_fb->num_channels_;
   int ref_total = (int)ref_buf->size();
 
-  // Compute morph indices and blend factor once per audio frame.
   int n_bufs = (int)file_buffers_.size();
-  double morph_scaled = morph_ * (n_bufs - 1);
-  int buf_a_idx = (int)morph_scaled;
-  if (buf_a_idx >= n_bufs - 1) buf_a_idx = n_bufs - 1;
-  int buf_b_idx = buf_a_idx + 1 < n_bufs ? buf_a_idx + 1 : buf_a_idx;
-  double t = morph_scaled - buf_a_idx;  // 0..1 blend between a and b
-
-  std::vector<double> *buf_a = file_buffers_[buf_a_idx]->GetAudioBuffer();
-  std::vector<double> *buf_b = file_buffers_[buf_b_idx]->GetAudioBuffer();
 
   for (auto &v : voices_) {
     if (!v.active) continue;
 
     double amp_env = v.eg.DoEnvelope(nullptr);
+    double morph_env = v.morph_eg.DoEnvelope(nullptr);
 
     if (amp_env == 0.0 && v.eg.m_state == OFFF) {
       v.active = false;
@@ -174,6 +179,18 @@ StereoVal SBSynth::GenNext(mixer_timing_info tinfo) {
       v.active = false;
       continue;
     }
+
+    // Per-voice morph: base morph_ offset by this voice's morph EG.
+    double voice_morph = morph_ + morph_env * morph_env_amt_;
+    if (voice_morph < 0.0) voice_morph = 0.0;
+    if (voice_morph > 1.0) voice_morph = 1.0;
+    double morph_scaled = voice_morph * (n_bufs - 1);
+    int buf_a_idx = (int)morph_scaled;
+    if (buf_a_idx >= n_bufs - 1) buf_a_idx = n_bufs - 1;
+    int buf_b_idx = buf_a_idx + 1 < n_bufs ? buf_a_idx + 1 : buf_a_idx;
+    double t = morph_scaled - buf_a_idx;
+    std::vector<double> *buf_a = file_buffers_[buf_a_idx]->GetAudioBuffer();
+    std::vector<double> *buf_b = file_buffers_[buf_b_idx]->GetAudioBuffer();
 
     // Phase distortion: warp normalized phase (0..1) before sampling.
     // read_pos advances linearly (correct pitch); sample_pos is the distorted
@@ -284,6 +301,16 @@ void SBSynth::SetParam(std::string name, double val) {
     scatter_ = std::max(0.0, std::min(1.0, val));
   } else if (name == "skip") {
     skip_ = std::max(0.0, std::min(1.0, val));
+  } else if (name == "menv_amt") {
+    morph_env_amt_ = std::max(0.0, std::min(1.0, val));
+  } else if (name == "menv_a") {
+    morph_attack_ms_ = val;
+  } else if (name == "menv_d") {
+    morph_decay_ms_ = val;
+  } else if (name == "menv_s") {
+    morph_sustain_lvl_ = std::max(0.0, std::min(1.0, val));
+  } else if (name == "menv_r") {
+    morph_release_ms_ = val;
   }
 }
 
@@ -313,6 +340,10 @@ std::string SBSynth::Status() {
     ss << " pd:" << pd_amt_ << "(" << (pd_type_ == 0 ? "sine" : "pow") << ")";
   if (scatter_ > 0.0) ss << " scatter:" << scatter_;
   if (skip_ > 0.0) ss << " skip:" << skip_;
+  if (morph_env_amt_ > 0.0)
+    ss << " menv:" << morph_env_amt_ << "(a" << (int)morph_attack_ms_ << " d"
+       << (int)morph_decay_ms_ << " s" << morph_sustain_lvl_ << " r"
+       << (int)morph_release_ms_ << ")";
   ss << ANSI_COLOR_RESET;
   return ss.str();
 }
@@ -353,6 +384,14 @@ std::string SBSynth::Info() {
   ss << "  scatter: " << scatter_
      << "  (0=always start at 0, 1=random start position)\n";
   ss << "  skip:    " << skip_ << "  (per-sample jump prob; try 0.001-0.02)\n";
+  ss << "\n";
+  ss << "  menv_amt:" << morph_env_amt_
+     << "  (morph EG depth; 0=off, 1=full sweep per voice)\n";
+  ss << "  menv_a:  " << morph_attack_ms_ << " ms\n";
+  ss << "  menv_d:  " << morph_decay_ms_ << " ms\n";
+  ss << "  menv_s:  " << morph_sustain_lvl_
+     << "  (0=one-shot sweep, >0=sustain at partial morph)\n";
+  ss << "  menv_r:  " << morph_release_ms_ << " ms\n";
   ss << ANSI_COLOR_RESET;
   return ss.str();
 }
