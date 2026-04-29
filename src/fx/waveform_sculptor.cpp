@@ -7,11 +7,6 @@
 
 #include "defjams.h"
 
-namespace {
-constexpr float kPi = 3.14159265358979323846f;
-constexpr float kTwoPi = 2.0f * kPi;
-}  // namespace
-
 WaveformSculptor::WaveformSculptor() {
   type_ = fx_type::GEOMETER;
 
@@ -120,7 +115,7 @@ float WaveformSculptor::GetWindowScalar(int position, int window_size) {
       // Cosine window: smooth version of triangle
       float t =
           static_cast<float>(position) / static_cast<float>(window_size - 1);
-      return 0.5f * (1.0f - std::cos(kTwoPi * t));
+      return 0.5f * (1.0f - std::cos(TWO_PI * t));
     }
   }
 }
@@ -555,7 +550,7 @@ void WaveformSculptor::RecreateSing(const int* x_points, const float* y_points,
       float const pct = static_cast<float>(x - x1) * oodenom;
 
       // Generate one sine cycle per interval
-      float const wand = std::sin(kTwoPi * pct);
+      float const wand = std::sin(TWO_PI * pct);
 
       // Interpolate landmark amplitudes to create envelope
       float const amplitude = y1 * (1.0f - pct) + y2 * pct;

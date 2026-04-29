@@ -18,6 +18,20 @@ if(CCACHE_PROGRAM)
   message(STATUS "Using ccache: ${CCACHE_PROGRAM}")
 endif()
 
+# Generate ctags if available
+find_program(CTAGS_PROGRAM ctags)
+if(CTAGS_PROGRAM)
+  add_custom_target(
+    tags
+    COMMAND ${CTAGS_PROGRAM} -R ${CMAKE_SOURCE_DIR}/src
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Regenerating ctags index")
+  message(
+    STATUS "ctags found: ${CTAGS_PROGRAM} (tags regenerated on each build)")
+else()
+  message(STATUS "ctags not found, tag generation skipped")
+endif()
+
 # Find required packages
 find_package(PkgConfig REQUIRED)
 
@@ -422,6 +436,9 @@ endif()
 # Main executable - just main.cpp linking against sbsh_lib
 add_executable(Sbsh src/main.cpp)
 target_link_libraries(Sbsh sbsh_lib)
+if(CTAGS_PROGRAM)
+  add_dependencies(Sbsh tags)
+endif()
 
 # Installation rules
 install(TARGETS Sbsh RUNTIME DESTINATION bin)

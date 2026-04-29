@@ -622,8 +622,9 @@ StereoVal GranularLooper::GenNext(mixer_timing_info tinfo) {
   StereoVal incoming_val = incoming_grain_->Generate();
 
   if (xfader_active_) {
-    double incoming_vol = xfader_.Generate();
-    double active_vol = 1.0 - incoming_vol;
+    double t = xfader_.Generate();
+    double incoming_vol = std::sin(t * M_PI * 0.5);
+    double active_vol = std::cos(t * M_PI * 0.5);
 
     val.left = active_val.left * active_vol + incoming_val.left * incoming_vol;
     val.right =

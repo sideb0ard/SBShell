@@ -422,7 +422,7 @@ let xblah_comp = comp()
 {
   setup()
   {
-    xassign(0, dx);
+    xassign(0, dx2);
     xassign(1, dx3);
     let ramp_div1 = ramp_div_factory();
     let ramp_div2 = ramp_div_factory();
@@ -491,6 +491,7 @@ let osloblah_comp = comp()
   }
 }
 
+# dx2 - SMURFc // ONESZ // DATRZ2
 let dummmosloblah_comp = comp()
 {
   setup()
@@ -508,30 +509,58 @@ let dummmosloblah_comp = comp()
     let fullramp = phasor(3840);
     let sincr = TWO_PI / 3840;
     let sinidx = 0;
+    let kickz1 = [1, 1, 0, 0,  0, 0, 1, 0,  0, 1, 0, 0,  0, 0, 0, 0];
+    let kickz2 = [1, 0, 0, 1,  0, 1, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0];
+    let kickz3 = [1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0,  0, 0, 1, 0];
+
+    let notz =  notes_in_key(47);
+    #let prog = [0, 4, 5, 3];
+    let prog = [5, 3, 0, 4];
+    let prx = 0;
+
+    let durz = [50, 100, 150, 300, 550, 80, 200];
+    let drx = 0;
+
   }
   run()
   {
-    for (let i = 0; i < 3840; i++) {
-      let rampval = signal_from(fullramp);
-      let out_sig1 = ramp_div1(rampval, 2 / 7);
-      let out_sig2 = ramp_div2(rampval, 3 / 4);
-      let mod_ratio = max(out_sig2, 0.001);
-      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+    if (count % 2 == 1) {
+      for (let i = 0; i < 3840; i++) {
+        let rampval = signal_from(fullramp);
+        let out_sig1 = ramp_div1(rampval, 3 / 7);
+        let out_sig2 = ramp_div2(rampval, 3 / 15);
+        let mod_ratio = max(out_sig2, 0.001);
+        let out_sig3 = ramp_div3(out_sig1, mod_ratio);
 
-      #if (i % stride == 0) {
-        #  draw_plot(out_sig1, plot_width, at = i);
-        #}
-      if (ramp2tri1(out_sig1)) {
-        #print("NOTEON:", i);
-        note_on_at(sbdrum, 0, i);
-        # note_on_at(dx3, chrd, i, dur = durz[drx]);
-        # drx = incr(drx, 0, len(durz));
-      }
-      if (ramp2tri2(out_sig3)) {
-        note_on_at(sbdrum, 3, i);
-        # note_on_at(dx3, chrd, i, dur = durz[drx]);
-        # drx = incr(drx, 0, len(durz));
+        set dx2:op2out scale(out_sig3, 0, 1, 0, 95);
+        # if (i % stride == 0) {
+          #   draw_plot(out_sig3, plot_width, at = i);
+          # }
+        if (ramp2tri1(out_sig3)) {
+          #print("NOTEON:", i);
+          let chrd = notes_in_chord(notz[prog[prx]], 47, 1);
+          prx = incr(prx, 0, len(prog));
+          note_on_at(dx2, chrd, i, dur = durz[drx]);
+          drx = incr(drx, 0, len(durz));
+          #     # note_on_at(dx3, chrd, i, dur = durz[drx]);
+          #     # drx = incr(drx, 0, len(durz));
+        }
+        #   if (ramp2tri2(out_sig3)) {
+          #     note_on_at(sbdrum, 3, i);
+          #     # note_on_at(dx3, chrd, i, dur = durz[drx]);
+          #     # drx = incr(drx, 0, len(durz));
+          #   }
       }
     }
+  }
+}
+
+let blah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
   }
 }
