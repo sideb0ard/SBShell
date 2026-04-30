@@ -698,7 +698,12 @@ void WaveformSculptor::SetParam(std::string name, double val) {
     int style = static_cast<int>(val);
     if (style >= 0 && style <= 5) {
       interp_style_ = static_cast<InterpStyle>(style);
-      SetInterpDefaults(interp_style_);  // Auto-set good defaults
+    }
+  } else if (name == "interp_preset") {
+    int style = static_cast<int>(val);
+    if (style >= 0 && style <= 5) {
+      interp_style_ = static_cast<InterpStyle>(style);
+      SetInterpDefaults(interp_style_);
     }
   } else if (name == "interp_param" || name == "iparam") {
     interp_param_ = std::max(0.0, std::min(1.0, val));

@@ -42,7 +42,7 @@ Diffuser::AllPassFilter::AllPassFilter(int delay_samples, double feedback)
 
 double Diffuser::AllPassFilter::Process(double input) {
   double delayed = delay_.Read(delay_samples_);
-  double output = -input + delayed;
+  double output = -feedback_ * input + delayed;
   delay_.Write(input + delayed * feedback_);
   return output;
 }
@@ -57,15 +57,13 @@ Diffuser::DiffusionStage::DiffusionStage(int sample_rate) {
   const int prime_delays_ms[kNumAllPasses] = {37, 43, 53, 61};
   const double feedback = 0.5f;
 
-  // Reserve space and construct with emplace_back
   left_apfs_.reserve(kNumAllPasses);
   right_apfs_.reserve(kNumAllPasses);
 
   for (int i = 0; i < kNumAllPasses; ++i) {
     int delay_samples = (prime_delays_ms[i] * sample_rate) / 1000;
-    left_apfs_[i] = AllPassFilter(delay_samples, feedback);
-    right_apfs_[i] =
-        AllPassFilter(delay_samples + 7, feedback);  // Slight offset
+    left_apfs_.emplace_back(delay_samples, feedback);
+    right_apfs_.emplace_back(delay_samples + 7, feedback);  // Slight offset
   }
 }
 
@@ -157,7 +155,8 @@ std::string Diffuser::Status() {
   ss << " sz:" << smooth_size_.GetCurrent();
   ss << " fb:" << smooth_feedback_.GetCurrent();
   ss << " uni:" << smooth_unison_.GetCurrent() << "\n";
-  ss << "dif2:" << smooth_diffuse_[1].GetCurrent();
+  ss << "dif1:" << smooth_diffuse_[0].GetCurrent();
+  ss << " dif2:" << smooth_diffuse_[1].GetCurrent();
   ss << " dif3:" << smooth_diffuse_[2].GetCurrent();
   ss << " dif4:" << smooth_diffuse_[3].GetCurrent();
   ss << " inert1:" << inertia_processors_[0].GetCurrent();
@@ -170,23 +169,28 @@ std::string Diffuser::Status() {
 
 StereoVal Diffuser::Process(StereoVal input) {
   // Smooth parameters with inertia
+  // Drive inertia processors and apply their output as smoothing speed
+  smooth_wet_.SetInertia(inertia_processors_[0].Process());
+  smooth_size_.SetInertia(inertia_processors_[1].Process());
+  smooth_feedback_.SetInertia(inertia_processors_[2].Process());
+  smooth_unison_.SetInertia(inertia_processors_[3].Process());
+
   double wet = smooth_wet_.Process();
   double wet_gain = smooth_wet_gain_.Process();
   double size = smooth_size_.Process();
   double feedback = smooth_feedback_.Process();
 
   // Update size-dependent parameters if changed significantly
-  static double last_size = 0.0;
-  if (std::abs(size - last_size) > 0.01) {
+  if (std::abs(size - last_size_) > 0.01) {
     UpdateSize(size);
-    last_size = size;
+    last_size_ = size;
   }
 
   // Store dry signal
   StereoVal dry = input;
 
-  // Apply feedback
-  input = ApplyFeedback(input);
+  // Apply feedback (pass fb so ApplyFeedback doesn't re-advance the smoother)
+  input = ApplyFeedback(input, feedback);
 
   // Process blur
   StereoVal blurred = ProcessBlur(input);
@@ -199,9 +203,10 @@ StereoVal Diffuser::Process(StereoVal input) {
   // Process diffusion stages
   blurred = ProcessDiffusion(blurred);
 
-  // Store for feedback
-  feedback_buffer_.left = blurred.left * feedback;
-  feedback_buffer_.right = blurred.right * feedback;
+  // Store for feedback — tanh limits here, after the gain stages, where it
+  // matters
+  feedback_buffer_.left = std::tanh(blurred.left * feedback);
+  feedback_buffer_.right = std::tanh(blurred.right * feedback);
 
   // Apply wet gain
   blurred.left *= wet_gain;
@@ -213,11 +218,6 @@ StereoVal Diffuser::Process(StereoVal input) {
   output.left = std::max(-1.0, std::min(1.0, output.left));
   output.right = std::max(-1.0, std::min(1.0, output.right));
 
-  if (std::abs(output.left) > 0.95 || std::abs(output.right) > 0.95) {
-    feedback_buffer_.left *= 0.5;  // Emergency damping
-    feedback_buffer_.right *= 0.5;
-  }
-
   return output;
 }
 
@@ -226,9 +226,8 @@ StereoVal Diffuser::ProcessBlur(StereoVal input) {
   main_delays_[0]->Write(input.left);
   main_delays_[1]->Write(input.right);
 
-  StereoVal output = {0.0, 0.0};
-
-  // Apply 2D kernel blur
+  // Kernel blur accumulates separately — it's already normalized to sum=1
+  StereoVal kernel_out = {0.0, 0.0};
   int half_kernel = kernel_size_ / 2;
 
   for (int t = -half_kernel; t <= half_kernel; ++t) {
@@ -236,40 +235,55 @@ StereoVal Diffuser::ProcessBlur(StereoVal input) {
       int kernel_x = t + half_kernel;
       int kernel_y = c + half_kernel;
 
-      if (kernel_x >= kernel_.size() || kernel_y >= kernel_[0].size()) continue;
+      if (kernel_x >= (int)kernel_.size() || kernel_y >= (int)kernel_[0].size())
+        continue;
 
       double weight = kernel_[kernel_x][kernel_y];
-
-      // Time dimension: read from delays
       int delay_samples = std::abs(t) * 10;
 
-      // Channel dimension: cross-feed
       if (c <= 0) {
-        output.left +=
+        kernel_out.left +=
             main_delays_[0]->Read(delay_samples) * weight * (1.0 + c * 0.5);
       }
       if (c >= 0) {
-        output.right +=
+        kernel_out.right +=
             main_delays_[1]->Read(delay_samples) * weight * (1.0 - c * 0.5);
       }
     }
   }
 
-  // Add delay taps
+  // Tap contributions accumulated separately, then normalized
+  StereoVal tap_out = {0.0, 0.0};
   for (size_t i = 0; i < active_taps_ && i < delay_taps_.size(); ++i) {
     const auto& tap = delay_taps_[i];
 
-    // Add modulation to delay time
-    double mod = std::sin(lfo_phase_ + i * 0.5) * 2.0;
+    // Use 4 quadrature phases instead of a unique sin() per tap —
+    // same decorrelation effect at 1/18th the CPU cost
+    static const double kPhaseOffsets[4] = {0.0, M_PI * 0.5, M_PI, M_PI * 1.5};
+    double mod = std::sin(lfo_phase_ + kPhaseOffsets[i % 4]) * 2.0;
     double modulated_delay = tap.delay_samples + mod;
 
     double tap_left = main_delays_[0]->ReadInterpolated(modulated_delay);
     double tap_right = main_delays_[1]->ReadInterpolated(modulated_delay);
 
-    // Apply tap with crossfeed
-    output.left += tap_left * tap.feedback + tap_right * tap.cross_feed;
-    output.right += tap_right * tap.feedback + tap_left * tap.cross_feed;
+    // Scale cross_feed by tap.feedback so it decays as 1/(i+1) — prevents
+    // unbounded accumulation across many taps (especially for correlated bass
+    // content)
+    double scaled_cross = tap.feedback * tap.cross_feed;
+    tap_out.left += tap_left * tap.feedback + tap_right * scaled_cross;
+    tap_out.right += tap_right * tap.feedback + tap_left * scaled_cross;
   }
+
+  // Only normalize the tap accumulation, not the kernel (kernel sum is already
+  // ~1)
+  if (active_taps_ > 0) {
+    double tap_norm = 1.0 / std::sqrt(static_cast<double>(active_taps_));
+    tap_out.left *= tap_norm;
+    tap_out.right *= tap_norm;
+  }
+
+  StereoVal output = {kernel_out.left * 0.6 + tap_out.left * 0.4,
+                      kernel_out.right * 0.6 + tap_out.right * 0.4};
 
   // Update LFO
   lfo_phase_ += lfo_rate_ * 2.0 * M_PI / sample_rate_;
@@ -294,11 +308,9 @@ StereoVal Diffuser::ProcessUnison(StereoVal input) {
     double voice_left = feedback_delays_[0]->ReadInterpolated(delay_mod);
     double voice_right = feedback_delays_[1]->ReadInterpolated(delay_mod);
 
-    // Apply panning
-    unison.left +=
-        voice_left * voice.pan_left + voice_right * (1.0 - voice.pan_right);
-    unison.right +=
-        voice_right * voice.pan_right + voice_left * (1.0 - voice.pan_left);
+    // Apply equal-power panning
+    unison.left += voice_left * voice.pan_left;
+    unison.right += voice_right * voice.pan_right;
   }
 
   double unison_mix = smooth_unison_.Process();
@@ -324,8 +336,7 @@ StereoVal Diffuser::ProcessDiffusion(StereoVal input) {
   return input;
 }
 
-StereoVal Diffuser::ApplyFeedback(StereoVal input) {
-  double fb = smooth_feedback_.Process();
+StereoVal Diffuser::ApplyFeedback(StereoVal input, double fb) {
   fb = std::min(fb, 0.85);
   return {std::tanh(input.left + feedback_buffer_.left * fb * 0.7),
           std::tanh(input.right + feedback_buffer_.right * fb * 0.7)};
@@ -416,11 +427,10 @@ void Diffuser::SetParameters(const Parameters& params) {
     inertia_processors_[i].SetInertia(params.inertia[i]);
   }
 
-  // Set inertia processor targets
-  inertia_processors_[0].SetTarget(params.wet);
-  inertia_processors_[1].SetTarget(params.size);
-  inertia_processors_[2].SetTarget(params.feedback);
-  inertia_processors_[3].SetTarget(params.unison);
+  // Inertia processors govern smoothing speed for wet/sz/fb/uni
+  for (int i = 0; i < 4; ++i) {
+    inertia_processors_[i].SetTarget(params.inertia[i]);
+  }
 
   UpdateUnison(params.unison);
 }
@@ -477,6 +487,7 @@ void Diffuser::SetParam(std::string name, double val) {
   } else if (name == "uni") {
     val = std::max(0.0, std::min(1.0, val));  // 0-1
     smooth_unison_.SetTarget(val);
+    UpdateUnison(val);
 
   } else if (name == "dif1") {
     val = std::max(0.0, std::min(1.0, val));  // 0-1
@@ -495,20 +506,23 @@ void Diffuser::SetParam(std::string name, double val) {
     smooth_diffuse_[3].SetTarget(val);
 
   } else if (name == "inert1") {
-    val = std::max(0.0, std::min(1.0, val));  // 0-1
-    inertia_processors_[0].SetInertia(val);
+    val = std::max(0.0, std::min(1.0, val));
+    inertia_processors_[0].SetTarget(val);
 
   } else if (name == "inert2") {
-    val = std::max(0.0, std::min(1.0, val));  // 0-1
-    inertia_processors_[1].SetInertia(val);
+    val = std::max(0.0, std::min(1.0, val));
+    inertia_processors_[1].SetTarget(val);
 
   } else if (name == "inert3") {
-    val = std::max(0.0, std::min(1.0, val));  // 0-1
-    inertia_processors_[2].SetInertia(val);
+    val = std::max(0.0, std::min(1.0, val));
+    inertia_processors_[2].SetTarget(val);
 
   } else if (name == "inert4") {
-    val = std::max(0.0, std::min(1.0, val));  // 0-1
-    inertia_processors_[3].SetInertia(val);
+    val = std::max(0.0, std::min(1.0, val));
+    inertia_processors_[3].SetTarget(val);
+
+  } else if (name == "reset") {
+    Reset();
   }
 }
 

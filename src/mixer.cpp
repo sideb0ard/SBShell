@@ -756,6 +756,7 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
         }
       }
     }
+    audio_reply_queue.push(1);  // unblock add_fx() caller
   } else if (action->type == AudioAction::ADD_BUFFER) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];

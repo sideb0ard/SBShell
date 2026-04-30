@@ -752,7 +752,7 @@ void GranularLooper::SetGrainDensity(int gps) {
 }
 
 void GranularLooper::SetGranularSpray(int spray_ms) {
-  granular_spray_frames_ = spray_ms / 1000 * SAMPLE_RATE;
+  granular_spray_frames_ = spray_ms / 1000.0 * SAMPLE_RATE;
 }
 
 void GranularLooper::SetQuasiGrainFudge(int fudgefactor) {

@@ -1883,6 +1883,8 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                  action->soundgen_num = soundgen->soundgen_id_;
                  action->fx = fx;
                  audio_queue.push(std::move(action));
+                 audio_reply_queue
+                     .pop();  // block until audio thread confirms fx added
                }
              }
            }

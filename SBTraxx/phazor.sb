@@ -17,10 +17,12 @@ let stop = NULL;
 let sbs = NULL;
 
 
-# p1 # newphasor; p2 # FXblah_comp; sched(0, 0, 1, 3840, "vol dx %");
+let shades = NULL;
+
+# p1 # newphasor; p2 # FXblah_comp; vol dx 0; sched(3840, 0, 0.7, 3840, "vol dx %");
 # p3 # drumblah_comp;
 
-# p4 # simplerampblah_comp; sched(0, 1, 0, 3840*8, "vol dx %");
+# p4 # simplerampblah_comp; sched(0, 1, 0, 3840, "vol dx %, vol walkin %");
 
 # p5 # xblah_comp
 
@@ -44,6 +46,7 @@ let init = fn()
   add_fx(dx, "djeq");
   walkin = loop(noises/walkinRain.aiff);
   add_fx(walkin, "distort");
+  set walkin:fx0:threshold 0.4;
   add_fx(walkin, "djeq");
 
   sbs = sbsynth();
@@ -52,6 +55,17 @@ let init = fn()
   # add_buf(sbs, "notes/noteWitMAWWelp.aiff");
 
   load_preset(dx3, "WAFFLE");
+
+  shades = loop(strings/shadesofrhythm4bar.aiff); set shades:len 128;
+  set shades:quasi_grain_fudge 220;
+  set shades:pitch 0.2;
+  send(delay, shades);
+  #add_fx(shades, "diffuser");
+  #set shades:fx0:wet 1;
+  #set shades:fx0:wet_gain 2;
+  #set shades:fx0:fb 0.5;
+
+  load_preset(dx2, "SMURFc");
 }
 
 
@@ -297,13 +311,18 @@ let FXblah_comp = comp()
   {
     if (count % 8 == 0) {
       note_off(dx, 0);
+      set shades:pitch 0.2;
       note_on_at(dx, chrd2, 300, dur = 0);
       note_on_at(dx, chrd2, 300, dur = 0);
     }
     if (count % 8 == 6) {
       note_off(dx, 0);
+      set shades:pitch 0.6;
       note_on_at(dx, chrd1, 300, dur = 0);
       note_on_at(dx, chrd1, 300, dur = 0);
+    }
+    if (count % 16 == 15) {
+      set shades:pitch 1.5;
     }
   }
 }
@@ -520,6 +539,7 @@ let dummmosloblah_comp = comp()
 
     let durz = [50, 100, 150, 300, 550, 80, 200];
     let drx = 0;
+    let algox = 0;
 
   }
   run()
@@ -551,6 +571,11 @@ let dummmosloblah_comp = comp()
           #     # drx = incr(drx, 0, len(durz));
           #   }
       }
+    }
+    if (count % 7 == 3) {
+      set dx2:algo algox;
+      algox = incr(algox, 0, 7);
+      sched(3840, 0, 0.7, 3840, "vol dx %");
     }
   }
 }

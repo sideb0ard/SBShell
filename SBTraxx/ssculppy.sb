@@ -1,0 +1,77 @@
+
+# bpm 120
+#  let bl = loop(loops/blakeHatLoop.aiff); set bl:pitch 0.7;
+let dbblah_comp = comp()
+{
+  setup()
+  {
+    let beat1 = [1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0];
+    let beat2 = [1, 0, 0, 1,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+  }
+  run()
+  {
+
+    let beat = beat1;
+    if (count % 8 == 7) {
+      beat = beat2;
+      set crkbass:slowdown 1;
+    }
+    for (let i = 0; i < 16; i++) {
+      if (beat[i] == 1) {
+        note_on_at(sbdrum, 0, i * pp);
+      }
+    }
+  }
+}
+
+let key = 37;
+
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let notes = notes_in_key(key);
+    let mel = [0, 4, 5, 0, 4, 0, 1, 2, 5];
+    let mx = 0;
+    let rif1 =  [37, 0, 37, 37,  0, 37, 0, 37,  37, 0, 37, 37,  0, 37, 0, 37];
+    let rif2 = [37, 0, 0, 0,  0, 37, 0, 0,  0, 0, 37, 0,  0, 0, 0, 0];
+    let rif3 = [37, 0, 0, 37,  0, 37, 0, 37,  0, 0, 37, 0,  37, 0, 37, 0];
+    let rif4 =  [37, 0, 0, 0,  0, 0, 0, 0,  37, 0, 0, 0,  0, 0, 0, 0];
+    let rifz = [rif1, rif2, rif3, rif4];
+    let rx = 0;
+    let sincr = TWO_PI / 3840;
+    let sx = 0;
+  }
+  run()
+  {
+    let rf = rifz[rx];
+    rx = incr(rx, 0, len(rifz));
+    let chrd = notes_in_chord(notes[mel[mx]], key, 1);
+    for (let i = 0; i < 16; i++) {
+      if (rf[i] > 0) {
+        note_on_at(dx, chrd, i * pp);
+      }
+    }
+    let plot_width = 80;
+    let stride = 3840 / plot_width;
+    mx = incr(mx, 0, len(mel));
+    for (let i = 0; i < 3840; i++) {
+      let sval = scale(sin(sx), -1, 1, 0, 1);
+      #print(sval);
+      sx = (sx + sincr) % TWO_PI;
+      #draw_plot(sval, 40, at=i);
+      if (i % stride == 0) {
+        draw_plot(sval, 40, "sine", at=i, row=1);
+      }
+    }
+  }
+}
+
+
+# set crkbass:scramble 1         - Randomly reorder 16 slices (keeps active beats)
+# set crkbass:stutter 1          - Random stutter repeats
+# set crkbass:strobe 1           - Alternate between anchor slice and sequence
+# set crkbass:gate 1             - Rhythmic gating with envelope
+# set crkbass:speedulate 1       - Half/double speed slice remapping
+# set crkbass:slowdown 1         - Decelerate into stutter at end of bar
+# set crkbass:repeat 1           - Beat repeat: lock and loop a section

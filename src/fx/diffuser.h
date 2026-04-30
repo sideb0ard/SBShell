@@ -132,7 +132,7 @@ class Diffuser : public Fx {
   StereoVal ProcessBlur(StereoVal input);
   StereoVal ProcessUnison(StereoVal input);
   StereoVal ProcessDiffusion(StereoVal input);
-  StereoVal ApplyFeedback(StereoVal input);
+  StereoVal ApplyFeedback(StereoVal input, double fb);
 
   // Utility methods
   int MsToSamples(double ms) const;
@@ -179,4 +179,8 @@ class Diffuser : public Fx {
   // Modulation
   double lfo_phase_ = 0.0f;
   double lfo_rate_ = 0.3f;  // Hz
+
+  // Size tracking (member instead of static local to avoid cross-instance
+  // sharing)
+  double last_size_ = 0.0;
 };
