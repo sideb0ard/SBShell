@@ -374,6 +374,47 @@ set clavl:octave_jump 1;     // Random octave shifts per step (0.5x, 1x, 2x)
 set clavl:pitch_staircase 1; // Chromatic staircase — steps up or down by semitones
 ```
 
+#### Granular Engine Controls
+
+The looper uses an N-grain pool (up to 16 simultaneous grains). New grains are launched at regular intervals; grain overlap controls how many play simultaneously.
+
+```javascript
+set clavl:grain_overlap 0.2; // Overlap between grains: 0.0-0.9 (default 0.2)
+set clavl:grain_env 0;       // Envelope shape: 0=Tukey (default), 1=Hann
+set clavl:grains_per_sec 15; // Grain launch rate
+set clavl:grain_dur_ms 80;   // Grain duration in milliseconds
+set clavl:grain_spray_ms 10; // Random position offset per grain (ms)
+set clavl:quasi_grain_fudge 0; // Random duration variation
+```
+
+**`grain_overlap`** — fraction of each grain's duration that overlaps with the next:
+- `0.0` — no overlap, grains are back-to-back (possible small gaps)
+- `0.2` — default, 20% overlap; clean loops, sound identical to previous behaviour
+- `0.5` — 50% overlap; 2 grains always active, slightly smeared onset transients
+- `0.7–0.9` — 3–10 grains active; dense granular cloud, drums lose punch, pads become washy
+
+**`grain_env`** — amplitude envelope applied to each grain:
+- `0` = **Tukey** (default): flat top with cosine-tapered edges. Safe for loops — grains sum to constant volume at any overlap. Switch to Hann for classic granular texture.
+- `1` = **Hann**: full bell curve, zero at both ends. Best at 50% overlap; creates the characteristic granular "shimmer". Good for pads/atmospherics, not drums.
+
+**Effect of increasing overlap:**
+```javascript
+// Loop/drum safe — sounds the same as before
+set clavl:grain_overlap 0.2;
+
+// Start to hear smearing — good for atmospheric pads
+set clavl:grains_per_sec 8;
+set clavl:grain_overlap 0.5;
+set clavl:grain_env 1;        // switch to Hann for texture
+
+// Dense granular cloud
+set clavl:grains_per_sec 20;
+set clavl:grain_dur_ms 150;
+set clavl:grain_overlap 0.8;
+set clavl:grain_env 1;
+set clavl:grain_spray_ms 30;  // spray adds pitch shimmer
+```
+
 **Example: triggering FX from a computation**
 
 ```javascript

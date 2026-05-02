@@ -335,8 +335,7 @@ void PitchStaircasePattern(std::array<double, 16> &pattern) {
 
 void GranularLooper::Reset() {
   file_buffer_->audio_buffer_read_idx_ = 0;
-  active_grain_ = grain_a_.get();
-  incoming_grain_ = grain_b_.get();
+  for (auto &g : grain_pool_) g.active = false;
   reverse_mode_ = false;
   SetGrainDensity(15);
   eg_.m_reset_to_zero = true;
@@ -357,17 +356,16 @@ void GranularLooper::Reset() {
 
 GranularLooper::GranularLooper() {
   grain_type_ = SoundGrainType::Signal;
-  active_grain_ = nullptr;
-  incoming_grain_ = nullptr;
+  for (auto &g : grain_pool_) g.active = false;
 }
 
 GranularLooper::GranularLooper(std::string filename, unsigned int loop_mode)
-    : grain_a_{std::make_unique<SoundGrainSample>()},
-      grain_b_{std::make_unique<SoundGrainSample>()},
-      grain_type_{SoundGrainType::Sample},
-      file_buffer_{std::make_unique<FileBuffer>(filename)},
-      active_grain_{grain_a_.get()},
-      incoming_grain_{grain_b_.get()} {
+    : grain_type_{SoundGrainType::Sample},
+      file_buffer_{std::make_unique<FileBuffer>(filename)} {
+  for (auto &g : grain_pool_) {
+    g.active = false;
+    g.type = SoundGrainType::Sample;
+  }
   type = LOOPER_TYPE;
   SetLoopMode(loop_mode);
   Reset();
@@ -386,7 +384,7 @@ void GranularLooper::EventNotify(broadcast_event event,
   (void)event;
 
   if (!started_ && tinfo.is_start_of_loop) {
-    LaunchGrain(active_grain_, tinfo);
+    LaunchGrain(tinfo);
     eg_.StartEg();
     started_ = true;
   }
@@ -542,15 +540,24 @@ int launch_count = 0;
 int samp_diff = 0;
 int midi_diff = 0;
 
-void GranularLooper::LaunchGrain(SoundGrain *grain, mixer_timing_info tinfo) {
+void GranularLooper::LaunchGrain(mixer_timing_info tinfo) {
+  // Find an inactive slot in the pool
+  SoundGrainSample *slot = nullptr;
+  for (auto &g : grain_pool_) {
+    if (!g.active) {
+      slot = &g;
+      break;
+    }
+  }
+  if (!slot) return;  // all slots busy, skip this launch
+
   int duration_frames = grain_duration_frames_;
   if (quasi_grain_fudge_ != 0)
     duration_frames += rand() % (int)(quasi_grain_fudge_ * 44.1);
 
-  std::unique_ptr<FileBuffer> &file_buffer = file_buffer_;
-  std::vector<double> *audio_buffer = file_buffer->GetAudioBuffer();
+  std::vector<double> *audio_buffer = file_buffer_->GetAudioBuffer();
 
-  int grain_idx = file_buffer->audio_buffer_read_idx_;
+  int grain_idx = file_buffer_->audio_buffer_read_idx_;
   if (granular_spray_frames_ > 0)
     grain_idx += (rand() % granular_spray_frames_) % audio_buffer->size();
 
@@ -559,42 +566,19 @@ void GranularLooper::LaunchGrain(SoundGrain *grain, mixer_timing_info tinfo) {
       .dur_frames = duration_frames,
       .starting_idx = grain_idx,
       .reverse_mode = reverse_mode_,
-      .num_channels = file_buffer->num_channels_,
+      .num_channels = file_buffer_->num_channels_,
       .degrade_by = degrade_by_,
-      .pitch_ratio = file_buffer->pitch_ratio_.load() *
-                     file_buffer->pitch_pattern_[file_buffer->cur_sixteenth_],
+      .pitch_ratio = file_buffer_->pitch_ratio_.load() *
+                     file_buffer_->pitch_pattern_[file_buffer_->cur_sixteenth_],
       .audio_buffer = audio_buffer,
+      .envelope_shape = envelope_shape_,
+      .overlap_fraction = grain_overlap_,
   };
 
-  grain->Initialize(params);
+  slot->Initialize(params);
 
-  xfade_time_in_frames_ = duration_frames / 100. * 20;
-  grain_spacing_frames_ = duration_frames - xfade_time_in_frames_;
-
+  grain_spacing_frames_ = duration_frames * (1.0 - grain_overlap_);
   next_grain_launch_sample_time_ = tinfo.cur_sample + grain_spacing_frames_;
-  //  if (launch_count < 10) {
-  //    std::cout << launch_count << " Mixer Samp#:" << tinfo.cur_sample
-  //              << " dur:" << duration_frames << " GRain IDX:" << grain_idx
-  //              << " NEXT LAYNC :" << next_grain_launch_sample_time_
-  //              << " MIDI:" << tinfo.midi_tick << " %16 " << tinfo.midi_tick %
-  //              16
-  //              << std::endl;
-  //    launch_count++;
-  //  }
-
-  start_xfade_at_frame_time_ = next_grain_launch_sample_time_;
-  if (started_)
-    stop_xfade_at_frame_time_ = tinfo.cur_sample + xfade_time_in_frames_;
-}
-
-void GranularLooper::SwitchXFadeGrains() {
-  if (active_grain_ == grain_a_.get()) {
-    active_grain_ = grain_b_.get();
-    incoming_grain_ = grain_a_.get();
-  } else {
-    active_grain_ = grain_a_.get();
-    incoming_grain_ = grain_b_.get();
-  }
 }
 
 StereoVal GranularLooper::GenNext(mixer_timing_info tinfo) {
@@ -605,33 +589,25 @@ StereoVal GranularLooper::GenNext(mixer_timing_info tinfo) {
 
   if (stop_pending_ && eg_.m_state == OFFF) active = false;
 
-  if (tinfo.cur_sample == start_xfade_at_frame_time_) {
-    xfader_active_ = true;
-  }
-  if (tinfo.cur_sample == stop_xfade_at_frame_time_) {
-    SwitchXFadeGrains();
-    xfader_active_ = false;
-    xfader_.Reset(xfade_time_in_frames_);
+  if (tinfo.cur_sample >= next_grain_launch_sample_time_) {
+    LaunchGrain(tinfo);
   }
 
-  if (tinfo.cur_sample >= next_grain_launch_sample_time_) {  // new grain time
-    LaunchGrain(incoming_grain_, tinfo);
+  // Sum all active grains — Tukey envelopes are self-normalizing at overlap <
+  // 0.5; for Hann or high overlap the sqrt normalization keeps loudness stable.
+  int active_count = 0;
+  for (auto &g : grain_pool_) {
+    if (g.active) {
+      StereoVal gv = g.Generate();
+      val.left += gv.left;
+      val.right += gv.right;
+      active_count++;
+    }
   }
-
-  StereoVal active_val = active_grain_->Generate();
-  StereoVal incoming_val = incoming_grain_->Generate();
-
-  if (xfader_active_) {
-    double t = xfader_.Generate();
-    double incoming_vol = std::sin(t * M_PI * 0.5);
-    double active_vol = std::cos(t * M_PI * 0.5);
-
-    val.left = active_val.left * active_vol + incoming_val.left * incoming_vol;
-    val.right =
-        active_val.right * active_vol + incoming_val.right * incoming_vol;
-  } else {
-    val.left = active_val.left;
-    val.right = active_val.right;
+  if (active_count > 1) {
+    double norm = 1.0 / std::sqrt(static_cast<double>(active_count));
+    val.left *= norm;
+    val.right *= norm;
   }
 
   eg_.Update();
@@ -710,12 +686,12 @@ std::string GranularLooper::Info() {
      << " pitch:" << file_buffer_->pitch_ratio_
      << "\ngrain_dur_ms:" << grain_duration_frames_
      << " grains_per_sec:" << grains_per_sec_
+     << " grain_overlap:" << grain_overlap_ << " grain_env:" << envelope_shape_
      << " quasi_grain_fudge:" << quasi_grain_fudge_
      << " grain_spray_ms:" << granular_spray_frames_ / 44.1
      << "\nattack:" << eg_.m_attack_time_msec
      << " decay:" << eg_.m_decay_time_msec
-     << " release:" << eg_.m_release_time_msec
-     << " grain_ramp_time:" << grain_ramp_time_ << "\n";
+     << " release:" << eg_.m_release_time_msec << "\n";
 
   int idx = 0;
   ss << ANSI_COLOR_WHITE << idx++ << " " << file_buffer_->filename_
@@ -745,10 +721,16 @@ void GranularLooper::SetGrainDuration(int dur) {
 void GranularLooper::SetGrainDensity(int gps) {
   grains_per_sec_ = gps;
   grain_duration_frames_ = (double)SAMPLE_RATE / grains_per_sec_;
-  grain_ramp_time_ = grain_duration_frames_ / 100. * 10;
-  xfade_time_in_frames_ = grain_duration_frames_ / 100. * 20;
-  xfader_.Reset(xfade_time_in_frames_);
-  grain_spacing_frames_ = grain_duration_frames_ - xfade_time_in_frames_;
+  grain_spacing_frames_ = grain_duration_frames_ * (1.0 - grain_overlap_);
+}
+
+void GranularLooper::SetGrainOverlap(double overlap) {
+  grain_overlap_ = std::max(0.0, std::min(0.9, overlap));
+  grain_spacing_frames_ = grain_duration_frames_ * (1.0 - grain_overlap_);
+}
+
+void GranularLooper::SetGrainEnvShape(int shape) {
+  envelope_shape_ = (shape == 1) ? 1 : 0;
 }
 
 void GranularLooper::SetGranularSpray(int spray_ms) {
@@ -785,12 +767,16 @@ void GranularLooper::SetLoopMode(unsigned int m) {
       buffer->loop_mode_ = LoopMode::static_mode;
       quasi_grain_fudge_ = 0;
       granular_spray_frames_ = 0;
+      grain_overlap_ = 0.5;
+      envelope_shape_ = 1;
       break;
     case (2):
     default:
       buffer->loop_mode_ = LoopMode::smudge_mode;
       quasi_grain_fudge_ = 220;
       granular_spray_frames_ = 441;  // 10ms * (44100/1000)
+      envelope_shape_ = 1;
+      grain_overlap_ = 0.8;
   }
 }
 void GranularLooper::SetScramblePending() {
@@ -875,8 +861,7 @@ void GranularLooper::NoteOn(midi_event ev) {
   if (file_buffer_->num_channels_ == 2) new_read_idx -= ((int)new_read_idx & 1);
 
   file_buffer_->audio_buffer_read_idx_ = static_cast<int>(new_read_idx);
-  grain_a_->SetReadIdx(new_read_idx);
-  grain_b_->SetReadIdx(new_read_idx);
+  for (auto &g : grain_pool_) g.SetReadIdx(new_read_idx);
   next_grain_launch_sample_time_ = 0;
   eg_.StartEg();
 }
@@ -978,6 +963,10 @@ void GranularLooper::SetParam(std::string name, double val) {
     eg_.SetReleaseTimeMsec(val);
   else if (name == "pitch") {
     SetPitch(val);
+  } else if (name == "grain_overlap") {
+    SetGrainOverlap(val);
+  } else if (name == "grain_env") {
+    SetGrainEnvShape(val);
   }
 }
 

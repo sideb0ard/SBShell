@@ -1,6 +1,7 @@
 #include <audioutils.h>
 #include <grains.h>
 
+#include <cmath>
 #include <iostream>
 
 namespace {
@@ -28,6 +29,8 @@ void SoundGrainSample::Initialize(SoundGrainParams params) {
   pitch_ratio = params.pitch_ratio;
 
   grain_len_frames = params.dur_frames;
+  envelope_shape = params.envelope_shape;
+  overlap_fraction = params.overlap_fraction;
   audiobuffer_cur_pos = params.starting_idx;
   if (reverse_mode) {
     audiobuffer_cur_pos =
@@ -75,6 +78,28 @@ StereoVal SoundGrainSample::Generate() {
 
   if (grain_frame_counter > grain_len_frames) {
     active = false;
+  }
+
+  // Apply per-grain amplitude envelope
+  if (grain_len_frames > 0) {
+    double t = static_cast<double>(grain_frame_counter) / grain_len_frames;
+    double env = 1.0;
+    if (envelope_shape == 1) {
+      // Hann window: smooth bell, zero at both ends
+      env = 0.5 * (1.0 - std::cos(2.0 * M_PI * t));
+    } else {
+      // Tukey window: flat top with cosine-tapered edges
+      // Sums to 1.0 across overlapping grains when spacing=(1-f)*duration
+      double f = (overlap_fraction > 0.0) ? overlap_fraction : 0.0;
+      if (f > 0.0 && t < f) {
+        env = 0.5 * (1.0 - std::cos(M_PI * t / f));
+      } else if (f > 0.0 && t > 1.0 - f) {
+        env = 0.5 * (1.0 + std::cos(M_PI * (t - (1.0 - f)) / f));
+      }
+      // else env = 1.0 (flat top)
+    }
+    out.left *= env;
+    out.right *= env;
   }
 
   return out;

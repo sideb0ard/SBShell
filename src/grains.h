@@ -20,6 +20,8 @@ struct SoundGrainParams {
   int degrade_by{0};
   double pitch_ratio{1.0};
   std::vector<double> *audio_buffer{nullptr};
+  int envelope_shape{0};         // 0=Tukey (flat-top), 1=Hann
+  double overlap_fraction{0.2};  // fraction of grain used for attack/release
 };
 
 struct SoundGrain {
@@ -54,6 +56,9 @@ struct SoundGrainSample : public SoundGrain {
 
   bool active{false};
   bool reverse_mode{false};
+
+  int envelope_shape{0};
+  double overlap_fraction{0.2};
 };
 
 }  // namespace SBAudio

@@ -229,6 +229,8 @@ std::string build_help() {
   ss << COOL_COLOR_GREEN << "  Granular controls:\n";
   ss << ANSI_COLOR_WHITE << "  set x:grains_per_sec 15  " << COOL_COLOR_ORANGE << "- Grain density\n";
   ss << ANSI_COLOR_WHITE << "  set x:grain_dur_ms 80    " << COOL_COLOR_ORANGE << "- Grain duration in ms\n";
+  ss << ANSI_COLOR_WHITE << "  set x:grain_overlap 0.2  " << COOL_COLOR_ORANGE << "- Overlap between grains (0.0-0.9, default 0.2)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:grain_env 0        " << COOL_COLOR_ORANGE << "- Envelope: 0=Tukey (loop-safe), 1=Hann (granular cloud)\n";
   ss << ANSI_COLOR_WHITE << "  set x:grain_spray_ms 10  " << COOL_COLOR_ORANGE << "- Random position spray in ms\n";
   ss << ANSI_COLOR_WHITE << "  set x:quasi_grain_fudge 0 " << COOL_COLOR_ORANGE << "- Duration randomisation\n\n";
 
