@@ -2626,6 +2626,37 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            return return_array;
            // return evaluator::NULLL;
          })},
+    // chord_notes(root, type=0, mod=0)
+    // Key-independent chord builder. type: 0=major 1=minor 2=dim 3=power 4=sus2
+    // 5=sus4 mod: 0=triad 1=min7 2=maj7 3=inv_min7 4=inv_maj7
+    {"chord_notes",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.empty()) return evaluator::NULLL;
+           auto root_obj = std::dynamic_pointer_cast<object::Number>(args[0]);
+           if (!root_obj) return evaluator::NULLL;
+
+           unsigned int root = static_cast<unsigned int>(root_obj->value_);
+           unsigned int chord_type = MAJOR_CHORD;
+           unsigned int modification = 0;
+
+           if (args.size() > 1) {
+             auto t = std::dynamic_pointer_cast<object::Number>(args[1]);
+             if (t) chord_type = static_cast<unsigned int>(t->value_);
+           }
+           if (args.size() > 2) {
+             auto m = std::dynamic_pointer_cast<object::Number>(args[2]);
+             if (m) modification = static_cast<unsigned int>(m->value_);
+           }
+
+           auto notez = GetMidiNotesInChord(root, chord_type, modification);
+           auto arr = std::make_shared<object::Array>(
+               std::vector<std::shared_ptr<object::Object>>());
+           for (int n : notez)
+             arr->elements_.push_back(std::make_shared<object::Number>(n));
+           return arr;
+         })},
     {"scale_note",
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)

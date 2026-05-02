@@ -22,7 +22,16 @@ let shades = NULL;
 # p1 # newphasor; p2 # FXblah_comp; vol dx 0; sched(3840, 0, 0.7, 3840, "vol dx %");
 # p3 # drumblah_comp;
 
-# p4 # simplerampblah_comp; sched(0, 1, 0, 3840, "vol dx %, vol walkin %");
+# sched(0, 1, 0, 3840*4, "vol walkin %");
+
+# vol dx 0; p4 # dummmosloblah_comp;  sched(3840, 0, 0.4, 3840, "vol dx2 %"); vol shades 0;
+
+# p4 # simplerampblah_comp; vol dx 0;
+
+# let rockm = loop(voices/back2basiccRAPAMP.wav); set rockm:len 8;
+# add_fx(rockm, "delay"); set rockm:fx0:fb 80;
+# p6 < osc 6 "0.6 0.8" "set rockm:pitch %";
+# p7 # rockmblah_comp
 
 # p5 # xblah_comp
 
@@ -46,7 +55,7 @@ let init = fn()
   add_fx(dx, "djeq");
   walkin = loop(noises/walkinRain.aiff);
   add_fx(walkin, "distort");
-  set walkin:fx0:threshold 0.4;
+  set walkin:fx0:threshold 0.4; set walkin:len 8;
   add_fx(walkin, "djeq");
 
   sbs = sbsynth();
@@ -55,11 +64,16 @@ let init = fn()
   # add_buf(sbs, "notes/noteWitMAWWelp.aiff");
 
   load_preset(dx3, "WAFFLE");
+  add_fx(dx3, "delay");
+  set dx3:fx0:fb 60;
 
   shades = loop(strings/shadesofrhythm4bar.aiff); set shades:len 128;
   set shades:quasi_grain_fudge 220;
   set shades:pitch 0.2;
   send(delay, shades);
+  add_fx(shades, "distort"); add_fx(shades, "reverb");
+  set shades:fx1:wetmx 60;
+  set shades:fx1:reverbtime 600;
   #add_fx(shades, "diffuser");
   #set shades:fx0:wet 1;
   #set shades:fx0:wet_gain 2;
@@ -577,15 +591,44 @@ let dummmosloblah_comp = comp()
       algox = incr(algox, 0, 7);
       sched(3840, 0, 0.7, 3840, "vol dx %");
     }
+
+    if (count % 16 == 11) {
+      vol dx 0;
+    }
   }
 }
 
-let blah_comp = comp()
+let rockmblah_comp = comp()
 {
   setup()
   {
+    let fxid = 0;
   }
   run()
   {
+    if (count % 3 == 0) {
+      if (fxid == 0) {
+        set rockm:stutter 1;
+      }
+      if (fxid == 1) {
+        set rockm:strobe 1;
+      }
+      if (fxid == 2) {
+        set rockm:gate 1;
+      }
+      if (fxid == 3) {
+        set rockm:speedulate 1;
+      }
+      if (fxid == 4) {
+        set rockm:slowdown 1;
+      }
+      if (fxid == 5) {
+        set rockm:reverse 1;
+      }
+      if (fxid == 6) {
+        set rockm:repeat 1;
+      }
+      fxid = incr(fxid, 0, 7);
+    }
   }
 }

@@ -132,6 +132,25 @@ SB#> [44, 48, 51]
 SB#> note_on(dx, notes_in_chord(44, 44))
 ```
 
+`chord_notes(root, type, mod)` builds a chord from intervals only — no key needed. Useful when you know the chord but not the key:
+```javascript
+# type: 0=major  1=minor  2=diminished  3=power  4=sus2  5=sus4
+# mod:  0=triad  1=min7   2=maj7        3=inv_min7        4=inv_maj7
+
+chord_notes(51)           # D# major triad
+SB#> [51, 55, 58]
+chord_notes(51, 1)        # D# minor triad
+SB#> [51, 54, 58]
+chord_notes(51, 1, 1)     # D# minor 7
+SB#> [51, 54, 58, 61]
+chord_notes(56, 1, 1)     # G# minor 7
+SB#> [56, 59, 63, 66]
+
+# Play a D# min7 > G# min7 progression:
+note_on(dx, chord_notes(51, 1, 1), dur=1000)
+note_on_at(dx, chord_notes(56, 1, 1), 1000, dur=1000)
+```
+
 Try some other DX synth:
 
 ```javascript

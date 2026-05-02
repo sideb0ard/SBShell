@@ -181,6 +181,9 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
     if (ie->operator_ == "&&" && !IsTruthy(left)) {
       return FFALSE;
     }
+    if (ie->operator_ == "||" && IsTruthy(left)) {
+      return TTRUE;
+    }
 
     auto right = Eval(ie->right_, env);
     if (IsError(right)) return right;

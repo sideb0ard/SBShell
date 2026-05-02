@@ -98,7 +98,10 @@ std::string build_help() {
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  midi_ref()                       " << COOL_COLOR_ORANGE << "- Map of note names to MIDI numbers\n";
   ss << ANSI_COLOR_WHITE << "  notes_in_key(root, scale)        " << COOL_COLOR_ORANGE << "- MIDI notes in key/scale\n";
-  ss << ANSI_COLOR_WHITE << "  notes_in_chord(root, type)       " << COOL_COLOR_ORANGE << "- MIDI notes in chord\n";
+  ss << ANSI_COLOR_WHITE << "  notes_in_chord(root, type)       " << COOL_COLOR_ORANGE << "- MIDI notes in chord (needs key)\n";
+  ss << ANSI_COLOR_WHITE << "  chord_notes(root, type, mod)     " << COOL_COLOR_ORANGE << "- MIDI notes in chord (key-independent)\n";
+  ss << ANSI_COLOR_WHITE << "    type: 0=major 1=minor 2=dim 3=power 4=sus2 5=sus4\n";
+  ss << ANSI_COLOR_WHITE << "    mod:  0=triad 1=min7 2=maj7 3=inv_min7 4=inv_maj7\n";
   ss << ANSI_COLOR_WHITE << "  scale_note(note, key, scale)     " << COOL_COLOR_ORANGE << "- Quantize note to scale\n";
   ss << ANSI_COLOR_WHITE << "  scale_melody(notes, root, scale) " << COOL_COLOR_ORANGE << "- Quantize melody array to scale\n";
   ss << ANSI_COLOR_WHITE << "  algoz()                          " << COOL_COLOR_ORANGE << "- Ascii drawing of the DX algorithms\n";

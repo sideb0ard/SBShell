@@ -1,6 +1,7 @@
 #include "xfader.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <sstream>
 
@@ -47,19 +48,13 @@ void XFader::Update(mixer_timing_info tinfo) {
 double XFader::GetValueFor(int idx) {
   bool is_in_left = left_channel_.find(idx) != left_channel_.end();
   bool is_in_right = right_channel_.find(idx) != right_channel_.end();
+  // Map position (-1..1) to a 0..1 crossfade parameter t
+  double t = (xfader_position_ + 1.0) * 0.5;  // 0=full left, 1=full right
   if (is_in_left) {
-    if (xfader_position_ <= 0) {
-      return 1;
-    } else {
-      return 1 - std::abs(xfader_position_);
-    }
+    return std::cos(t * M_PI * 0.5);
   }
   if (is_in_right) {
-    if (xfader_position_ >= 0) {
-      return 1;
-    } else {
-      return 1 - std::abs(xfader_position_);
-    }
+    return std::sin(t * M_PI * 0.5);
   }
   return 1;
 }
