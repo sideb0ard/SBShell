@@ -1323,6 +1323,7 @@ std::shared_ptr<object::Object> ApplyComputationRun(
   std::shared_ptr<object::Computation> comp =
       std::dynamic_pointer_cast<object::Computation>(callable);
   if (comp) {
+    std::lock_guard<std::mutex> lock(comp->run_mutex_);
     // Run setup on first invocation - deferred from comp creation
     // This allows init() to execute first and initialize variables
     if (!comp->setup_executed_) {

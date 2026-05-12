@@ -93,6 +93,14 @@ std::shared_ptr<ast::LetStatement> Parser::ParseLetStatement() {
   auto stmt = std::make_shared<ast::LetStatement>(cur_token_);
   stmt->is_new_item = true;
 
+  if (!PeekTokenIs(token::SLANG_IDENT) &&
+      token::IsKeyword(peek_token_.literal_)) {
+    std::cerr
+        << "ERROR: '" << peek_token_.literal_
+        << "' is a reserved keyword and cannot be used as a variable name\n";
+    return nullptr;
+  }
+
   if (!ExpectPeek(token::SLANG_IDENT)) {
     std::cerr << "NO IDENT! - returning nullptr \n";
     return nullptr;

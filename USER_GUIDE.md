@@ -440,6 +440,30 @@ let fx_comp = comp()
 }
 ```
 
+#### Granulate FX — live granular processing
+
+Route any sound generator through the same grain engine as `loop()` using `add_fx`:
+
+```javascript
+let dx = fmsynth();
+add_fx(dx, "granulate");    // or "gran" for short
+
+// Dry/wet and all grain controls available as fx params:
+set dx:fx0:wet 0.7
+set dx:fx0:grain_overlap 0.5
+set dx:fx0:grain_env 1          // Hann for shimmer
+set dx:fx0:grains_per_sec 12
+set dx:fx0:grain_dur_ms 120
+set dx:fx0:grain_spray_ms 20    // position randomisation = pitch shimmer
+```
+
+The FX captures incoming audio into a 10-second ring buffer. Grains read from slightly behind the write head, so the input is always captured before it's granulated. The same `grain_overlap` / `grain_env` / `grain_dur_ms` / `grain_spray_ms` params work identically to `loop()`.
+
+**Typical uses:**
+- `grain_env 1` + high `grain_spray_ms` on a pad → smeared, shimmering texture
+- Low `grains_per_sec` + `grain_env 0` (Tukey) on a drum bus → subtle thickening without smear
+- Automate `wet` in a computation to fade in/out the granular texture mid-performance
+
 ### Sample Player
 
 Load and play audio samples from the `wavs/` directory:

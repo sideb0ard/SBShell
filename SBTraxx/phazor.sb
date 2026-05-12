@@ -24,16 +24,24 @@ let shades = NULL;
 
 # sched(0, 1, 0, 3840*4, "vol walkin %");
 
-# vol dx 0; p4 # dummmosloblah_comp;  sched(3840, 0, 0.4, 3840, "vol dx2 %"); vol shades 0;
+# vol dx 0; p4 # dummmosloblah_comp;  sched(3840, 0, 0.4, 3840, "vol dx2 %");
 
-# p4 # simplerampblah_comp; vol dx 0;
+# p4 # simplerampblah_comp; vol dx 0; vol shades 0;
 
-# let rockm = loop(voices/back2basiccRAPAMP.wav); set rockm:len 8;
+# let rockm = loop(voices/back2basiccRAPAMP.wav); set rockm:len 8; vol rockm 0;
 # add_fx(rockm, "delay"); set rockm:fx0:fb 80;
-# p6 < osc 6 "0.6 0.8" "set rockm:pitch %";
-# p7 # rockmblah_comp
+# p6 < osc 6 "0.6 0.8" "set rockm:pitch %";  p7 # rockmblah_comp
+# sched(0, 0, 0.7, 3840*4, "vol rockm %");
 
-# p5 # xblah_comp
+# p5 # xblah_comp;
+
+# p4 # simplerampTWOOblah_comp;
+# add_buf(sbs, "NewLoopz/detGumbD.wav");
+
+
+
+
+
 
 
 # note_on(dx, notes_in_chord(52, 47, 1), dur = 0);
@@ -445,6 +453,54 @@ let simplerampblah_comp = comp()
       if (ramp2tri(out_sig3)) {
         #print("NOTEON:", i);
         note_on_at(dx3, chrd, i, dur = durz[drx]);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
+let simplerampTWOOblah_comp = comp()
+{
+  setup()
+  {
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri = ramp2trigger_factory();
+
+    let plot_width = 120;
+    let stride = 3840 / plot_width;
+    #let fullramp = phasor(3840 * 2);
+    let fullramp = phasor(3840);
+
+    let chrd1 = notes_in_chord(49, 47, 1);
+    let chrd2 = notes_in_chord(54, 47, 1);
+    let chrd3 = notes_in_chord(59, 47, 1);
+
+    let durz = [1000, 200, 1300, 1450, 600];
+    let drx = 0;
+  }
+  run()
+  {
+    let chrd = chrd1;
+    if (count % 8 == 7) {
+      chrd = chrd2;
+    }
+    if (count % 11 == 7) {
+      chrd = chrd3;
+    }
+    if (count % 13 == 0) {
+      chrd = down(chrd, 24);
+    }
+    for (let i = 0; i < 3840; i++) {
+      let rampval = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 2 / 3);
+      let out_sig2 = ramp_div2(rampval, 11 / 4);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      set dx3:op2out scale(out_sig2, 0, 1, 0, 99) at = i;
+      if (ramp2tri(out_sig3)) {
+        #print("NOTEON:", i);
+        note_on_at(dx2, chrd, i, dur = durz[drx]);
         drx = incr(drx, 0, len(durz));
       }
     }

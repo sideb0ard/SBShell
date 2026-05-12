@@ -4,6 +4,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -305,7 +306,8 @@ class Computation : public CallableWithEnv {
   std::shared_ptr<ast::BlockStatement> setup_;
   std::shared_ptr<ast::BlockStatement> run_;
   std::shared_ptr<ast::BlockStatement> signal_generator_;
-  bool setup_executed_;  // Defer setup until first run() call
+  bool setup_executed_;   // Defer setup until first run() call
+  std::mutex run_mutex_;  // Prevent concurrent runs from REPL + process thread
 };
 
 class MidiArray : public Object {

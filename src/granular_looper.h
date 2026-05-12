@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "envelope_generator.h"
-#include "grains.h"
+#include "granular_engine.h"
 #include "soundgenerator.h"
 #include "stepper.h"
 
@@ -37,26 +37,12 @@ class GranularLooper : public SoundGenerator {
   bool started_{false};
 
   std::unique_ptr<FileBuffer> file_buffer_;
-
   SoundGrainType grain_type_{SoundGrainType::Sample};
 
-  static constexpr int kMaxGrains = 16;
-  std::array<SoundGrainSample, kMaxGrains> grain_pool_;
-
-  double grain_overlap_{0.2};  // fraction of grain duration used for overlap
-  int envelope_shape_{0};      // 0=Tukey (default), 1=Hann
-
-  int granular_spray_frames_{0};  // random off-set from starting idx
-  int quasi_grain_fudge_{0};      // random variation from length of grain
-
-  int grains_per_sec_{0};
-  int grain_duration_frames_{0};
-  int grain_spacing_frames_{0};
+  GranularEngine engine_;
 
   bool reverse_mode_{false};
   bool reverse_pending_{false};
-
-  int next_grain_launch_sample_time_{1};
 
   EnvelopeGenerator eg_;  // start/stop amp
 
@@ -75,6 +61,8 @@ class GranularLooper : public SoundGenerator {
   void SetGrainDensity(int gps);
   void SetGranularSpray(int spray_ms);
   void SetQuasiGrainFudge(int fudgefactor);
+  void SetGrainOverlap(double overlap);
+  void SetGrainEnvShape(int shape);
   void SetReverseMode(bool b);
 
   void SetLoopMode(unsigned int m);
@@ -93,8 +81,6 @@ class GranularLooper : public SoundGenerator {
   void SetPitchStaircasePending();
 
   void LaunchGrain(mixer_timing_info tinfo);
-  void SetGrainOverlap(double overlap);
-  void SetGrainEnvShape(int shape);
 
   void SetGrainSlopePct(int percent);
   void SetDegradeBy(int degradation);

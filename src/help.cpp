@@ -238,6 +238,13 @@ std::string build_help() {
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  send(effect, gen)    " << COOL_COLOR_ORANGE << "- Send generator to effect\n";
   ss << ANSI_COLOR_WHITE << "  add_fx(gen, fx_name) " << COOL_COLOR_ORANGE << "- Add effect to generator\n";
+  ss << ANSI_COLOR_WHITE << "    granulate / gran    " << COOL_COLOR_ORANGE << "- Live granular FX (routes audio through grain engine)\n";
+  ss << ANSI_COLOR_WHITE << "      set gen:fx0:wet 0.5          " << COOL_COLOR_ORANGE << "- Dry/wet mix\n";
+  ss << ANSI_COLOR_WHITE << "      set gen:fx0:grain_overlap 0.5 " << COOL_COLOR_ORANGE << "- Grain overlap (0.0-0.9)\n";
+  ss << ANSI_COLOR_WHITE << "      set gen:fx0:grain_env 1       " << COOL_COLOR_ORANGE << "- Envelope: 0=Tukey 1=Hann\n";
+  ss << ANSI_COLOR_WHITE << "      set gen:fx0:grains_per_sec 15 " << COOL_COLOR_ORANGE << "- Grain density\n";
+  ss << ANSI_COLOR_WHITE << "      set gen:fx0:grain_dur_ms 80   " << COOL_COLOR_ORANGE << "- Grain duration in ms\n";
+  ss << ANSI_COLOR_WHITE << "      set gen:fx0:grain_spray_ms 10 " << COOL_COLOR_ORANGE << "- Position randomisation\n";
   ss << ANSI_COLOR_WHITE << "  mvol(volume)         " << COOL_COLOR_ORANGE << "- Set master volume (0.0-1.0)\n";
   ss << ANSI_COLOR_WHITE << "  monitor(filepath)    " << COOL_COLOR_ORANGE << "- Monitor file for live coding\n\n";
 
