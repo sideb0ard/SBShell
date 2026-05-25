@@ -1,0 +1,88 @@
+let phasor_diff = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = val - prev;
+    prev = val;
+    if (delta < -0.5) { return 1 + delta; }
+    if (delta > 0.5)  { return 1 - delta; }
+    return delta;
+  }
+}
+
+# Accumulate a ramp running at `ratio` times the source speed.
+#   # Pass a varying ratio each tick for FM-style modulation.
+let phasor_scale = fn()
+{
+  let diff = phasor_diff();
+  let acc = 0;
+  fn(val, ratio) {
+    acc = (acc + diff(val) / ratio) % 1.0;
+    if (acc < 0) { acc = acc + 1.0; }
+    return acc;
+  }
+}
+
+# # Fire true once per cycle of a 0→1 ramp value (detects the wrap).
+let phasor_wrap = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = abs(val - prev);
+    prev = val;
+    return delta > 0.5;
+  }
+}
+#
+# # ── newphasor comp ───────────────────────────────────────────────────────────
+
+let newphasor = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(3840);
+    let s1 = phasor_scale();
+    let s2 = phasor_scale();
+    let s3 = phasor_scale();
+    let on_wrap0 = phasor_wrap();
+    let on_wrap1 = phasor_wrap();
+    let on_wrap2 = phasor_wrap();
+    let on_wrap3 = phasor_wrap();
+
+    let plot_width = 80;
+    let stride = 3840 / plot_width;
+
+    let chrd1 = [44, 48, 51, 54];
+    let chrd2 = [37, 41, 44, 48];
+
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let r = signal_from(fullramp);
+      #print("RAMp:", r);
+
+      let v1 = s1(r, 1 / 6);
+      let v2 = s2(r, 3 / 8);
+      let v3 = s3(v1, max(v2, 0.001));
+
+      if (i % stride == 0) {
+        draw_plot(v2, plot_width, at = i);
+      }
+
+      if (on_wrap0(r)) {
+        #print("R:", i);
+      }
+      if (on_wrap1(v1)) {
+        #print("v1:", i);
+      }
+      if (on_wrap2(v2)) {
+        #print("v2:", i);
+      }
+      if (on_wrap3(v3)) {
+        #print("v3:", i);
+      }
+    }
+
+  }
+}

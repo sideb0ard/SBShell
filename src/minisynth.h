@@ -13,6 +13,8 @@
 
 #include <array>
 
+static const char MOOG_PRESET_FILENAME_JSON[] = "settings/moog_presets.json";
+
 namespace SBAudio {
 
 typedef struct synthsettings {

@@ -1,0 +1,55 @@
+
+let cpblah_comp = comp()
+{
+  setup()
+  {
+    let durz = [50, 100, 1200, 500, 700, 1000, 0, 0];
+    let drx = 0;
+    let ptz = [0.6, 0.7, 1, 8, 0.5];
+    let ptx = 0;
+  }
+  run()
+  {
+    if (count % 4 == 3) {
+      #note_on(pac,1, dur = 0);
+      set itg:scramble 1;
+    }
+    if (count % 8 == 2) {
+      note_on(pac,1, dur = 0);
+      set itg:stutter 1;
+    }
+    set itg:pitch ptz[ptx];
+    ptx = incr(ptx, 0, len(ptz));
+    #note_on_at(saype, 1, 10 * pp, dur = durz[drx]);
+    drx = incr(drx, 0, len(durz));
+    note_on_at(wut, 1, 12 * pp, dur = 0);
+    if (count % 3 == 0) {
+      note_on_at(wut, 1, 3 * pp, dur = 0);
+      note_on_at(wut, 1, 4 * pp, dur = 0);
+    }
+  }
+}
+
+let perhhblah_comp = comp()
+{
+  setup()
+  {
+    let pat = [0, 1, 1, 1,  0, 1, 0, 0,  0, 0, 0, 0,  0, 1, 1, 1];
+    let pitxz = [2, 0.2, 0.5, 1, 4, 3, 2];
+    let px = 0;
+  }
+  run()
+  {
+    set rim:pitch pitxz[px];
+    px = incr(px, 0, len(pitxz));
+    for (let i = 0; i < 16; i++) {
+      let offz = 40;
+      if (i % 2 == 0) {
+        offz = 0;
+      }
+      if (pat[i] == 1) {
+        note_on_at(rim, 1, i * pp + offz, dur = 0);
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+let phasor_wrap = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = abs(val - prev);
+    prev = val;
+    return delta > 0.5;
+  }
+}
+
+let dbblah_comp = comp()
+{
+  setup() {
+    let period_a = 2880;
+    let period_b = 5760;
+    let prev_phase_a = 0;
+    let prev_phase_b = 0;
+    let wrap_a = phasor_wrap();
+    let wrap_b = phasor_wrap();
+  }
+  run() {
+    for (let i = 0; i < 3840; i++) {
+      let t = count * 3840 + i;
+      let phase_a = (t % period_a) / period_a;
+      let phase_b = (t % period_b) / period_b;
+
+      if (wrap_a(phase_a)) { note_on_at(sbdrum, 0, i); }
+      if (wrap_b(phase_b)) { note_on_at(sbdrum, 1, i); }
+    }
+  }
+}

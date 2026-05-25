@@ -44,7 +44,6 @@ sudo apt-get install -y \
     build-essential cmake git \
     portaudio19-dev libportmidi-dev \
     libsndfile1-dev libreadline-dev \
-    libjsoncpp-dev \
     pkg-config
 ```
 
@@ -52,7 +51,7 @@ sudo apt-get install -y \
 ```bash
 brew install \
     portaudio portmidi libsndfile \
-    readline jsoncpp pkg-config
+    readline pkg-config
 ```
 
 ### Arch Linux
@@ -60,7 +59,7 @@ brew install \
 sudo pacman -S --needed \
     base-devel cmake git \
     portaudio portmidi libsndfile \
-    readline jsoncpp pkgconf
+    readline pkgconf
 ```
 
 ### Red Hat/CentOS/Fedora
@@ -69,7 +68,6 @@ sudo yum install -y \
     gcc-c++ cmake git \
     portaudio-devel portmidi-devel \
     libsndfile-devel readline-devel \
-    jsoncpp-devel \
     pkgconfig
 ```
 
@@ -80,13 +78,13 @@ SoundB0ard uses the following libraries:
 ### Automatically Downloaded (via FetchContent)
 - **Ableton Link** - For tempo synchronization
 - **PerlinNoise** - For procedural noise generation
+- **nlohmann/json** - JSON serialization for preset files (uses system install if available: `brew install nlohmann-json` / `apt install nlohmann-json-dev`)
 
 ### System Libraries (must be installed)
 - **PortAudio** - Cross-platform audio I/O
 - **PortMidi** - Cross-platform MIDI I/O  
 - **libsndfile** - Audio file reading/writing
 - **Readline** - Command-line editing
-- **JsonCpp** - JSON parsing
 - **pkg-config** - Package configuration
 
 ## Troubleshooting

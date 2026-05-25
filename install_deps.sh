@@ -22,7 +22,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             libportmidi-dev \
             libsndfile1-dev \
             libreadline-dev \
-            libjsoncpp-dev \
             pkg-config
     elif command -v yum &> /dev/null; then
         # Red Hat/CentOS/Fedora
@@ -35,7 +34,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             portmidi-devel \
             libsndfile-devel \
             readline-devel \
-            jsoncpp-devel \
             pkgconfig
     elif command -v pacman &> /dev/null; then
         # Arch Linux
@@ -48,7 +46,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             portmidi \
             libsndfile \
             readline \
-            jsoncpp \
             pkgconf
     else
         echo "Unsupported Linux distribution. Please install the following packages manually:"
@@ -57,7 +54,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "- portmidi development files"
         echo "- libsndfile development files"
         echo "- readline development files"
-        echo "- jsoncpp development files"
         echo "- pkg-config"
         exit 1
     fi
@@ -71,7 +67,6 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
             portmidi \
             libsndfile \
             readline \
-            jsoncpp \
             pkg-config
     else
         echo "Homebrew not found. Please install Homebrew first:"

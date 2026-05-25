@@ -109,6 +109,16 @@ FetchContent_Declare(
   GIT_TAG v3.0.0)
 FetchContent_MakeAvailable(perlin_noise)
 
+# nlohmann/json: prefer system install (brew/apt), fall back to FetchContent
+find_package(nlohmann_json 3.11 QUIET)
+if(NOT nlohmann_json_FOUND)
+  FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3)
+  FetchContent_MakeAvailable(nlohmann_json)
+endif()
+
 # WebSocket uses a custom POSIX-socket implementation (no WebSocketPP/ASIO
 # needed)
 
@@ -160,29 +170,6 @@ if(NOT SNDFILE_FOUND)
       FATAL_ERROR
         "libsndfile library not found. Install with: "
         "sudo apt install libsndfile1-dev (Ubuntu/Debian) or equivalent")
-  endif()
-endif()
-
-# Use pkg-config for jsoncpp
-pkg_check_modules(JSONCPP jsoncpp)
-if(NOT JSONCPP_FOUND)
-  find_library(
-    JSONCPP_LIB jsoncpp
-    PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64
-    NO_DEFAULT_PATH)
-  if(NOT JSONCPP_LIB)
-    # Fallback to default search
-    find_library(JSONCPP_LIB jsoncpp)
-  endif()
-  if(NOT JSONCPP_LIB)
-    message(
-      FATAL_ERROR
-        "jsoncpp library not found. Install with: "
-        "sudo apt install libjsoncpp-dev (Ubuntu/Debian) or equivalent")
-  endif()
-  find_path(JSONCPP_INCLUDE_DIR json/json.h)
-  if(NOT JSONCPP_INCLUDE_DIR)
-    message(FATAL_ERROR "jsoncpp headers not found")
   endif()
 endif()
 
@@ -345,12 +332,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   endif()
 endif()
 
-if(JSONCPP_FOUND)
-  target_include_directories(sbsh_lib PUBLIC ${JSONCPP_INCLUDE_DIRS})
-else()
-  target_include_directories(sbsh_lib PUBLIC ${JSONCPP_INCLUDE_DIR})
-endif()
-
 # Set compiler flags on sbsh_lib
 target_compile_options(
   sbsh_lib PUBLIC $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
@@ -368,7 +349,8 @@ if(ENABLE_SANITIZERS AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # Link libraries to sbsh_lib
-target_link_libraries(sbsh_lib PUBLIC Ableton::Link Threads::Threads)
+target_link_libraries(sbsh_lib PUBLIC Ableton::Link Threads::Threads
+                                      nlohmann_json::nlohmann_json)
 
 # Find readline full paths for macOS (needed before linking)
 if(READLINE_FOUND AND CMAKE_SYSTEM_NAME MATCHES "Darwin")
@@ -417,13 +399,6 @@ if(SNDFILE_FOUND)
   target_compile_options(sbsh_lib PUBLIC ${SNDFILE_CFLAGS_OTHER})
 else()
   target_link_libraries(sbsh_lib PUBLIC ${SNDFILE_LIB})
-endif()
-
-if(JSONCPP_FOUND)
-  target_link_libraries(sbsh_lib PUBLIC ${JSONCPP_LIBRARIES})
-  target_compile_options(sbsh_lib PUBLIC ${JSONCPP_CFLAGS_OTHER})
-else()
-  target_link_libraries(sbsh_lib PUBLIC ${JSONCPP_LIB})
 endif()
 
 # macOS frameworks

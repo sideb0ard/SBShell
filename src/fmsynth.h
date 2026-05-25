@@ -13,6 +13,8 @@
 
 #include <string>
 
+static const char FM_PRESET_FILENAME_JSON[] = "settings/fm_presets.json";
+
 namespace SBAudio {
 
 enum { DX1, DX2, DX3, DX4, DX5, DX6, DX7, DX8, MAXDX };

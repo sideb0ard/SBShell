@@ -19,6 +19,9 @@ namespace fs = std::filesystem;
 
 #include "cmdloop.h"
 #include "defjams.h"
+#include "drum_synth.h"
+#include "fmsynth.h"
+#include "minisynth.h"
 #include "mixer.h"
 #include "utils.h"
 // #include "lookuptables.h"
@@ -878,55 +881,31 @@ std::vector<int> GenerateBjork(int num_pulses, int seq_length) {
 }
 
 std::vector<std::string> GetSynthPresets(unsigned int synthtype) {
-  std::cout << "GET ME!\n";
-
-  std::string preset_file_name{};
-  switch (synthtype) {
-    case (MINISYNTH_TYPE):
-      preset_file_name = MOOG_PRESET_FILENAME;
-      break;
-    case (FMSYNTH_TYPE):
-      preset_file_name = FM_PRESET_FILENAME;
-      break;
-    case (DRUMSYNTH_TYPE):
-      preset_file_name = DRUM_PRESET_FILENAME;
-      break;
-  }
-
   std::vector<std::string> preset_names{};
-  std::ifstream presetzzz{preset_file_name};
 
-  if (presetzzz.is_open()) {
-    std::string line;
-
-    while (std::getline(presetzzz, line)) {
-      std::string delimiter = "::";
-
-      size_t pos = 0;
-      std::string cur_setting{};
-      std::string name{};
-      std::string val{};
-
-      while ((pos = line.find(delimiter)) != std::string::npos) {
-        cur_setting = line.substr(0, pos);
-        std::stringstream ss{cur_setting};
-        int found_count{0};
-        while (!ss.eof()) {
-          if (found_count == 0)
-            std::getline(ss, name, '=');
-          else if (found_count == 1)
-            std::getline(ss, val, '=');
-          found_count++;
-        }
-
-        if (name == "name") {
-          preset_names.push_back(val);
-          break;
-        }
-        line.erase(0, pos + delimiter.length());
-      }
+  // Helper: read preset names from a flat JSON file
+  auto read_json_names = [&](const char *path) {
+    std::ifstream jf(path);
+    if (!jf.is_open()) return;
+    try {
+      nlohmann::json root;
+      jf >> root;
+      for (auto &[key, _] : root.items()) preset_names.push_back(key);
+    } catch (...) {
     }
+  };
+
+  if (synthtype == DRUMSYNTH_TYPE) {
+    read_json_names(DRUM_KITS_FILENAME);
+    if (!preset_names.empty()) return preset_names;
+  } else if (synthtype == FMSYNTH_TYPE) {
+    read_json_names(FM_PRESET_FILENAME_JSON);
+    if (!preset_names.empty()) return preset_names;
+  } else if (synthtype == MINISYNTH_TYPE) {
+    read_json_names(MOOG_PRESET_FILENAME_JSON);
+    if (!preset_names.empty()) return preset_names;
   }
+
   return preset_names;
 }
 

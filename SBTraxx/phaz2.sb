@@ -1,0 +1,164 @@
+
+let init = fn()
+{
+}
+
+let phasor_diff = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = val - prev;
+    prev = val;
+    if (delta < -0.5) { return 1 + delta; }
+    if (delta > 0.5)  { return 1 - delta; }
+    return delta;
+  }
+}
+
+# Accumulate a ramp running at `ratio` times the source speed.
+#   # Pass a varying ratio each tick for FM-style modulation.
+let phasor_scale = fn()
+{
+  let diff = phasor_diff();
+  let acc = 0;
+  fn(val, ratio) {
+    acc = (acc + diff(val) / ratio) % 1.0;
+    if (acc < 0) { acc = acc + 1.0; }
+    return acc;
+  }
+}
+
+# # Fire true once per cycle of a 0→1 ramp value (detects the wrap).
+let phasor_wrap = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = abs(val - prev);
+    prev = val;
+    return delta > 0.5;
+  }
+}
+#
+# # ── newphasor comp ───────────────────────────────────────────────────────────
+#
+# DX CARPENTER
+let newphasor = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(3840);
+    let s1 = phasor_scale();
+    let s2 = phasor_scale();
+    let s3 = phasor_scale();
+    let on_wrap = phasor_wrap();
+
+    let stride = 3840 / 120;
+
+    let chrd1 = [44, 48, 51, 54];
+    let chrd2 = [37, 41, 44, 48];
+    let pat = [1, 1, 3, 3,  2, 1, 0, 2,  1, 3, 3, 3,  1, 0, 3, 3];
+    let px = 0;
+
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let r = signal_from(fullramp);
+      #print("RAMp:", r);
+
+      let v1 = s1(r, 1 / 6);
+      let v2 = s2(r, 3 / 8);
+      let v3 = s3(v1, max(v2, 0.001));
+
+      if (i % stride == 0) {
+        set dx:fx0:lo    scale(v3, 0, 1, 80, 18000) at=i;
+        set dx:op2out    scale(v3, 0, 1, 40, 90)   at=i;
+      }
+
+      if (on_wrap(v3)) {
+        #print("DELTA:", i, " PX:", px);
+        if (count % 16 < 14) {
+          if (pat[px] == 0) {
+            note_on_at(dx, chrd1, i, dur = 0);
+          }
+        }
+        if (count % 19 < 16) {
+          if (pat[px] == 1) {
+            note_on_at(dx, chrd2, i, dur = 0);
+          }
+        }
+        if (pat[px] == 2) {
+          note_off_at(dx, 0, i);
+          set dx:fx0:active 0 at = i;
+        }
+        if (pat[px] == 4 && px % 7 == 0) {
+          set dx:fx0:active 1 at = i;
+        }
+        px = incr(px, 0, len(pat));
+      }
+    }
+
+    if (count % 16 == 3) {
+      pat = rand_array(16, 0, 4);
+      #print(pat);
+    }
+  }
+}
+
+let mxblah_comp = comp()
+{
+  setup()
+  {
+    let pat = [0, 10, 12, 11,  6, 14, 11, 5,  14, 2, 9, 11,  6, 3, 14, 3];
+    let durz = [10, 50, 100, 250, 0];
+    let drx = 0;
+  }
+  run()
+  {
+    unsolo();
+
+    if (count % 4 == 3) {
+      pat = rand_array(16, 0, 15);
+    }
+
+    for (let i = 0; i < 16; i++) {
+      note_on_at(dee, pat[i], i* pp, dur = durz[drx]);
+    }
+    drx = incr(drx, 0, len(durz));
+
+
+    if (count % 8 == 7) {
+      let when = 12 * pp;
+      solo(dee) at = when;
+      solo(bd) at = when;
+      solo(hh) at = when;
+      solo(holdme) ;
+    }
+  }
+}
+
+let dxeffectblah_comp = comp()
+{
+  setup()
+  {
+    let fbz = [50, 60, 80, 90, 95];
+    let fbx = 0;
+    let ratz = [3.70, 1.41, 17.30, 21.98];
+    let rx = 0;
+
+    let ratez = [2, 13, 0.7, 11, 7.4, 3.14];
+    let rax = 0;
+  }
+  run()
+  {
+    set dx:op2fb fbz[fbx];
+    fbx = incr(fbx, 0, len(fbz));
+
+    set dx:o2rat ratz[rx];
+    rx = incr(rx, 0, len(ratz));
+
+    set dx:l1_rate ratez[rax];
+    rax = incr(rax, 0, len(ratez));
+
+  }
+}

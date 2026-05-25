@@ -4,8 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 #include "midi_freq_table.h"
 #include "mixer.h"
@@ -889,200 +891,97 @@ void MiniSynth::Randomize() {
   // minisynth_print_settings(ms);
 }
 
+namespace {
+nlohmann::json MoogSettingsToJson(const SBAudio::synthsettings &s,
+                                  double volume) {
+  nlohmann::json j;
+  j["voice_mode"] = s.m_voice_mode;
+  j["monophonic"] = s.m_monophonic;
+  j["lfo1_waveform"] = s.m_lfo1_waveform;
+  j["lfo1_dest"] = s.m_lfo1_dest;
+  j["lfo1_mode"] = s.m_lfo1_mode;
+  j["lfo1_rate"] = s.m_lfo1_rate;
+  j["lfo1_amp"] = s.m_lfo1_amplitude;
+  j["lfo1_osc_pitch_intensity"] = s.m_lfo1_osc_pitch_intensity;
+  j["lfo1_osc_pitch_enabled"] = s.m_lfo1_osc_pitch_enabled;
+  j["lfo1_filter_fc_intensity"] = s.m_lfo1_filter_fc_intensity;
+  j["lfo1_filter_fc_enabled"] = s.m_lfo1_filter_fc_enabled;
+  j["lfo1_amp_intensity"] = s.m_lfo1_amp_intensity;
+  j["lfo1_amp_enabled"] = s.m_lfo1_amp_enabled;
+  j["lfo1_pan_intensity"] = s.m_lfo1_pan_intensity;
+  j["lfo1_pan_enabled"] = s.m_lfo1_pan_enabled;
+  j["lfo1_pulsewidth_intensity"] = s.m_lfo1_pulsewidth_intensity;
+  j["lfo1_pulsewidth_enabled"] = s.m_lfo1_pulsewidth_enabled;
+  j["lfo2_waveform"] = s.m_lfo2_waveform;
+  j["lfo2_dest"] = s.m_lfo2_dest;
+  j["lfo2_mode"] = s.m_lfo2_mode;
+  j["lfo2_rate"] = s.m_lfo2_rate;
+  j["lfo2_amp"] = s.m_lfo2_amplitude;
+  j["lfo2_osc_pitch_intensity"] = s.m_lfo2_osc_pitch_intensity;
+  j["lfo2_osc_pitch_enabled"] = s.m_lfo2_osc_pitch_enabled;
+  j["lfo2_filter_fc_intensity"] = s.m_lfo2_filter_fc_intensity;
+  j["lfo2_filter_fc_enabled"] = s.m_lfo2_filter_fc_enabled;
+  j["lfo2_amp_intensity"] = s.m_lfo2_amp_intensity;
+  j["lfo2_amp_enabled"] = s.m_lfo2_amp_enabled;
+  j["lfo2_pan_intensity"] = s.m_lfo2_pan_intensity;
+  j["lfo2_pan_enabled"] = s.m_lfo2_pan_enabled;
+  j["lfo2_pulsewidth_intensity"] = s.m_lfo2_pulsewidth_intensity;
+  j["lfo2_pulsewidth_enabled"] = s.m_lfo2_pulsewidth_enabled;
+  j["attack_time_msec"] = s.m_eg1_attack_time_msec;
+  j["decay_time_msec"] = s.m_eg1_decay_time_msec;
+  j["release_time_msec"] = s.m_eg1_release_time_msec;
+  j["sustain_level"] = s.m_eg1_sustain_level;
+  j["volume_db"] = volume;
+  j["fc_control"] = s.m_fc_control;
+  j["q_control"] = s.m_q_control;
+  j["detune_cents"] = s.m_detune_cents;
+  j["pulse_width_pct"] = s.m_pulse_width_pct;
+  j["sub_osc_db"] = s.m_sub_osc_db;
+  j["noise_osc_db"] = s.m_noise_osc_db;
+  j["eg1_osc_intensity"] = s.m_eg1_osc_intensity;
+  j["eg1_osc_enabled"] = s.m_eg1_osc_enabled;
+  j["eg1_filter_intensity"] = s.m_eg1_filter_intensity;
+  j["eg1_filter_enabled"] = s.m_eg1_filter_enabled;
+  j["eg1_dca_intensity"] = s.m_eg1_dca_intensity;
+  j["eg1_dca_enabled"] = s.m_eg1_dca_enabled;
+  j["filter_keytrack_intensity"] = s.m_filter_keytrack_intensity;
+  j["octave"] = s.m_octave;
+  j["pitchbend_range"] = s.m_pitchbend_range;
+  j["legato_mode"] = s.m_legato_mode;
+  j["reset_to_zero"] = s.m_reset_to_zero;
+  j["filter_keytrack"] = s.m_filter_keytrack;
+  j["filter_type"] = s.m_filter_type;
+  j["filter_saturation"] = s.m_filter_saturation;
+  j["nlp"] = s.m_nlp;
+  j["velocity_to_attack_scaling"] = s.m_velocity_to_attack_scaling;
+  j["note_number_to_decay_scaling"] = s.m_note_number_to_decay_scaling;
+  j["portamento_time_msec"] = s.m_portamento_time_msec;
+  j["sustain_override"] = s.m_eg1_sustain_override;
+  return j;
+}
+}  // namespace
+
 void MiniSynth::Save(std::string new_preset_name) {
   if (new_preset_name.empty()) {
-    printf(
-        "Play tha game, pal, need a name to save yer synth settings "
-        "with\n");
+    printf("Play tha game, pal, need a name to save yer synth settings with\n");
     return;
   }
-  const char *preset_name = new_preset_name.c_str();
-
-  printf("Saving '%s' settings for Minisynth to file %s\n", preset_name,
-         MOOG_PRESET_FILENAME);
-  FILE *presetzzz = fopen(MOOG_PRESET_FILENAME, "a+");
-  if (presetzzz == NULL) {
-    printf("Couldn't save settings!!\n");
-    return;
-  }
-
-  int settings_count = 0;
   snprintf(m_settings.m_settings_name, sizeof(m_settings.m_settings_name), "%s",
-           preset_name);
+           new_preset_name.c_str());
 
-  fprintf(presetzzz, "::name=%s", m_settings.m_settings_name);
-  settings_count++;
-
-  fprintf(presetzzz, "::voice_mode=%u", m_settings.m_voice_mode);
-  settings_count++;
-
-  fprintf(presetzzz, "::monophonic=%d", m_settings.m_monophonic);
-  settings_count++;
-
-  // LFO1
-  fprintf(presetzzz, "::lfo1_waveform=%u", m_settings.m_lfo1_waveform);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_dest=%u", m_settings.m_lfo1_dest);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_mode=%u", m_settings.m_lfo1_mode);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_rate=%f", m_settings.m_lfo1_rate);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_amp=%f", m_settings.m_lfo1_amplitude);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_osc_pitch_intensity=%f",
-          m_settings.m_lfo1_osc_pitch_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_osc_pitch_enabled=%d",
-          m_settings.m_lfo1_osc_pitch_enabled);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_filter_fc_intensity=%f",
-          m_settings.m_lfo1_filter_fc_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_filter_fc_enabled=%d",
-          m_settings.m_lfo1_filter_fc_enabled);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_amp_intensity=%f",
-          m_settings.m_lfo1_amp_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_amp_enabled=%d", m_settings.m_lfo1_amp_enabled);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_pan_intensity=%f",
-          m_settings.m_lfo1_pan_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_pan_enabled=%d", m_settings.m_lfo1_pan_enabled);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_pulsewidth_intensity=%f",
-          m_settings.m_lfo1_pulsewidth_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo1_pulsewidth_enabled=%d",
-          m_settings.m_lfo1_pulsewidth_enabled);
-  settings_count++;
-
-  // LFO2
-  fprintf(presetzzz, "::lfo2_waveform=%u", m_settings.m_lfo2_waveform);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_dest=%u", m_settings.m_lfo2_dest);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_mode=%u", m_settings.m_lfo2_mode);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_rate=%f", m_settings.m_lfo2_rate);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_amp=%f", m_settings.m_lfo2_amplitude);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_osc_pitch_intensity=%f",
-          m_settings.m_lfo2_osc_pitch_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_osc_pitch_enabled=%d",
-          m_settings.m_lfo2_osc_pitch_enabled);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_filter_fc_intensity=%f",
-          m_settings.m_lfo2_filter_fc_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_filter_fc_enabled=%d",
-          m_settings.m_lfo2_filter_fc_enabled);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_amp_intensity=%f",
-          m_settings.m_lfo2_amp_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_amp_enabled=%d", m_settings.m_lfo2_amp_enabled);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_pan_intensity=%f",
-          m_settings.m_lfo2_pan_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_pan_enabled=%d", m_settings.m_lfo2_pan_enabled);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_pulsewidth_intensity=%f",
-          m_settings.m_lfo2_pulsewidth_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::lfo2_pulsewidth_enabled=%d",
-          m_settings.m_lfo2_pulsewidth_enabled);
-  settings_count++;
-  // EG1
-  fprintf(presetzzz, "::attack_time_msec=%f",
-          m_settings.m_eg1_attack_time_msec);
-  settings_count++;
-  fprintf(presetzzz, "::decay_time_msec=%f", m_settings.m_eg1_decay_time_msec);
-  settings_count++;
-  fprintf(presetzzz, "::release_time_msec=%f",
-          m_settings.m_eg1_release_time_msec);
-  settings_count++;
-  fprintf(presetzzz, "::sustain_level=%f", m_settings.m_eg1_sustain_level);
-  settings_count++;
-
-  fprintf(presetzzz, "::volume_db=%f", volume);
-  settings_count++;
-  fprintf(presetzzz, "::fc_control=%f", m_settings.m_fc_control);
-  settings_count++;
-  fprintf(presetzzz, "::q_control=%f", m_settings.m_q_control);
-  settings_count++;
-
-  fprintf(presetzzz, "::detune_cents=%f", m_settings.m_detune_cents);
-  settings_count++;
-  fprintf(presetzzz, "::pulse_width_pct=%f", m_settings.m_pulse_width_pct);
-  settings_count++;
-  fprintf(presetzzz, "::sub_osc_db=%f", m_settings.m_sub_osc_db);
-  settings_count++;
-  fprintf(presetzzz, "::noise_osc_db=%f", m_settings.m_noise_osc_db);
-  settings_count++;
-
-  fprintf(presetzzz, "::eg1_osc_intensity=%f", m_settings.m_eg1_osc_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::eg1_osc_enabled=%d", m_settings.m_eg1_osc_enabled);
-  settings_count++;
-
-  fprintf(presetzzz, "::eg1_filter_intensity=%f",
-          m_settings.m_eg1_filter_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::eg1_filter_enabled=%d",
-          m_settings.m_eg1_filter_enabled);
-  settings_count++;
-
-  fprintf(presetzzz, "::eg1_dca_intensity=%f", m_settings.m_eg1_dca_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::eg1_dca_enabled=%d", m_settings.m_eg1_dca_enabled);
-  settings_count++;
-
-  fprintf(presetzzz, "::filter_keytrack_intensity=%f",
-          m_settings.m_filter_keytrack_intensity);
-  settings_count++;
-
-  fprintf(presetzzz, "::octave=%d", m_settings.m_octave);
-  settings_count++;
-  fprintf(presetzzz, "::pitchbend_range=%d", m_settings.m_pitchbend_range);
-  settings_count++;
-
-  fprintf(presetzzz, "::legato_mode=%u", m_settings.m_legato_mode);
-  settings_count++;
-  fprintf(presetzzz, "::reset_to_zero=%u", m_settings.m_reset_to_zero);
-  settings_count++;
-  fprintf(presetzzz, "::filter_keytrack=%u", m_settings.m_filter_keytrack);
-  settings_count++;
-  fprintf(presetzzz, "::filter_type=%u", m_settings.m_filter_type);
-  settings_count++;
-  fprintf(presetzzz, "::filter_saturation=%f", m_settings.m_filter_saturation);
-  settings_count++;
-
-  fprintf(presetzzz, "::nlp=%u", m_settings.m_nlp);
-  settings_count++;
-  fprintf(presetzzz, "::velocity_to_attack_scaling=%u",
-          m_settings.m_velocity_to_attack_scaling);
-  settings_count++;
-  fprintf(presetzzz, "::note_number_to_decay_scaling=%u",
-          m_settings.m_note_number_to_decay_scaling);
-  settings_count++;
-  fprintf(presetzzz, "::portamento_time_msec=%f",
-          m_settings.m_portamento_time_msec);
-  settings_count++;
-
-  fprintf(presetzzz, "::sustain_override=%u",
-          m_settings.m_eg1_sustain_override);
-  settings_count++;
-
-  fprintf(presetzzz, ":::\n");
-  fclose(presetzzz);
-  printf("Wrote %d settings\n", settings_count++);
-  return;
+  nlohmann::json root;
+  std::ifstream infile(MOOG_PRESET_FILENAME_JSON);
+  if (infile.is_open()) {
+    try {
+      infile >> root;
+    } catch (...) {
+      root = nlohmann::json::object();
+    }
+  }
+  root[new_preset_name] = MoogSettingsToJson(m_settings, volume);
+  std::ofstream outfile(MOOG_PRESET_FILENAME_JSON);
+  outfile << root.dump(2) << "\n";
+  printf("MiniSynth -- saved preset '%s'\n", new_preset_name.c_str());
 }
 
 void MiniSynth::LoadPreset(std::string preset_name,

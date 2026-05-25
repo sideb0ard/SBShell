@@ -2,20 +2,33 @@
 
 #include <fstream>
 #include <iostream>
-#include <sstream>
+#include <nlohmann/json.hpp>
+
+#include "fmsynth.h"
+#include "minisynth.h"
 
 namespace {
-std::vector<std::string> tokenize(std::string const &str, std::string delim) {
-  size_t start;
-  size_t end = 0;
 
-  std::vector<std::string> tokens;
-
-  while ((start = str.find_first_not_of(delim, end)) != std::string::npos) {
-    end = str.find(delim, start);
-    tokens.push_back(str.substr(start, end - start));
+// Read a named preset from a flat JSON file into a map<string,double>.
+// Handles both JSON number and boolean values.
+std::map<std::string, double> ReadPresetFromJson(const char *path,
+                                                 const std::string &name) {
+  std::map<std::string, double> result;
+  std::ifstream f(path);
+  if (!f.is_open()) return result;
+  try {
+    nlohmann::json root;
+    f >> root;
+    if (!root.contains(name)) return result;
+    for (auto &[k, v] : root[name].items()) {
+      if (v.is_number())
+        result[k] = v.get<double>();
+      else if (v.is_boolean())
+        result[k] = v.get<bool>() ? 1.0 : 0.0;
+    }
+  } catch (...) {
   }
-  return tokens;
+  return result;
 }
 
 }  // namespace
@@ -56,7 +69,6 @@ double calculate_dx_amp(double dx_level) {
 std::map<std::string, double> GetPreset(int id, std::string preset_name) {
   std::map<std::string, double> preset_vals;
 
-  std::ifstream preset_file;
   if (preset_name.empty()) {
     printf(
         "Play tha game, pal, need a name to LOAD yer synth settings "
@@ -64,57 +76,13 @@ std::map<std::string, double> GetPreset(int id, std::string preset_name) {
     return preset_vals;
   }
 
+  // Drums use JSON (LoadPreset handles it directly); no map needed here.
+  if (id == DRUMSYNTH_TYPE) return preset_vals;
+
   if (id == FMSYNTH_TYPE)
-    preset_file.open(FM_PRESET_FILENAME, std::ifstream::in);
-  else if (id == MINISYNTH_TYPE)
-    preset_file.open(MOOG_PRESET_FILENAME, std::ifstream::in);
-  else if (id == DRUMSYNTH_TYPE)
-    preset_file.open(DRUM_PRESET_FILENAME, std::ifstream::in);
+    return ReadPresetFromJson(FM_PRESET_FILENAME_JSON, preset_name);
+  if (id == MINISYNTH_TYPE)
+    return ReadPresetFromJson(MOOG_PRESET_FILENAME_JSON, preset_name);
 
-  if (!preset_file.is_open()) {
-    std::cerr << "WOOF, COULDNT OPEN " << preset_name << std::endl;
-    return preset_vals;
-  }
-
-  bool found_preset{false};
-  std::string line;
-  std::string field_delim{"::"};
-
-  while (getline(preset_file, line) && !found_preset) {
-    std::vector<std::string> tokens = tokenize(line, field_delim);
-
-    for (const auto &t : tokens) {
-      std::stringstream ss{t};
-      std::string key;
-      std::string val;
-
-      std::string tmp;
-      int tokecount = 0;
-      while (getline(ss, tmp, '=')) {
-        if (tokecount == 0) {
-          key = tmp;
-        } else {
-          val = tmp;
-        }
-        tokecount++;
-      }
-
-      if (tokecount == 2) {
-        if (key == "name" && val == preset_name) {
-          found_preset = true;
-        }
-      }
-      if (!found_preset) continue;
-
-      try {
-        double dval = std::stod(val);
-        preset_vals[key] = dval;
-      } catch (std::invalid_argument) {
-        // no-op - ignore name which is a string
-      }
-    }
-  }
-
-  preset_file.close();
   return preset_vals;
 }

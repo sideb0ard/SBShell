@@ -1,0 +1,213 @@
+let phasor_diff = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = val - prev;
+    prev = val;
+    if (delta < -0.5) { return 1 + delta; }
+    if (delta > 0.5)  { return 1 - delta; }
+    return delta;
+  }
+}
+
+# Accumulate a ramp running at `ratio` times the source speed.
+#   # Pass a varying ratio each tick for FM-style modulation.
+let phasor_scale = fn()
+{
+  let diff = phasor_diff();
+  let acc = 0;
+  fn(val, ratio) {
+    acc = (acc + diff(val) / ratio) % 1.0;
+    if (acc < 0) { acc = acc + 1.0; }
+    return acc;
+  }
+}
+
+let key = 49;
+let keymod = 1;
+let chordtype = 1;
+let notes = notes_in_key(key, keymod);
+let chrd1 = notes_in_chord(notes[0], key, chordtype, keymod);
+let chrd2 = notes_in_chord(notes[4], key, chordtype, keymod);
+let chrd3 = notes_in_chord(notes[3], key, chordtype, keymod);
+# note_on(dx, [49, 52, 56, 59], dur = 0);
+# note_off(dx, 0); note_on(dx, [56, 59, 63, 66], dur = 0);
+# note_off(dx, 0); note_on(dx, [54, 57, 61, 64], dur = 0);
+
+# # Fire true once per cycle of a 0→1 ramp value (detects the wrap).
+let phasor_wrap = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = abs(val - prev);
+    prev = val;
+    return delta > 0.5;
+  }
+}
+#
+# # ── newphasor comp ───────────────────────────────────────────────────────────
+#
+let newphasor = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(3840);
+    let s1 = phasor_scale();
+    let s2 = phasor_scale();
+    let s3 = phasor_scale();
+    let on_wrap0 = phasor_wrap();
+    let on_wrap1 = phasor_wrap();
+    let on_wrap2 = phasor_wrap();
+    let on_wrap3 = phasor_wrap();
+
+    let stride = 3840 / 120;
+
+    let chrd1 = [44, 48, 51, 54];
+    let chrd2 = [37, 41, 44, 48];
+
+  }
+  run()
+  {
+    let plot_width = 120;
+    for (let i = 0; i < 3840; i++) {
+      let r = signal_from(fullramp);
+      #print("RAMp:", r);
+
+      let v1 = s1(r, 3 / 8);
+      let v2 = s2(r, 5 / 11);
+      let v3 = s3(v1, max(v2, 0.001));
+
+      if (i % stride == 0) {
+        set sbdrum:fm1_mod_freq_rat 2 + (v1 * 8) at = i;
+        set sbdrum:fm2_mod_freq_rat 2 + (v2 * 18) at = i;
+        set sbdrum:fm2_mod_freq_rat 2 + (v2 * 18) at = i;
+        set sbdrum:fm3_car_eg_attack 2 + (v3 * 300) at = i;
+        #draw_plot(v2, plot_width, at = i);
+        if (count % 4 < 2) {
+          set dx:op2out 80 * v3 at = i;
+        }
+        if (count % 4 < 3) {
+          set dx:op3out 80 * v2 at = i;
+        }
+
+      }
+
+      if (count % 4 < 3) {
+        if (on_wrap0(r)) {
+          note_on_at(sbdrum, 0, i);
+        }
+      }
+      if (count % 7 < 6) {
+        if (on_wrap1(v1)) {
+          note_on_at(bdd, 5, i, dur = 0);
+        }
+      }
+      if (count % 5 < 2) {
+        if (on_wrap2(v2)) {
+          note_on_at(oh, 6, i, dur = 30);
+        }
+      }
+      if (count % 3 ==  0) {
+        if (on_wrap3(v3)) {
+          note_on_at(ch, 7, i, dur = 20);
+        }
+      }
+    }
+  }
+}
+
+# glassr // WURBKl // simplepiano
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let durz = [0, 0, 0, 3000, 1000, 4000, 0, 500];
+    let drx = 0;
+  }
+  run()
+  {
+    if (count % 7 == 0) {
+      note_off(dx, 0) ; note_on(dx, chrd1, dur = durz[drx]);
+      drx = incr(drx, 0, len(durz));
+    }
+    if (count % 11 == 4) {
+      let when = pp * 8;
+      note_off_at(dx, 0, when) ; note_on_at(dx, chrd2, when, dur = durz[drx]);
+      drx = incr(drx, 0, len(durz));
+    }
+    if (count % 13 == 7) {
+      note_off_at(dx, 0, 0) ; note_on_at(dx, chrd3, 0, dur = durz[drx]);
+      drx = incr(drx, 0, len(durz));
+    }
+  }
+}
+
+let mxblah_comp = comp()
+{
+  setup()
+  {
+    let pat = [0, 10, 12, 11,  6, 14, 11, 5,  14, 2, 9, 11,  6, 3, 14, 3];
+    let durz = [10, 50, 100, 250, 0];
+    let drx = 0;
+  }
+  run()
+  {
+    if (count % 4 == 3) {
+      pat = rand_array(16, 0, 15);
+    }
+
+    for (let i = 0; i < 16; i++) {
+      note_on_at(nas, pat[i], i* pp, dur = durz[drx]);
+    }
+    drx = incr(drx, 0, len(durz));
+  }
+}
+
+let moblah_comp = comp()
+{
+  setup()
+  {
+    let pat1 = [36, 0, 36, 36, 0, 39, 0, 36,  43, 0, 36, 0, 41, 39, 0, 36];
+    let pat2 = [36, 0, 43, 0, 36, 0, 46, 43,  0, 36, 0, 39, 43, 0, 41, 0];
+    let durz = [250, 100, 750, 250, 400, 650, 800];
+    let drx = 0;
+  }
+  run()
+  {
+    let pat = pat1;
+    if (count % 5 == 3) {
+      pat = pat2;
+    }
+
+    for (let i = 0; i < 16; i++) {
+      if (pat[i] > 0) {
+        note_on_at(mo, pat[i], i * pp, dur = durz[drx]);
+      }
+    }
+    if (count % 7 == 0) {
+      drx = rand(len(durz));
+    }
+  }
+}
+
+# let lite = loop(legowelt/Synth-LiteHouseMood.wav); set lite:len 8;
+# add_fx(lite, reverb); set lite:fx0:wetmx 80;
+
+let liteblah_comp = comp()
+{
+  setup()
+  {
+    let pitchz = [2, 1.8, 1.4];
+    let px = 0;
+  }
+  run()
+  {
+    if (count % 8 == 7) {
+      set lite:scramble 1;
+    }
+    if (count % 7 == 3) {
+      set lite:pitch pitchz[px] at = 10 * pp;
+      px = incr(px, 0, len(pitchz));
+    }
+  }
+}

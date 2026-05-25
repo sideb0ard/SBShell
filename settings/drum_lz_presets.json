@@ -1,0 +1,423 @@
+{
+  "dxdrn": {},
+  "MOD": {},
+  "MODrr": {},
+  "MOTUS": {},
+  "THUG": {},
+  "TRUNK": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "buttz": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "LOGRe": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "LOGRe2": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "dxdrumz": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "FMZ": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "MOTUSZ2": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "MOTUIGGH": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "SLUG": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "HARF": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "HRF2": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "SNZ": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "KITSUNE": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "STRZ": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "011125SB": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "011125SB2": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "grrooovv": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "BEAT4": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "BEAT42": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "TWULB": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "beltram": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "HUT1": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "AUGz": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "AUGPER": {
+    "vol": 0.2,
+    "pan": 0.0,
+    "freq": 100.0,
+    "attack": 100.0,
+    "decay": 6.0,
+    "osc_range": 6.0
+  },
+  "craNK": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 80.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "KICKDZ": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "MARX": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "SINEU": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "SINEUCP": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 180.0
+  },
+  "fmznitch": {
+    "vol": 0.4,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 100.0,
+    "decay": 100.0,
+    "osc_range": 100.0
+  },
+  "TR808": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "default": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "TR909": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 300.0,
+    "attack": 5.0,
+    "decay": 120.0,
+    "osc_range": 35.0
+  },
+  "LINNDRUM": {
+    "vol": 0.65,
+    "pan": 0.0,
+    "freq": 200.0,
+    "attack": 8.0,
+    "decay": 150.0,
+    "osc_range": 40.0
+  },
+  "PLASMA": {
+    "vol": 0.8,
+    "pan": 0.0,
+    "freq": 8000.0,
+    "attack": 1.0,
+    "decay": 8.0,
+    "osc_range": 150.0
+  },
+  "SUBSONIC": {
+    "vol": 0.5,
+    "pan": 0.0,
+    "freq": 100.0,
+    "attack": 30.0,
+    "decay": 400.0,
+    "osc_range": 20.0
+  },
+  "CRYSTALYNC": {
+    "vol": 0.75,
+    "pan": 0.0,
+    "freq": 1760.0,
+    "attack": 2.0,
+    "decay": 80.0,
+    "osc_range": 80.0
+  },
+  "BIOMECH": {
+    "vol": 0.68,
+    "pan": 0.0,
+    "freq": 440.0,
+    "attack": 10.0,
+    "decay": 140.0,
+    "osc_range": 55.0
+  },
+  "VINTAGE_CIRCUIT": {
+    "vol": 0.62,
+    "pan": 0.0,
+    "freq": 260.0,
+    "attack": 12.0,
+    "decay": 160.0,
+    "osc_range": 42.0
+  },
+  "V3": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "AUTECHRE": {
+    "vol": 0.8,
+    "pan": 0.35,
+    "freq": 340.0,
+    "attack": 1.0,
+    "decay": 45.0,
+    "osc_range": 63.0
+  },
+  "DILLA": {
+    "vol": 0.5,
+    "pan": -0.3,
+    "freq": 180.0,
+    "attack": 12.0,
+    "decay": 150.0,
+    "osc_range": 28.0
+  },
+  "PREMIER": {
+    "vol": 0.75,
+    "pan": 0.25,
+    "freq": 290.0,
+    "attack": 5.0,
+    "decay": 80.0,
+    "osc_range": 42.0
+  },
+  "glitchhh808": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 67.0,
+    "attack": 10.0,
+    "decay": 100.0,
+    "osc_range": 1000.0
+  },
+  "V4": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "SNDX": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "SNDXp2": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "SNDX3": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "SNIGF": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "CRAKZ": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "CRAKZ2": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  },
+  "SNDX4": {
+    "vol": 0.7,
+    "pan": 0.0,
+    "freq": 220.0,
+    "attack": 10.0,
+    "decay": 180.0,
+    "osc_range": 47.0
+  }
+}

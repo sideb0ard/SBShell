@@ -1,0 +1,23 @@
+
+
+let kerriblah_comp = comp()
+{
+  setup()
+  {
+    let mel = [[58,54,49], 0, 0, 0, [58,54,49], 0, [51,47], 0,
+        [51,47], 0, [51,47], 0, [56,51,47], 0, [56,51], 51
+    ];
+    let bass = [ 39, 0, 51, 0, 0, 0, [44,42], 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (type(mel[i]) == "ARRAY" || mel[i] > 0) {
+        note_on_at(dx, mel[i], i * pp, dur = 300);
+      }
+      if (type(bass[i]) == "ARRAY" || bass[i] > 0) {
+        note_on_at(dx2, bass[i], i * pp, dur = 300);
+      }
+    }
+  }
+}

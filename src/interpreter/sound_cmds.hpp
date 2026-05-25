@@ -17,6 +17,9 @@ void ParseSynthCmd(std::vector<std::shared_ptr<object::Object>> &args);
 void SynthLoadPreset(std::shared_ptr<object::Object> &obj,
                      const std::string &preset_name,
                      const std::map<std::string, double> &preset);
+void DrumPartCmd(std::shared_ptr<object::Object> &obj,
+                 const std::string &preset_name, const std::string &part,
+                 bool save);
 std::vector<int> GetNotesInKey(int root, int scale_type = 0);
 std::vector<int> GetNotesInChord(int root, int key, int chord_modifier = 0,
                                  int key_modifier = 0);

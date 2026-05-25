@@ -1,4 +1,5 @@
 #include <audioutils.h>
+#include <drum_synth.h>
 #include <fx/basicfilterpass.h>
 #include <fx/diffuser.h>
 #include <fx/distortion.h>
@@ -128,6 +129,25 @@ void SynthLoadPreset(std::shared_ptr<object::Object> &obj,
           preset_name, preset);
     }
   }
+}
+
+void DrumPartCmd(std::shared_ptr<object::Object> &obj,
+                 const std::string &preset_name, const std::string &part,
+                 bool save) {
+  auto soundgen = std::dynamic_pointer_cast<object::SoundGenerator>(obj);
+  if (!soundgen || !global_mixr->IsValidSoundgenNum(soundgen->soundgen_id_))
+    return;
+  auto *drum = dynamic_cast<SBAudio::DrumSynth *>(
+      global_mixr->sound_generators_[soundgen->soundgen_id_].get());
+  if (!drum) {
+    std::cerr << (save ? "save" : "load") << "_drum_part: not a drum synth"
+              << std::endl;
+    return;
+  }
+  if (save)
+    drum->SavePart(preset_name, part);
+  else
+    drum->LoadPart(preset_name, part);
 }
 
 std::vector<int> GetNotesInKey(int root, int scale_type) {

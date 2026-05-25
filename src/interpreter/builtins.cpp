@@ -2027,6 +2027,51 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                           }
                           return evaluator::NULLL;
                         })},
+    // save_drum_part(drum, "preset_name", "part")
+    // part = bd / sd / hh / hh2 / cp / fm1 / fm2 / fm3 / lz
+    {"save_drum_part",
+     std::make_shared<object::BuiltIn>(
+         [](std::vector<std::shared_ptr<object::Object>> args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() >= 3) {
+             auto soundgen =
+                 std::dynamic_pointer_cast<object::SoundGenerator>(args[0]);
+             auto preset_name =
+                 std::dynamic_pointer_cast<object::String>(args[1]);
+             auto part = std::dynamic_pointer_cast<object::String>(args[2]);
+             if (soundgen && preset_name && part) {
+               auto action = std::make_unique<AudioActionItem>(
+                   AudioAction::SAVE_DRUM_PART);
+               action->args = args;
+               action->preset_name = preset_name->value_;
+               action->part_name = part->value_;
+               audio_queue.push(std::move(action));
+             }
+           }
+           return evaluator::NULLL;
+         })},
+    // load_drum_part(drum, "preset_name", "part")
+    {"load_drum_part",
+     std::make_shared<object::BuiltIn>(
+         [](std::vector<std::shared_ptr<object::Object>> args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() >= 3) {
+             auto soundgen =
+                 std::dynamic_pointer_cast<object::SoundGenerator>(args[0]);
+             auto preset_name =
+                 std::dynamic_pointer_cast<object::String>(args[1]);
+             auto part = std::dynamic_pointer_cast<object::String>(args[2]);
+             if (soundgen && preset_name && part) {
+               auto action = std::make_unique<AudioActionItem>(
+                   AudioAction::LOAD_DRUM_PART);
+               action->args = args;
+               action->preset_name = preset_name->value_;
+               action->part_name = part->value_;
+               audio_queue.push(std::move(action));
+             }
+           }
+           return evaluator::NULLL;
+         })},
     {"rand",
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)

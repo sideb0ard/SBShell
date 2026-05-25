@@ -42,6 +42,8 @@ enum AudioAction {
   PREVIEW,
   RAND,
   SAVE_PRESET,
+  SAVE_DRUM_PART,
+  LOAD_DRUM_PART,
   STATUS,
   SOLO,
   STOP,
@@ -68,6 +70,7 @@ struct AudioActionItem {
   bool general_val{false};
 
   std::string preset_name;
+  std::string part_name;  // for SAVE_DRUM_PART / LOAD_DRUM_PART
   std::map<std::string, double> preset;
 
   std::vector<double> buffer;

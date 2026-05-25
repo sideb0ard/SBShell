@@ -6,9 +6,11 @@
 #include <string.h>
 #include <utils.h>
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <nlohmann/json.hpp>
 
 extern std::unique_ptr<Mixer> global_mixr;
 
@@ -686,143 +688,84 @@ void FMSynth::Randomize() {
   Update();
 }
 
+namespace {
+nlohmann::json FmSettingsToJson(const SBAudio::fmsynthsettings &s) {
+  nlohmann::json j;
+  j["m_lfo1_intensity"] = s.m_lfo1_intensity;
+  j["m_lfo1_rate"] = s.m_lfo1_rate;
+  j["m_lfo1_waveform"] = s.m_lfo1_waveform;
+  j["m_lfo1_mod_dest1"] = s.m_lfo1_mod_dest1;
+  j["m_lfo1_mod_dest2"] = s.m_lfo1_mod_dest2;
+  j["m_lfo1_mod_dest3"] = s.m_lfo1_mod_dest3;
+  j["m_lfo1_mod_dest4"] = s.m_lfo1_mod_dest4;
+  j["m_op1_waveform"] = s.m_op1_waveform;
+  j["m_op1_ratio"] = s.m_op1_ratio;
+  j["m_op1_detune_cents"] = s.m_op1_detune_cents;
+  j["m_eg1_attack_ms"] = s.m_eg1_attack_ms;
+  j["m_eg1_decay_ms"] = s.m_eg1_decay_ms;
+  j["m_eg1_sustain_lvl"] = s.m_eg1_sustain_lvl;
+  j["m_eg1_release_ms"] = s.m_eg1_release_ms;
+  j["m_op1_output_lvl"] = s.m_op1_output_lvl;
+  j["m_op2_waveform"] = s.m_op2_waveform;
+  j["m_op2_ratio"] = s.m_op2_ratio;
+  j["m_op2_detune_cents"] = s.m_op2_detune_cents;
+  j["m_eg2_attack_ms"] = s.m_eg2_attack_ms;
+  j["m_eg2_decay_ms"] = s.m_eg2_decay_ms;
+  j["m_eg2_sustain_lvl"] = s.m_eg2_sustain_lvl;
+  j["m_eg2_release_ms"] = s.m_eg2_release_ms;
+  j["m_op2_output_lvl"] = s.m_op2_output_lvl;
+  j["m_op3_waveform"] = s.m_op3_waveform;
+  j["m_op3_ratio"] = s.m_op3_ratio;
+  j["m_op3_detune_cents"] = s.m_op3_detune_cents;
+  j["m_eg3_attack_ms"] = s.m_eg3_attack_ms;
+  j["m_eg3_decay_ms"] = s.m_eg3_decay_ms;
+  j["m_eg3_sustain_lvl"] = s.m_eg3_sustain_lvl;
+  j["m_eg3_release_ms"] = s.m_eg3_release_ms;
+  j["m_op3_output_lvl"] = s.m_op3_output_lvl;
+  j["m_op4_waveform"] = s.m_op4_waveform;
+  j["m_op4_ratio"] = s.m_op4_ratio;
+  j["m_op4_detune_cents"] = s.m_op4_detune_cents;
+  j["m_eg4_attack_ms"] = s.m_eg4_attack_ms;
+  j["m_eg4_decay_ms"] = s.m_eg4_decay_ms;
+  j["m_eg4_sustain_lvl"] = s.m_eg4_sustain_lvl;
+  j["m_eg4_release_ms"] = s.m_eg4_release_ms;
+  j["m_op4_output_lvl"] = s.m_op4_output_lvl;
+  j["m_op1_feedback"] = s.m_op1_feedback;
+  j["m_op2_feedback"] = s.m_op2_feedback;
+  j["m_op3_feedback"] = s.m_op3_feedback;
+  j["m_op4_feedback"] = s.m_op4_feedback;
+  j["m_portamento_time_ms"] = s.m_portamento_time_ms;
+  j["m_volume_db"] = s.m_volume_db;
+  j["m_pitchbend_range"] = s.m_pitchbend_range;
+  j["m_voice_mode"] = s.m_voice_mode;
+  j["m_velocity_to_attack_scaling"] = s.m_velocity_to_attack_scaling;
+  j["m_note_number_to_decay_scaling"] = s.m_note_number_to_decay_scaling;
+  j["m_reset_to_zero"] = s.m_reset_to_zero;
+  j["m_legato_mode"] = s.m_legato_mode;
+  return j;
+}
+}  // namespace
+
 void FMSynth::Save(std::string preset) {
   if (preset.empty()) {
-    printf(
-        "Play tha game, pal, need a name to save yer synth settings "
-        "with\n");
+    printf("Play tha game, pal, need a name to save yer synth settings with\n");
     return;
   }
-  const char *preset_name = preset.c_str();
+  strncpy(m_settings.m_settings_name, preset.c_str(), 256);
 
-  printf("Saving '%s' settings for fmsynth to file %s\n", preset_name,
-         FM_PRESET_FILENAME);
-  FILE *presetzzz = fopen(FM_PRESET_FILENAME, "a+");
-  if (presetzzz == NULL) {
-    printf("Couldn't save settings!!\n");
-    return;
+  nlohmann::json root;
+  std::ifstream infile(FM_PRESET_FILENAME_JSON);
+  if (infile.is_open()) {
+    try {
+      infile >> root;
+    } catch (...) {
+      root = nlohmann::json::object();
+    }
   }
-
-  int settings_count = 0;
-  strncpy(m_settings.m_settings_name, preset_name, 256);
-
-  fprintf(presetzzz, "::name=%s", m_settings.m_settings_name);
-  settings_count++;
-
-  fprintf(presetzzz, "::m_lfo1_intensity=%f", m_settings.m_lfo1_intensity);
-  settings_count++;
-  fprintf(presetzzz, "::m_lfo1_rate=%f", m_settings.m_lfo1_rate);
-  settings_count++;
-  fprintf(presetzzz, "::m_lfo1_waveform=%d", m_settings.m_lfo1_waveform);
-  settings_count++;
-  fprintf(presetzzz, "::m_lfo1_mod_dest1=%d", m_settings.m_lfo1_mod_dest1);
-  settings_count++;
-  fprintf(presetzzz, "::m_lfo1_mod_dest2=%d", m_settings.m_lfo1_mod_dest2);
-  settings_count++;
-  fprintf(presetzzz, "::m_lfo1_mod_dest3=%d", m_settings.m_lfo1_mod_dest3);
-  settings_count++;
-  fprintf(presetzzz, "::m_lfo1_mod_dest4=%d", m_settings.m_lfo1_mod_dest4);
-  settings_count++;
-
-  fprintf(presetzzz, "::m_op1_waveform=%d", m_settings.m_op1_waveform);
-  settings_count++;
-  fprintf(presetzzz, "::m_op1_ratio=%f", m_settings.m_op1_ratio);
-  settings_count++;
-  fprintf(presetzzz, "::m_op1_detune_cents=%f", m_settings.m_op1_detune_cents);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg1_attack_ms=%f", m_settings.m_eg1_attack_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg1_decay_ms=%f", m_settings.m_eg1_decay_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg1_sustain_lvl=%f", m_settings.m_eg1_sustain_lvl);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg1_release_ms=%f", m_settings.m_eg1_release_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_op1_output_lvl=%f", m_settings.m_op1_output_lvl);
-  settings_count++;
-
-  fprintf(presetzzz, "::m_op2_waveform=%d", m_settings.m_op2_waveform);
-  settings_count++;
-  fprintf(presetzzz, "::m_op2_ratio=%f", m_settings.m_op2_ratio);
-  settings_count++;
-  fprintf(presetzzz, "::m_op2_detune_cents=%f", m_settings.m_op2_detune_cents);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg2_attack_ms=%f", m_settings.m_eg2_attack_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg2_decay_ms=%f", m_settings.m_eg2_decay_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg2_sustain_lvl=%f", m_settings.m_eg2_sustain_lvl);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg2_release_ms=%f", m_settings.m_eg2_release_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_op2_output_lvl=%f", m_settings.m_op2_output_lvl);
-  settings_count++;
-
-  fprintf(presetzzz, "::m_op3_waveform=%d", m_settings.m_op3_waveform);
-  settings_count++;
-  fprintf(presetzzz, "::m_op3_ratio=%f", m_settings.m_op3_ratio);
-  settings_count++;
-  fprintf(presetzzz, "::m_op3_detune_cents=%f", m_settings.m_op3_detune_cents);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg3_attack_ms=%f", m_settings.m_eg3_attack_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg3_decay_ms=%f", m_settings.m_eg3_decay_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg3_sustain_lvl=%f", m_settings.m_eg3_sustain_lvl);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg3_release_ms=%f", m_settings.m_eg3_release_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_op3_output_lvl=%f", m_settings.m_op3_output_lvl);
-  settings_count++;
-
-  fprintf(presetzzz, "::m_op4_waveform=%d", m_settings.m_op4_waveform);
-  settings_count++;
-  fprintf(presetzzz, "::m_op4_ratio=%f", m_settings.m_op4_ratio);
-  settings_count++;
-  fprintf(presetzzz, "::m_op4_detune_cents=%f", m_settings.m_op4_detune_cents);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg4_attack_ms=%f", m_settings.m_eg4_attack_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg4_decay_ms=%f", m_settings.m_eg4_decay_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg4_sustain_lvl=%f", m_settings.m_eg4_sustain_lvl);
-  settings_count++;
-  fprintf(presetzzz, "::m_eg4_release_ms=%f", m_settings.m_eg4_release_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_op4_output_lvl=%f", m_settings.m_op4_output_lvl);
-  settings_count++;
-  fprintf(presetzzz, "::m_op1_feedback=%f", m_settings.m_op1_feedback);
-  settings_count++;
-  fprintf(presetzzz, "::m_op2_feedback=%f", m_settings.m_op2_feedback);
-  settings_count++;
-  fprintf(presetzzz, "::m_op3_feedback=%f", m_settings.m_op3_feedback);
-  settings_count++;
-  fprintf(presetzzz, "::m_op4_feedback=%f", m_settings.m_op4_feedback);
-  settings_count++;
-
-  fprintf(presetzzz, "::m_portamento_time_ms=%f",
-          m_settings.m_portamento_time_ms);
-  settings_count++;
-  fprintf(presetzzz, "::m_volume_db=%f", m_settings.m_volume_db);
-  settings_count++;
-  fprintf(presetzzz, "::m_pitchbend_range=%d", m_settings.m_pitchbend_range);
-  settings_count++;
-  fprintf(presetzzz, "::m_voice_mode=%d", m_settings.m_voice_mode);
-  settings_count++;
-  fprintf(presetzzz, "::m_velocity_to_attack_scaling=%d",
-          m_settings.m_velocity_to_attack_scaling);
-  settings_count++;
-  fprintf(presetzzz, "::m_note_number_to_decay_scaling=%d",
-          m_settings.m_note_number_to_decay_scaling);
-  settings_count++;
-  fprintf(presetzzz, "::m_reset_to_zero=%d", m_settings.m_reset_to_zero);
-  settings_count++;
-  fprintf(presetzzz, "::m_legato_mode=%d", m_settings.m_legato_mode);
-  settings_count++;
-
-  fprintf(presetzzz, ":::\n");
-  fclose(presetzzz);
-  printf("Wrote %d settings\n", settings_count++);
+  root[preset] = FmSettingsToJson(m_settings);
+  std::ofstream outfile(FM_PRESET_FILENAME_JSON);
+  outfile << root.dump(2) << "\n";
+  printf("FMSynth -- saved preset '%s'\n", preset.c_str());
 }
 
 void FMSynth::LoadPreset(std::string preset_name,

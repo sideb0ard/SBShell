@@ -932,6 +932,11 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
   } else if (action->type == AudioAction::LOAD_PRESET) {
     interpreter_sound_cmds::SynthLoadPreset(
         action->args[0], action->preset_name, action->preset);
+  } else if (action->type == AudioAction::SAVE_DRUM_PART ||
+             action->type == AudioAction::LOAD_DRUM_PART) {
+    interpreter_sound_cmds::DrumPartCmd(
+        action->args[0], action->preset_name, action->part_name,
+        action->type == AudioAction::SAVE_DRUM_PART);
   } else if (action->type == AudioAction::RAND) {
     sound_generators_[action->mixer_soundgen_idx]->Randomize();
   } else if (action->type == AudioAction::PREVIEW) {

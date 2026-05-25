@@ -1,0 +1,138 @@
+let phasor_diff = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = val - prev;
+    prev = val;
+    if (delta < -0.5) { return 1 + delta; }
+    if (delta > 0.5)  { return 1 - delta; }
+    return delta;
+  }
+}
+
+# Accumulate a ramp running at `ratio` times the source speed.
+#   # Pass a varying ratio each tick for FM-style modulation.
+let phasor_scale = fn()
+{
+  let diff = phasor_diff();
+  let acc = 0;
+  fn(val, ratio) {
+    acc = (acc + diff(val) / ratio) % 1.0;
+    if (acc < 0) { acc = acc + 1.0; }
+    return acc;
+  }
+}
+
+# # Fire true once per cycle of a 0→1 ramp value (detects the wrap).
+let phasor_wrap = fn()
+{
+  let prev = 0;
+  fn(val) {
+    let delta = abs(val - prev);
+    prev = val;
+    return delta > 0.5;
+  }
+}
+#
+# # ── newphasor comp ───────────────────────────────────────────────────────────
+
+let newphasor = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(3840);
+    let s1 = phasor_scale();
+    let s2 = phasor_scale();
+    let s3 = phasor_scale();
+    let on_wrap0 = phasor_wrap();
+    let on_wrap1 = phasor_wrap();
+    let on_wrap2 = phasor_wrap();
+    let on_wrap2 = phasor_wrap();
+
+    let stride = 3840 / 120;
+
+    let chrd1 = [44, 48, 51, 54];
+    let chrd2 = [37, 41, 44, 48];
+
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let r = signal_from(fullramp);
+      #print("RAMp:", r);
+
+      let v1 = s1(r, 1 / 6);
+      let v2 = s2(r, 3 / 8);
+      let v3 = s3(v1, max(v2, 0.001));
+
+      if (i % stride == 0) {
+      }
+
+      if (on_wrap0(r)) {
+        print("R:", i);
+      }
+      if (on_wrap1(v1)) {
+        print("v1:", i);
+      }
+      if (on_wrap2(v2)) {
+        print("v2:", i);
+      }
+      if (on_wrap3(v3)) {
+        print("v3:", i);
+      }
+    }
+
+  }
+}
+
+
+#  Notes to use (C minor dub):
+#  - 36 = C2 (root, anchor)
+#  - 39 = Eb2 (minor 3rd)
+#  - 43 = G2 (5th, resolution)
+#  - 46 = Bb2 (b7th — very dub)
+#
+#  Song structure using count:
+
+let moblah_comp = comp()
+{
+  setup()
+  {
+    # Intro: sparse, just root with occasional 5th
+    let intro  = [0, 0, 36, 0,  0, 0, 0, 0,  36, 0, 0, 43,  0, 0, 0, 0];
+
+    # Main: more movement, b7th appears
+    let main1  = [0, 0, 36, 0,  0, 0, 43, 0,  36, 0, 0, 0,  46, 0, 36, 0];
+
+    # Variation: shift the rhythm slightly
+    let main2  = [0, 0, 0, 36,  0, 0, 0, 0,  0, 43, 0, 0,  36, 0, 46, 0];
+
+    # Breakdown: almost nothing, just a breath
+    let breakdown = [0, 0, 36, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 36, 0];
+
+    let durz = [600, 800, 400, 1000, 300];
+    let drx = 0;
+  }
+  run()
+  {
+    let pat = intro;
+
+    if (count >= 16 && count < 32) {
+      pat = main1;
+    }
+    if (count >= 32 && count < 40) {
+      pat = breakdown;
+    }
+    if (count >= 40) {
+      if (count % 8 < 4) { pat = main1; }
+      else               { pat = main2; }
+    }
+
+    for (let i = 0; i < 16; i++) {
+      if (pat[i] > 0) {
+        note_on_at(dx, pat[i], i * pp, dur = durz[drx]);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
