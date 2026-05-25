@@ -71,9 +71,11 @@ class DrumModule {
 
   // Call this instead of restarting envelopes directly on retrigger
   void RequestRetrigger(double vel) {
-    pending_retrigger_ = true;
     pending_velocity_ = vel;
-    retrigger_ramp_ = 1.0;
+    if (!pending_retrigger_) {
+      pending_retrigger_ = true;
+      retrigger_ramp_ = 1.0;  // only reset if not already fading
+    }
   }
 
   // Call this in Generate() to apply fade and check for retrigger completion

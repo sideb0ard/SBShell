@@ -16,6 +16,10 @@ let stop = NULL;
 
 let sbs = NULL;
 
+let this = NULL;
+let thee = NULL;
+
+
 
 let shades = NULL;
 
@@ -24,20 +28,39 @@ let shades = NULL;
 
 # sched(0, 1, 0, 3840*4, "vol walkin %");
 
-# vol dx 0; p4 # dummmosloblah_comp;  sched(3840, 0, 0.4, 3840, "vol dx2 %");
+# p4 # fliipahblah_comp; p3 # "";
 
-# p4 # simplerampblah_comp; vol dx 0; vol shades 0;
+# sched(0, 1, 0, 3840 * 16, "vol shades %");
+# sched(0, 0, 1, 3840*4, "vol walkin %");
 
-# let rockm = loop(voices/back2basiccRAPAMP.wav); set rockm:len 8; vol rockm 0;
-# add_fx(rockm, "delay"); set rockm:fx0:fb 80;
-# p6 < osc 6 "0.6 0.8" "set rockm:pitch %";  p7 # rockmblah_comp
-# sched(0, 0, 0.7, 3840*4, "vol rockm %");
+# p15 # xblah_comp;
+# sched(0, 0, 1, 3840 * 16, "vol shades %");
 
-# p5 # xblah_comp;
-
-# p4 # simplerampTWOOblah_comp;
-# add_buf(sbs, "NewLoopz/detGumbD.wav");
-
+let fliipahblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    vol dx 0.7;
+    if (count % 16 == 15) {
+      vol dx 0;
+      print("SIMPLERAMP");
+      simplerampblah_comp();
+    }
+    if (count % 33 == 11) {
+      vol dx 0;
+      print("DUMMO");
+      dummmosloblah_comp();
+    }
+    if (count % 27 == 17) {
+      vol dx 0;
+      print("TOWBLL");
+      #simplerampTWOOblah_comp()
+    }
+  }
+}
 
 
 
@@ -71,7 +94,7 @@ let init = fn()
   # add_buf(sbs, "notes/garageyChord.aiff");
   # add_buf(sbs, "notes/noteWitMAWWelp.aiff");
 
-  load_preset(dx3, "WAFFLE");
+  load_preset(dx3, "ocezzz");
   add_fx(dx3, "delay");
   set dx3:fx0:fb 60;
 
@@ -88,6 +111,11 @@ let init = fn()
   #set shades:fx0:fb 0.5;
 
   load_preset(dx2, "SMURFc");
+
+  this = sample(notes/mawPANcrakl.aiff);
+  thee = sample(notes/mood2SwingNoteGlitch.aiff);
+  p5 < osc 8 "0.5 20" "set thee:pitch %";
+  p6 < osc 7 "0.5 20" "set this:pitch %";
 }
 
 
@@ -192,7 +220,7 @@ let dx2blah_comp = comp()
       let pos = 0;
       let gap = pp * 4;
       for (let i = 0; i < num_hit; i++) {
-        note_on_at(dx,  chrd, pos, dur = durz[drx]);
+        note_on_at(dx3,  down(chrd, 12), pos, dur = durz[drx]);
         drx = incr(drx, 0, len(durz));
         pos = pos + gap;
         gap = gap * dif;
@@ -373,7 +401,7 @@ let drumblah_comp = comp()
     #let notez = [20];
     let nx = 0;
 
-    let durz = [30, 50, 60, 100, 200, 300];
+    let durz = [30, 50, 60, 100, 200, 300, 0];
     let drx = 0;
   }
   run()
@@ -397,11 +425,13 @@ let drumblah_comp = comp()
       if (i % stride == 0) {
         if (ramp2tri(out_sig3)) {
           if (i % 2 == 0) {
-            note_on_at(sbs, notez[nx], i, dur = durz[drx]);
+            note_on_at(thee, 1, i, dur = durz[drx]);
             nx = incr(nx, 0, len(notez));
+            drx = incr(drx, 0, len(durz));
           }
           if (i % 3 == 0) {
-            note_on_at(sbs, notez[nx], i, dur = durz[drx]);
+            note_on_at(this, 1, i, dur = durz[drx]);
+            drx = incr(drx, 0, len(durz));
           }
         }
         #draw_plot(sin_sig * out_sig3, plot_width, at = i);
@@ -409,7 +439,6 @@ let drumblah_comp = comp()
       }
       #print("OUTSIG:", out_sig);
     }
-    drx = incr(drx, 0, len(durz));
   }
 }
 
@@ -511,8 +540,8 @@ let xblah_comp = comp()
 {
   setup()
   {
-    xassign(0, dx2);
-    xassign(1, dx3);
+    xassign(0, thee);
+    xassign(1, this);
     let ramp_div1 = ramp_div_factory();
     let ramp_div2 = ramp_div_factory();
     let ramp_div3 = ramp_div_factory();

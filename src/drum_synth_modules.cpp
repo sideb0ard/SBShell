@@ -106,7 +106,7 @@ StereoVal BassDrum::Generate() {
     osc2_->Update();
 
     double osc1_out = osc1_->DoOscillate(nullptr) * amp_eg_out;
-    if (osc1_->just_wrapped) osc2_->StartOscillator();
+    if (hard_sync_ && osc1_->just_wrapped) osc2_->StartOscillator();
     double osc2_out = osc2_->DoOscillate(nullptr) * amp_eg_out;
 
     double osc_mix = click_.GenNext() + osc1_out + osc2_out;

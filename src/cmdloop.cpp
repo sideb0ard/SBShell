@@ -91,7 +91,7 @@ static void RenderDisplayItem(
     ss << COOL_COLOR_GREEN << "[";
     for (double v : buf)
       ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
-    ss << "]" << ANSI_COLOR_RESET;
+    ss << "]" << ANSI_COLOR_RESET << "\033[K";
     if (item.row >= 0)
       ss << "\0338";
     else
