@@ -254,7 +254,10 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
         std::dynamic_pointer_cast<ast::StringLiteral>(ls_stmt->path_);
     if (lspath) lspath_string = lspath->value_;
     std::string listing = list_sample_dir(lspath_string);
-    repl_queue.push(listing);
+    FILE *pager = popen("less -FRX", "w");
+    if (!pager) pager = stdout;
+    fwrite(listing.c_str(), 1, listing.size(), pager);
+    if (pager != stdout) pclose(pager);
   }
 
   std::shared_ptr<ast::HelpStatement> help_stmt =

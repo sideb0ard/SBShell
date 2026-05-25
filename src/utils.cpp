@@ -909,6 +909,28 @@ std::vector<std::string> GetSynthPresets(unsigned int synthtype) {
   return preset_names;
 }
 
+std::vector<std::string> GetDrumPartPresets(const std::string &part) {
+  static const std::unordered_map<std::string, const char *> part_files = {
+      {"bd", DRUM_BD_PRESETS_FILENAME},  {"sd", DRUM_SD_PRESETS_FILENAME},
+      {"hh", DRUM_HH_PRESETS_FILENAME},  {"hh2", DRUM_HH2_PRESETS_FILENAME},
+      {"cp", DRUM_CP_PRESETS_FILENAME},  {"fm1", DRUM_FM_PRESETS_FILENAME},
+      {"fm2", DRUM_FM_PRESETS_FILENAME}, {"fm3", DRUM_FM_PRESETS_FILENAME},
+      {"lz", DRUM_LZ_PRESETS_FILENAME},
+  };
+  std::vector<std::string> names;
+  auto it = part_files.find(part);
+  if (it == part_files.end()) return names;
+  std::ifstream jf(it->second);
+  if (!jf.is_open()) return names;
+  try {
+    nlohmann::json root;
+    jf >> root;
+    for (auto &[key, _] : root.items()) names.push_back(key);
+  } catch (...) {
+  }
+  return names;
+}
+
 void PrintMultiMidi(MultiEventMidiPattern &pattern) {
   std::cout << MultiMidiString(pattern) << std::endl;
 }

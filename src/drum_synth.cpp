@@ -253,6 +253,10 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.sd.attack = val;
   else if (name == "sd_noise_attack")
     settings_.sd.noise_attack = val;
+  else if (name == "sd_pitch_eg_depth")
+    settings_.sd.pitch_eg_depth = val;
+  else if (name == "sd_pitch_eg_decay")
+    settings_.sd.pitch_eg_decay = val;
 
   else if (name == "cp_vol")
     settings_.cp.vol = val;
@@ -439,7 +443,9 @@ std::string DrumSynth::Info() {
      << " sd_delay_sync_tempo:" << settings_.sd.delay_sync_tempo
      << " sd_delay_sync_len:" << settings_.sd.delay_sync_len << std::endl;
   ss << "     sd_attack:" << settings_.sd.attack
-     << " sd_noise_attack:" << settings_.sd.noise_attack << std::endl;
+     << " sd_noise_attack:" << settings_.sd.noise_attack
+     << " sd_pitch_eg_depth:" << settings_.sd.pitch_eg_depth
+     << " sd_pitch_eg_decay:" << settings_.sd.pitch_eg_decay << std::endl;
   ss << COOL_COLOR_YELLOW_MELLOW "     cp(2): cp_vol:" << settings_.cp.vol
      << " cp_pan:" << settings_.cp.pan << " cp_nvol:" << settings_.cp.nvol
      << " cp_nattack:" << settings_.cp.nattack
@@ -803,6 +809,8 @@ void DrumSynth::Update() {
   sd_->delay_->SetSyncLen(settings_.sd.delay_sync_len);
   sd_->eg_.SetAttackTimeMsec(settings_.sd.attack);
   sd_->noise_eg_.SetAttackTimeMsec(settings_.sd.noise_attack);
+  sd_->pitch_eg_depth_ = settings_.sd.pitch_eg_depth;
+  sd_->pitch_eg_.SetDecayTimeMsec(settings_.sd.pitch_eg_decay);
 
   hh_->dca_.m_amplitude_control = settings_.hh.vol;
   hh_->dca_.m_pan_control = settings_.hh.pan;

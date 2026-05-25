@@ -82,13 +82,16 @@ struct SdSettings {
   int delay_sync_len{0};
   double attack{1.0};
   double noise_attack{1.0};
+  double pitch_eg_depth{0.0};   // semitones of upward pitch sweep on attack
+  double pitch_eg_decay{30.0};  // ms for pitch to fall back to base
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     SdSettings, vol, pan, noise_vol, noise_decay, tone, decay, octave, key,
     hi_osc_waveform, lo_osc_waveform, distortion_threshold, use_delay,
     delay_mode, delay_ms, delay_feedback_pct, delay_ratio, delay_wetmix,
-    delay_sync_tempo, delay_sync_len, attack, noise_attack)
+    delay_sync_tempo, delay_sync_len, attack, noise_attack, pitch_eg_depth,
+    pitch_eg_decay)
 
 struct HhSettings {
   double vol{1};

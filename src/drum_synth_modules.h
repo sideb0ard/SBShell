@@ -180,6 +180,9 @@ class SnareDrum : public DrumModule {
 
   std::unique_ptr<QBLimitedOscillator> lo_osc_;
   std::unique_ptr<QBLimitedOscillator> hi_osc_;
+
+  EnvelopeGenerator pitch_eg_;
+  double pitch_eg_depth_{0.0};  // semitones; 0 = no sweep
 };
 
 class HandClap : public DrumModule {

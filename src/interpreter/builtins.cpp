@@ -1940,14 +1940,30 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
              -> std::shared_ptr<object::Object> {
            int args_size = args.size();
 
-           if (args_size == 1) {
+           auto show_paged = [](const std::vector<std::string>& names) {
+             FILE* pager = popen("less -FRX", "w");
+             if (!pager) pager = stdout;
+             for (const auto& p : names) fprintf(pager, "%s\n", p.c_str());
+             if (pager != stdout) pclose(pager);
+           };
+
+           if (args_size >= 2) {
+             // list_presets(drums, "sd") — per-part drum preset listing
+             auto part_arg = std::dynamic_pointer_cast<object::String>(args[1]);
+             if (part_arg) {
+               auto names = GetDrumPartPresets(part_arg->value_);
+               if (!names.empty())
+                 show_paged(names);
+               else
+                 printf("No presets found for part '%s'\n",
+                        part_arg->value_.c_str());
+             }
+           } else if (args_size == 1) {
              auto soundgen =
                  std::dynamic_pointer_cast<object::SoundGenerator>(args[0]);
              auto sg_type = soundgen->soundgenerator_type;
              if (HasPresets(sg_type)) {
-               auto preset_names = GetSynthPresets(sg_type);
-
-               for (const auto& p : preset_names) std::cout << p << std::endl;
+               show_paged(GetSynthPresets(sg_type));
              }
            }
            return evaluator::NULLL;
@@ -2012,21 +2028,47 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            }
            return evaluator::NULLL;
          })},
-    {"save_preset", std::make_shared<object::BuiltIn>(
-                        [](std::vector<std::shared_ptr<object::Object>> args)
-                            -> std::shared_ptr<object::Object> {
-                          int args_size = args.size();
-                          if (args_size >= 2) {
-                            auto cmd_name =
-                                std::make_shared<object::String>("save");
-                            args.push_back(cmd_name);
-                            auto action = std::make_unique<AudioActionItem>(
-                                AudioAction::SAVE_PRESET);
-                            action->args = args;
-                            audio_queue.push(std::move(action));
-                          }
-                          return evaluator::NULLL;
-                        })},
+    {"save_preset",
+     std::make_shared<object::BuiltIn>(
+         [](std::vector<std::shared_ptr<object::Object>> args)
+             -> std::shared_ptr<object::Object> {
+           int args_size = args.size();
+           if (args_size >= 2) {
+             auto soundgen =
+                 std::dynamic_pointer_cast<object::SoundGenerator>(args[0]);
+             auto preset_name =
+                 std::dynamic_pointer_cast<object::String>(args[1]);
+             if (!soundgen || !preset_name) return evaluator::NULLL;
+
+             // Check if preset already exists
+             bool force = false;
+             if (args_size >= 3) {
+               auto flag = std::dynamic_pointer_cast<object::Boolean>(args[2]);
+               if (flag) force = flag->value_;
+             }
+             if (!force && HasPresets(soundgen->soundgenerator_type)) {
+               auto existing = GetSynthPresets(soundgen->soundgenerator_type);
+               bool found = std::find(existing.begin(), existing.end(),
+                                      preset_name->value_) != existing.end();
+               if (found) {
+                 printf(
+                     "Preset '%s' already exists. "
+                     "Call save_preset(gen, \"%s\", true) to "
+                     "overwrite.\n",
+                     preset_name->value_.c_str(), preset_name->value_.c_str());
+                 return evaluator::NULLL;
+               }
+             }
+
+             auto cmd_name = std::make_shared<object::String>("save");
+             args.push_back(cmd_name);
+             auto action =
+                 std::make_unique<AudioActionItem>(AudioAction::SAVE_PRESET);
+             action->args = args;
+             audio_queue.push(std::move(action));
+           }
+           return evaluator::NULLL;
+         })},
     // save_drum_part(drum, "preset_name", "part")
     // part = bd / sd / hh / hh2 / cp / fm1 / fm2 / fm3 / lz
     {"save_drum_part",

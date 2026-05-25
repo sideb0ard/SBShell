@@ -94,7 +94,7 @@ let init = fn()
   # add_buf(sbs, "notes/garageyChord.aiff");
   # add_buf(sbs, "notes/noteWitMAWWelp.aiff");
 
-  load_preset(dx3, "ocezzz");
+  load_preset(dx3, "WaterStrin");
   add_fx(dx3, "delay");
   set dx3:fx0:fb 60;
 

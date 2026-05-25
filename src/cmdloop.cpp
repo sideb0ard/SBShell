@@ -58,6 +58,55 @@ static std::string strip_line_comment(const std::string &line) {
 static bool active{true};
 constexpr int kFileCheckInterval = 960;  // Check once per beat (PPQN)
 
+// ---------------------------------------------------------------------------
+// Tab completion
+// ---------------------------------------------------------------------------
+static const char *kCompletionWords[] = {
+    // Sound generators
+    "drum()", "minisynth()", "fmsynth()", "sbsynth()", "phasor(", "loop(",
+    "sample(",
+    // Language keywords
+    "let ", "if (", "else", "while (", "return", "true", "false", "NULL",
+    "comp ", "setup()", "run()", "break", "continue", "fn ",
+    // Note / playback
+    "note_on(", "note_off(", "note_on_at(", "note_off_at(",
+    // Instrument control
+    "set ", "info(", "vol(", "solo(", "mute(", "add_fx(", "add_buf(",
+    "signal_from(", "change_steps(", "reset(",
+    // Presets
+    "load_preset(", "save_preset(", "list_presets(", "rand_preset(",
+    "save_drum_part(", "load_drum_part(",
+    // Scheduling
+    "sched(",
+    // Pattern / music helpers
+    "eval_pattern(", "print_pattern(", "notes_in_chord(", "notes_in_key(",
+    "print_notes(",
+    // Misc builtins
+    "bpm(", "monitor(", "ls", "ps", "kit()", "drum_kit()", "midi_ref()",
+    "lowercase(", "uppercase(", nullptr};
+
+static char *sb_completion_generator(const char *text, int state) {
+  static int list_index;
+  static size_t len;
+  if (!state) {
+    list_index = 0;
+    len = strlen(text);
+  }
+  while (kCompletionWords[list_index]) {
+    const char *word = kCompletionWords[list_index++];
+    if (strncmp(word, text, len) == 0) return strdup(word);
+  }
+  return nullptr;
+}
+
+static char **sb_completion(const char *text, int start, int end) {
+  (void)end;
+  // When completing the first word on a line, suppress filename fallback so
+  // we don't get a "display all N files?" prompt for unmatched input.
+  if (start == 0) rl_attempted_completion_over = 1;
+  return rl_completion_matches(text, sb_completion_generator);
+}
+
 static void RenderDisplayItem(
     const ScheduledDisplayItem &item,
     std::unordered_map<std::string, std::deque<double>> &plot_bufs) {
@@ -184,9 +233,11 @@ int event_hook() {
         if (is_inplace) {
           std::cout << msg << std::flush;
         } else {
-          std::cout << msg;
-          rl_line_buffer[0] = '\0';
-          rl_done = 1;
+          // Print above the current readline line without restarting readline.
+          // Restarting via rl_done=1 wipes the kill ring, breaking Ctrl-U/Y/L.
+          printf("\r\033[K%s\n", msg.c_str());
+          rl_on_new_line();  // tell readline cursor is on a fresh line
+          rl_forced_update_display();  // redraw prompt + current edit buffer
         }
       }
     }
@@ -194,13 +245,23 @@ int event_hook() {
   return 0;
 }
 
+// Expand ~ to home dir for readline history functions
+static std::string expand_history_path() {
+  const char *home = getenv("HOME");
+  if (!home) return ".sbshell_history";
+  return std::string(home) + "/.sbshell_history";
+}
+
 void *loopy() {
   std::cout << get_string_logo();
-  read_history(NULL);
+  std::string history_path = expand_history_path();
+  read_history(history_path.c_str());
+  int history_base_len = history_length;  // entries loaded from disk
   setlocale(LC_ALL, "");
 
   std::string last_line;
   rl_event_hook = event_hook;
+  rl_attempted_completion_function = sb_completion;
   rl_set_keyboard_input_timeout(500);
 
   while (true) {
@@ -209,10 +270,34 @@ void *loopy() {
     if (!line) break;  // readline returned NULL
 
     if (line.get() && *line.get()) {
-      std::string current_line(line.get());
+      // Perform history expansion (!! !$ !-2 etc.) before anything else
+      char *expanded = nullptr;
+      int expand_result = history_expand(line.get(), &expanded);
+      // expand_result: 0=no change, 1=expanded, -1=error, 2=display only
+      std::unique_ptr<char, void (*)(void *)> expanded_guard(expanded, free);
+
+      std::string current_line;
+      if (expand_result == 1) {
+        // Print the expanded command so the user can see what ran (bash-style)
+        printf("%s\n", expanded);
+        current_line = expanded;
+      } else if (expand_result == 2) {
+        // "display only" — print and don't execute (e.g. :p modifier)
+        printf("%s\n", expanded);
+        add_history(expanded);
+        last_line = expanded;
+        continue;
+      } else if (expand_result < 0) {
+        // Expansion error (e.g. !! with empty history)
+        fprintf(stderr, "%s\n",
+                expanded ? expanded : "history expansion error");
+        continue;
+      } else {
+        current_line = line.get();
+      }
 
       if (current_line != last_line) {
-        add_history(line.get());
+        add_history(current_line.c_str());
         last_line = current_line;
       }
       eval_command_queue.push(strip_line_comment(current_line));
@@ -222,7 +307,13 @@ void *loopy() {
   printf(COOL_COLOR_PINK
          "\nBeat it, ya val jerk!\n" ANSI_COLOR_RESET);  // Thrashin'
                                                          // reference
-  write_history(nullptr);
+  // Only append the new entries from this session — don't rewrite the whole
+  // file, which would clobber history written by other sessions.
+  int new_entries = history_length - history_base_len;
+  if (new_entries > 0)
+    append_history(new_entries, history_path.c_str());
+  else
+    write_history(history_path.c_str());  // first-ever run: create the file
 
   return nullptr;
 }

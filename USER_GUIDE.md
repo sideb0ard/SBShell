@@ -270,8 +270,15 @@ load_preset(drums, "TR808");   // Classic 808
 load_preset(drums, "TR909");   // Punchy 909
 load_preset(drums, "DILLA");   // Warm, lo-fi
 
-list_presets(drums); // to see all presets
+list_presets(drums);          // list full kit presets
+list_presets(drums, "sd");    // list presets for one voice (bd/sd/hh/hh2/cp/fm1/fm2/fm3/lz)
 save_preset(drums, "NEWPRESETNAME"); // to save a new preset
+
+// Save/load individual drum voices across presets:
+// part names: bd / sd / hh / hh2 / cp / fm1 / fm2 / fm3 / lz
+save_drum_part(drums, "MY_KIT", "bd");       // save just the kick from current settings
+load_drum_part(drums, "TR808", "bd");        // load 808 kick into current kit
+load_drum_part(drums, "TR909", "sd");        // swap in a 909 snare
 
 // Drum voices (MIDI note numbers):
 // 0 = Kick
@@ -668,7 +675,11 @@ info(drums);
 // Set a parameter
 set drums:bd_vol 1.0;        // Kick volume
 set drums:bd_decay 200;      // Kick decay time
-set drums:bd_pitch_env_range 12;  // Pitch sweep depth
+set drums:bd_pitch_env_range 12;  // Kick pitch sweep depth (semitones)
+
+// Snare pitch envelope (upward sweep on attack — great for snap and crack):
+set drums:sd_pitch_eg_depth 8;    // Semitones of upward pitch sweep (0 = off)
+set drums:sd_pitch_eg_decay 25;   // How fast the sweep falls back (ms)
 
 ```
 

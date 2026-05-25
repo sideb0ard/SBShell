@@ -162,3 +162,33 @@ let dxeffectblah_comp = comp()
 
   }
 }
+
+let kblah_comp = comp()
+{
+  setup()
+  {
+    let kdz = [1, 0, 0, 1,  0, 0, 1, 0,  0, 1, 0, 0,  0, 0, 1, 0];
+    let sdz = [0, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+
+    let poly = [1, 1, 0, 0, 1, 0];
+    let px = 0;
+  }
+  run()
+  {
+    if (count % 8 < 7) {
+      for (let i = 0; i < 16; i++) {
+        if (kdz[i] == 1) {
+          note_on_at(sbdrum, 0, i * pp);
+        }
+        if (sdz[i] == 1) {
+          note_on_at(sbdrum, 1, i * pp);
+        }
+        if (poly[px] == 1) {
+          note_on_at(sbdrum, 3, i * pp);
+        }
+        px = incr(px, 0, len(poly));
+      }
+    }
+
+  }
+}

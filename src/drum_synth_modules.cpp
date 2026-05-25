@@ -187,6 +187,13 @@ SnareDrum::SnareDrum() {
   eg_.SetDecayTimeMsec(100);
   eg_.Update();
 
+  pitch_eg_.SetRampMode(true);
+  pitch_eg_.m_reset_to_zero = true;
+  pitch_eg_.SetEgMode(DIGITAL);
+  pitch_eg_.SetAttackTimeMsec(1);
+  pitch_eg_.SetDecayTimeMsec(30);
+  pitch_eg_.Update();
+
   distortion_.SetParam("threshold", 0.5);
   delay_ = std::make_unique<StereoDelay>();
 }
@@ -212,6 +219,7 @@ void SnareDrum::DoRetrigger(double vel) {
   hi_osc_->StartOscillator();
 
   eg_.StartEg();
+  pitch_eg_.StartEg();
 }
 
 StereoVal SnareDrum::Generate() {
@@ -225,6 +233,11 @@ StereoVal SnareDrum::Generate() {
     noise_out = noise_filter_->DoFilter(noise_out);
 
     // OSCILLATORS
+
+    double pitch_eg_out = pitch_eg_.DoEnvelope(nullptr);
+    double pitch_mod = pitch_eg_depth_ * pitch_eg_out;
+    lo_osc_->SetFoModExp(pitch_mod);
+    hi_osc_->SetFoModExp(pitch_mod);
 
     lo_osc_->Update();
     hi_osc_->Update();
@@ -262,6 +275,7 @@ StereoVal SnareDrum::Generate() {
 
     eg_.StopEg();
     noise_eg_.StopEg();
+    pitch_eg_.StopEg();
     note_on_ = false;
   }
 

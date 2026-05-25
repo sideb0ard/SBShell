@@ -91,6 +91,7 @@ bool FileExists(std::string filename);
 }  // namespace utils
 
 std::vector<std::string> GetSynthPresets(unsigned int synthtype);
+std::vector<std::string> GetDrumPartPresets(const std::string &part);
 void PrintMultiMidi(MultiEventMidiPattern &pattern);
 std::string MultiMidiString(MultiEventMidiPattern &pattern);
 
