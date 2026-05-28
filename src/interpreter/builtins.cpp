@@ -2070,7 +2070,7 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            return evaluator::NULLL;
          })},
     // save_drum_part(drum, "preset_name", "part")
-    // part = bd / sd / hh / hh2 / cp / fm1 / fm2 / fm3 / lz
+    // part = bd / sd / hh / oh / cp / fm1 / fm2 / fm3 / lz
     {"save_drum_part",
      std::make_shared<object::BuiltIn>(
          [](std::vector<std::shared_ptr<object::Object>> args)

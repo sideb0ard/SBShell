@@ -107,10 +107,9 @@ void ParseSynthCmd(std::vector<std::shared_ptr<object::Object>> &args) {
       std::shared_ptr<object::String> str_obj =
           std::dynamic_pointer_cast<object::String>(args[1]);
       if (str_obj) {
-        if (args.size() == 3) {
-          std::shared_ptr<object::String> str_cmd =
-              std::dynamic_pointer_cast<object::String>(args[2]);
-          if (str_cmd->value_ == "save")
+        if (args.size() >= 3) {
+          auto str_cmd = std::dynamic_pointer_cast<object::String>(args.back());
+          if (str_cmd && str_cmd->value_ == "save")
             global_mixr->sound_generators_[soundgen->soundgen_id_]->Save(
                 str_obj->value_);
         }

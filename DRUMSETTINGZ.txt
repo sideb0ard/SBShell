@@ -31,7 +31,7 @@ Roland TR-808 Style
   hh_hif_q: 1-2      # Clean
   hh_decay: 30-50    # Very short (closed)
 
-  hh2_decay: 150-300 # Longer (open hat)
+  oh_decay: 150-300 # Longer (open hat)
 
   ---
   Roland TR-909 Style
@@ -69,7 +69,7 @@ Roland TR-808 Style
   hh_hif_q: 1-2
   hh_decay: 20-40    # Closed
 
-  hh2_decay: 100-200 # Open
+  oh_decay: 100-200 # Open
 
   ---
 Key Differences (with new Q working!)

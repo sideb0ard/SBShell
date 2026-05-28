@@ -237,7 +237,7 @@ note_on(sbdrum, 2);
 // what else?
 info sbdrum;
 
-// bd(0) // sd(1) // cp(2) // hh(3) // hh2(4) ..
+// bd(0) // sd(1) // cp(2) // hh(3) // oh(4) ..
 
 // play a long bass note on an FM Synth (midi 20 - G#)
 note_on(dx, 20, dur = 5000);
@@ -271,11 +271,11 @@ load_preset(drums, "TR909");   // Punchy 909
 load_preset(drums, "DILLA");   // Warm, lo-fi
 
 list_presets(drums);          // list full kit presets
-list_presets(drums, "sd");    // list presets for one voice (bd/sd/hh/hh2/cp/fm1/fm2/fm3/lz)
+list_presets(drums, "sd");    // list presets for one voice (bd/sd/hh/oh/cp/fm1/fm2/fm3/lz)
 save_preset(drums, "NEWPRESETNAME"); // to save a new preset
 
 // Save/load individual drum voices across presets:
-// part names: bd / sd / hh / hh2 / cp / fm1 / fm2 / fm3 / lz
+// part names: bd / sd / hh / oh / cp / fm1 / fm2 / fm3 / lz
 save_drum_part(drums, "MY_KIT", "bd");       // save just the kick from current settings
 load_drum_part(drums, "TR808", "bd");        // load 808 kick into current kit
 load_drum_part(drums, "TR909", "sd");        // swap in a 909 snare

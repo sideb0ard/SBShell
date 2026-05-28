@@ -44,7 +44,7 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE  << "  monitor(\"file.sb\")    " << COOL_COLOR_ORANGE << "- Import and monitor script file\n";
   ss << ANSI_COLOR_WHITE  << "  info(<instrument_name>)  " << COOL_COLOR_ORANGE << "- Show all parameters\n";
   ss << ANSI_COLOR_WHITE  << "  list_presets(<instrument_name>)          " << COOL_COLOR_ORANGE << "- List available presets\n";
-  ss << ANSI_COLOR_WHITE  << "  list_presets(drums, \"part\")              " << COOL_COLOR_ORANGE << "- List presets for one drum voice (bd/sd/hh/hh2/cp)\n";
+  ss << ANSI_COLOR_WHITE  << "  list_presets(drums, \"part\")              " << COOL_COLOR_ORANGE << "- List presets for one drum voice (bd/sd/hh/oh/cp)\n";
   ss << ANSI_COLOR_WHITE  << "  p10 # comp_name;  " << COOL_COLOR_ORANGE << "- Assign computation to process\n\n";
 
   ss << COOL_COLOR_GREEN
@@ -150,11 +150,11 @@ std::string build_help() {
   ss << COOL_COLOR_GREEN << "PRESET MANAGEMENT\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  list_presets(gen)           " << COOL_COLOR_ORANGE << "- List available presets\n";
-  ss << ANSI_COLOR_WHITE << "  list_presets(drums, \"part\") " << COOL_COLOR_ORANGE << "- List presets for one drum voice (bd/sd/hh/hh2/cp/fm1/fm2/fm3/lz)\n";
+  ss << ANSI_COLOR_WHITE << "  list_presets(drums, \"part\") " << COOL_COLOR_ORANGE << "- List presets for one drum voice (bd/sd/hh/oh/cp/fm1/fm2/fm3/lz)\n";
   ss << ANSI_COLOR_WHITE << "  load_preset(gen, name)      " << COOL_COLOR_ORANGE << "- Load named preset\n";
   ss << ANSI_COLOR_WHITE << "  rand_preset(gen)            " << COOL_COLOR_ORANGE << "- Load random preset\n";
   ss << ANSI_COLOR_WHITE << "  save_preset(gen, name)      " << COOL_COLOR_ORANGE << "- Save current settings\n";
-  ss << ANSI_COLOR_WHITE << "  save_drum_part(drum, preset, part) " << COOL_COLOR_ORANGE << "- Save one drum voice (bd/sd/hh/hh2/cp/fm1/fm2/fm3/lz)\n";
+  ss << ANSI_COLOR_WHITE << "  save_drum_part(drum, preset, part) " << COOL_COLOR_ORANGE << "- Save one drum voice (bd/sd/hh/oh/cp/fm1/fm2/fm3/lz)\n";
   ss << ANSI_COLOR_WHITE << "  load_drum_part(drum, preset, part) " << COOL_COLOR_ORANGE << "- Load one drum voice from preset\n";
   ss << COOL_COLOR_GREEN << "  Snare pitch envelope:\n";
   ss << ANSI_COLOR_WHITE << "  set d:sd_pitch_eg_depth 8   " << COOL_COLOR_ORANGE << "- Upward pitch sweep on attack (semitones, 0=off)\n";

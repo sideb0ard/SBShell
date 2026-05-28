@@ -26,7 +26,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 HH_FILE  = PROJECT_ROOT / "settings" / "drum_hh_presets.json"
-HH2_FILE = PROJECT_ROOT / "settings" / "drum_hh2_presets.json"
+HH2_FILE = PROJECT_ROOT / "settings" / "drum_oh_presets.json"
 
 
 def hh(sqamp=0.5, attack=10.0, decay=10.0, midf=10000.0, hif=8000.0,

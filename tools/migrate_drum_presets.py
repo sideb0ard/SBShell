@@ -9,7 +9,7 @@ Reads settings/drumpresets.dat, writes:
   settings/drum_bd_presets.json - BdSettings keyed by kit name
   settings/drum_sd_presets.json - SdSettings keyed by kit name
   settings/drum_hh_presets.json - HhSettings keyed by kit name (closed hat)
-  settings/drum_hh2_presets.json- HhSettings keyed by kit name (open hat)
+  settings/drum_oh_presets.json- HhSettings keyed by kit name (open hat)
   settings/drum_cp_presets.json - CpSettings keyed by kit name
   settings/drum_fm_presets.json - FmDrumSettings keyed by "<kit>_fm1/2/3"
   settings/drum_lz_presets.json - LazerSettings keyed by kit name
@@ -30,7 +30,7 @@ PREFIXES = {
     "bd": ["bd_"],
     "sd": ["sd_"],
     "hh": ["hh_"],
-    "hh2": ["hh2_"],
+    "oh": ["oh_"],
     "cp": ["cp_"],
     "fm1": ["fm1_"],
     "fm2": ["fm2_"],
@@ -85,7 +85,7 @@ def main():
     bd_presets = {}
     sd_presets = {}
     hh_presets = {}
-    hh2_presets = {}
+    oh_presets = {}
     cp_presets = {}
     fm_presets = {}
     lz_presets = {}
@@ -107,7 +107,7 @@ def main():
                 "bd": extract_part(flat, ["bd_"]),
                 "sd": extract_part(flat, ["sd_"]),
                 "hh": extract_part(flat, ["hh_"]),
-                "hh2": extract_part(flat, ["hh2_"]),
+                "oh": extract_part(flat, ["oh_"]),
                 "cp": extract_part(flat, ["cp_"]),
                 "fm1": extract_part(flat, ["fm1_"]),
                 "fm2": extract_part(flat, ["fm2_"]),
@@ -118,7 +118,7 @@ def main():
             bd_presets[name] = kit["bd"]
             sd_presets[name] = kit["sd"]
             hh_presets[name] = kit["hh"]
-            hh2_presets[name] = kit["hh2"]
+            oh_presets[name] = kit["oh"]
             cp_presets[name] = kit["cp"]
             fm_presets[f"{name}_fm1"] = kit["fm1"]
             fm_presets[f"{name}_fm2"] = kit["fm2"]
@@ -136,7 +136,7 @@ def main():
     write("drum_bd_presets.json", bd_presets)
     write("drum_sd_presets.json", sd_presets)
     write("drum_hh_presets.json", hh_presets)
-    write("drum_hh2_presets.json", hh2_presets)
+    write("drum_oh_presets.json", oh_presets)
     write("drum_cp_presets.json", cp_presets)
     write("drum_fm_presets.json", fm_presets)
     write("drum_lz_presets.json", lz_presets)

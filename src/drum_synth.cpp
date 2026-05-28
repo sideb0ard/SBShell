@@ -24,7 +24,7 @@ DrumSynth::DrumSynth() {
   bd_ = std::make_unique<BassDrum>();
   sd_ = std::make_unique<SnareDrum>();
   hh_ = std::make_unique<HiHat>();
-  hh2_ = std::make_unique<HiHat>();
+  oh_ = std::make_unique<HiHat>();
   cp_ = std::make_unique<HandClap>();
   fm1_ = std::make_unique<FMDrum>();
   fm2_ = std::make_unique<FMDrum>();
@@ -47,9 +47,9 @@ StereoVal DrumSynth::GenNext(mixer_timing_info tinfo) {
   out.left += hh_out.left;
   out.right += hh_out.right;
 
-  auto hh2_out = hh2_->Generate();
-  out.left += hh2_out.left;
-  out.right += hh2_out.right;
+  auto oh_out = oh_->Generate();
+  out.left += oh_out.left;
+  out.right += oh_out.right;
 
   auto snare_out = sd_->Generate();
   out.left += snare_out.left;
@@ -176,40 +176,40 @@ void DrumSynth::SetParam(std::string name, double val) {
   else if (name == "hh_delay_sync_len")
     settings_.hh.delay_sync_len = val;
 
-  else if (name == "hh2_vol")
-    settings_.hh2.vol = val;
-  else if (name == "hh2_pan")
-    settings_.hh2.pan = val;
-  else if (name == "hh2_attack")
-    settings_.hh2.attack = val;
-  else if (name == "hh2_decay")
-    settings_.hh2.decay = val;
-  else if (name == "hh2_sqamp")
-    settings_.hh2.sqamp = val;
-  else if (name == "hh2_midf")
-    settings_.hh2.midf = val;
-  else if (name == "hh2_hif")
-    settings_.hh2.hif = val;
-  else if (name == "hh2_hif_q")
-    settings_.hh2.hif_q = val;
-  else if (name == "hh2_dist")
-    settings_.hh2.distortion_threshold = val;
-  else if (name == "hh2_delay_en")
-    settings_.hh2.use_delay = val;
-  else if (name == "hh2_delay_mode")
-    settings_.hh2.delay_mode = val;
-  else if (name == "hh2_delay_ms")
-    settings_.hh2.delay_ms = val;
-  else if (name == "hh2_delay_feedback_pct")
-    settings_.hh2.delay_feedback_pct = val;
-  else if (name == "hh2_delay_ratio")
-    settings_.hh2.delay_ratio = val;
-  else if (name == "hh2_delay_wetmix")
-    settings_.hh2.delay_wetmix = val;
-  else if (name == "hh2_delay_sync_tempo")
-    settings_.hh2.delay_sync_tempo = val;
-  else if (name == "hh2_delay_sync_len")
-    settings_.hh2.delay_sync_len = val;
+  else if (name == "oh_vol")
+    settings_.oh.vol = val;
+  else if (name == "oh_pan")
+    settings_.oh.pan = val;
+  else if (name == "oh_attack")
+    settings_.oh.attack = val;
+  else if (name == "oh_decay")
+    settings_.oh.decay = val;
+  else if (name == "oh_sqamp")
+    settings_.oh.sqamp = val;
+  else if (name == "oh_midf")
+    settings_.oh.midf = val;
+  else if (name == "oh_hif")
+    settings_.oh.hif = val;
+  else if (name == "oh_hif_q")
+    settings_.oh.hif_q = val;
+  else if (name == "oh_dist")
+    settings_.oh.distortion_threshold = val;
+  else if (name == "oh_delay_en")
+    settings_.oh.use_delay = val;
+  else if (name == "oh_delay_mode")
+    settings_.oh.delay_mode = val;
+  else if (name == "oh_delay_ms")
+    settings_.oh.delay_ms = val;
+  else if (name == "oh_delay_feedback_pct")
+    settings_.oh.delay_feedback_pct = val;
+  else if (name == "oh_delay_ratio")
+    settings_.oh.delay_ratio = val;
+  else if (name == "oh_delay_wetmix")
+    settings_.oh.delay_wetmix = val;
+  else if (name == "oh_delay_sync_tempo")
+    settings_.oh.delay_sync_tempo = val;
+  else if (name == "oh_delay_sync_len")
+    settings_.oh.delay_sync_len = val;
 
   else if (name == "sd_vol")
     settings_.sd.vol = val;
@@ -479,21 +479,20 @@ std::string DrumSynth::Info() {
   ss << "     hh_delay_wetmix:" << settings_.hh.delay_wetmix
      << " hh_delay_sync_tempo:" << settings_.hh.delay_sync_tempo
      << " hh_delay_sync_len:" << settings_.hh.delay_sync_len << std::endl;
-  ss << COOL_COLOR_YELLOW_MELLOW "     hh2(4): hh2_vol:" << settings_.hh2.vol
-     << " hh2_pan:" << settings_.hh2.pan
-     << " hh2_attack:" << settings_.hh2.attack
-     << " hh2_decay:" << settings_.hh2.decay << std::endl;
-  ss << "     hh2_sqamp:" << settings_.hh2.sqamp
-     << " hh2_midf:" << settings_.hh2.midf << " hh2_hif:" << settings_.hh2.hif
-     << " hh2_hif_q:" << settings_.hh2.hif_q
-     << " hh2_dist:" << settings_.hh2.distortion_threshold << std::endl;
-  ss << "     hh2_delay_mode:" << settings_.hh2.delay_mode
-     << " hh2_delay_ms:" << settings_.hh2.delay_ms
-     << " hh2_delay_feedback_pct:" << settings_.hh2.delay_feedback_pct
-     << " hh2_delay_ratio:" << settings_.hh2.delay_ratio << std::endl;
-  ss << "     hh2_delay_wetmix:" << settings_.hh2.delay_wetmix
-     << " hh2_delay_sync_tempo:" << settings_.hh2.delay_sync_tempo
-     << " hh2_delay_sync_len:" << settings_.hh2.delay_sync_len << std::endl;
+  ss << COOL_COLOR_YELLOW_MELLOW "     oh(4): oh_vol:" << settings_.oh.vol
+     << " oh_pan:" << settings_.oh.pan << " oh_attack:" << settings_.oh.attack
+     << " oh_decay:" << settings_.oh.decay << std::endl;
+  ss << "     oh_sqamp:" << settings_.oh.sqamp
+     << " oh_midf:" << settings_.oh.midf << " oh_hif:" << settings_.oh.hif
+     << " oh_hif_q:" << settings_.oh.hif_q
+     << " oh_dist:" << settings_.oh.distortion_threshold << std::endl;
+  ss << "     oh_delay_mode:" << settings_.oh.delay_mode
+     << " oh_delay_ms:" << settings_.oh.delay_ms
+     << " oh_delay_feedback_pct:" << settings_.oh.delay_feedback_pct
+     << " oh_delay_ratio:" << settings_.oh.delay_ratio << std::endl;
+  ss << "     oh_delay_wetmix:" << settings_.oh.delay_wetmix
+     << " oh_delay_sync_tempo:" << settings_.oh.delay_sync_tempo
+     << " oh_delay_sync_len:" << settings_.oh.delay_sync_len << std::endl;
   ss << COOL_COLOR_ORANGE "     fm1(5): fm1_vol:" << settings_.fm1.vol
      << " fm1_pan:" << settings_.fm1.pan
      << " fm1_car_freq:" << settings_.fm1.carrier_freq
@@ -590,7 +589,7 @@ void DrumSynth::NoteOn(midi_event ev) {
       break;
     case (4):
       // Hi Hat 2 // Open Hat
-      hh2_->NoteOn(velocity);
+      oh_->NoteOn(velocity);
       break;
     case (5):
       // FM Drum 1
@@ -668,8 +667,8 @@ void DrumSynth::SavePart(std::string preset_name, std::string part) {
     save(DRUM_SD_PRESETS_FILENAME, nlohmann::json(settings_.sd));
   else if (part == "hh")
     save(DRUM_HH_PRESETS_FILENAME, nlohmann::json(settings_.hh));
-  else if (part == "hh2")
-    save(DRUM_HH2_PRESETS_FILENAME, nlohmann::json(settings_.hh2));
+  else if (part == "oh")
+    save(DRUM_OH_PRESETS_FILENAME, nlohmann::json(settings_.oh));
   else if (part == "cp")
     save(DRUM_CP_PRESETS_FILENAME, nlohmann::json(settings_.cp));
   else if (part == "fm1")
@@ -682,7 +681,7 @@ void DrumSynth::SavePart(std::string preset_name, std::string part) {
     save(DRUM_LZ_PRESETS_FILENAME, nlohmann::json(settings_.lz));
   else
     std::cerr << "SavePart: unknown part '" << part
-              << "' (use bd/sd/hh/hh2/cp/fm1/fm2/fm3/lz)" << std::endl;
+              << "' (use bd/sd/hh/oh/cp/fm1/fm2/fm3/lz)" << std::endl;
 }
 
 bool DrumSynth::LoadPart(std::string preset_name, std::string part) {
@@ -708,10 +707,10 @@ bool DrumSynth::LoadPart(std::string preset_name, std::string part) {
       if (!load(DRUM_HH_PRESETS_FILENAME)) return false;
       settings_.hh =
           ReadJsonFile(DRUM_HH_PRESETS_FILENAME)[preset_name].get<HhSettings>();
-    } else if (part == "hh2") {
-      if (!load(DRUM_HH2_PRESETS_FILENAME)) return false;
-      settings_.hh2 = ReadJsonFile(DRUM_HH2_PRESETS_FILENAME)[preset_name]
-                          .get<HhSettings>();
+    } else if (part == "oh") {
+      if (!load(DRUM_OH_PRESETS_FILENAME)) return false;
+      settings_.oh =
+          ReadJsonFile(DRUM_OH_PRESETS_FILENAME)[preset_name].get<HhSettings>();
     } else if (part == "cp") {
       if (!load(DRUM_CP_PRESETS_FILENAME)) return false;
       settings_.cp =
@@ -734,7 +733,7 @@ bool DrumSynth::LoadPart(std::string preset_name, std::string part) {
                          .get<LazerSettings>();
     } else {
       std::cerr << "LoadPart: unknown part '" << part
-                << "' (use bd/sd/hh/hh2/cp/fm1/fm2/fm3/lz)" << std::endl;
+                << "' (use bd/sd/hh/oh/cp/fm1/fm2/fm3/lz)" << std::endl;
       return false;
     }
   } catch (const std::exception &e) {
@@ -830,23 +829,23 @@ void DrumSynth::Update() {
   hh_->delay_->SetSync(settings_.hh.delay_sync_tempo);
   hh_->delay_->SetSyncLen(settings_.hh.delay_sync_len);
 
-  hh2_->dca_.m_amplitude_control = settings_.hh2.vol;
-  hh2_->dca_.m_pan_control = settings_.hh2.pan;
-  hh2_->eg_.SetAttackTimeMsec(settings_.hh2.attack);
-  hh2_->eg_.SetDecayTimeMsec(settings_.hh2.decay);
-  hh2_->SetAmplitude(settings_.hh2.sqamp);
-  hh2_->mid_filter_->SetFcControl(settings_.hh2.midf);
-  hh2_->high_filter_->SetFcControl(settings_.hh2.hif);
-  hh2_->high_filter_->SetQControlGUI(settings_.hh2.hif_q);
-  hh2_->distortion_.SetParam("threshold", settings_.hh2.distortion_threshold);
-  hh2_->use_delay_ = settings_.hh2.use_delay;
-  hh2_->delay_->SetMode(settings_.hh2.delay_mode);
-  hh2_->delay_->SetDelayTimeMs(settings_.hh2.delay_ms);
-  hh2_->delay_->SetFeedbackPercent(settings_.hh2.delay_feedback_pct);
-  hh2_->delay_->SetDelayRatio(settings_.hh2.delay_ratio);
-  hh2_->delay_->SetWetMix(settings_.hh2.delay_wetmix);
-  hh2_->delay_->SetSync(settings_.hh2.delay_sync_tempo);
-  hh2_->delay_->SetSyncLen(settings_.hh2.delay_sync_len);
+  oh_->dca_.m_amplitude_control = settings_.oh.vol;
+  oh_->dca_.m_pan_control = settings_.oh.pan;
+  oh_->eg_.SetAttackTimeMsec(settings_.oh.attack);
+  oh_->eg_.SetDecayTimeMsec(settings_.oh.decay);
+  oh_->SetAmplitude(settings_.oh.sqamp);
+  oh_->mid_filter_->SetFcControl(settings_.oh.midf);
+  oh_->high_filter_->SetFcControl(settings_.oh.hif);
+  oh_->high_filter_->SetQControlGUI(settings_.oh.hif_q);
+  oh_->distortion_.SetParam("threshold", settings_.oh.distortion_threshold);
+  oh_->use_delay_ = settings_.oh.use_delay;
+  oh_->delay_->SetMode(settings_.oh.delay_mode);
+  oh_->delay_->SetDelayTimeMs(settings_.oh.delay_ms);
+  oh_->delay_->SetFeedbackPercent(settings_.oh.delay_feedback_pct);
+  oh_->delay_->SetDelayRatio(settings_.oh.delay_ratio);
+  oh_->delay_->SetWetMix(settings_.oh.delay_wetmix);
+  oh_->delay_->SetSync(settings_.oh.delay_sync_tempo);
+  oh_->delay_->SetSyncLen(settings_.oh.delay_sync_len);
 
   cp_->dca_.m_amplitude_control = settings_.cp.vol;
   cp_->dca_.m_pan_control = settings_.cp.pan;

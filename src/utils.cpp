@@ -912,7 +912,7 @@ std::vector<std::string> GetSynthPresets(unsigned int synthtype) {
 std::vector<std::string> GetDrumPartPresets(const std::string &part) {
   static const std::unordered_map<std::string, const char *> part_files = {
       {"bd", DRUM_BD_PRESETS_FILENAME},  {"sd", DRUM_SD_PRESETS_FILENAME},
-      {"hh", DRUM_HH_PRESETS_FILENAME},  {"hh2", DRUM_HH2_PRESETS_FILENAME},
+      {"hh", DRUM_HH_PRESETS_FILENAME},  {"oh", DRUM_OH_PRESETS_FILENAME},
       {"cp", DRUM_CP_PRESETS_FILENAME},  {"fm1", DRUM_FM_PRESETS_FILENAME},
       {"fm2", DRUM_FM_PRESETS_FILENAME}, {"fm3", DRUM_FM_PRESETS_FILENAME},
       {"lz", DRUM_LZ_PRESETS_FILENAME},

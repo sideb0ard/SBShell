@@ -14,8 +14,7 @@ static const char DRUM_KITS_FILENAME[] = "settings/drum_kits.json";
 static const char DRUM_BD_PRESETS_FILENAME[] = "settings/drum_bd_presets.json";
 static const char DRUM_SD_PRESETS_FILENAME[] = "settings/drum_sd_presets.json";
 static const char DRUM_HH_PRESETS_FILENAME[] = "settings/drum_hh_presets.json";
-static const char DRUM_HH2_PRESETS_FILENAME[] =
-    "settings/drum_hh2_presets.json";
+static const char DRUM_OH_PRESETS_FILENAME[] = "settings/drum_oh_presets.json";
 static const char DRUM_CP_PRESETS_FILENAME[] = "settings/drum_cp_presets.json";
 static const char DRUM_FM_PRESETS_FILENAME[] = "settings/drum_fm_presets.json";
 static const char DRUM_LZ_PRESETS_FILENAME[] = "settings/drum_lz_presets.json";
@@ -189,7 +188,7 @@ struct DrumSettings {
   BdSettings bd;
   SdSettings sd;
   HhSettings hh;
-  HhSettings hh2;
+  HhSettings oh;
   CpSettings cp;
   FmDrumSettings fm1;
   FmDrumSettings fm2;
@@ -199,9 +198,9 @@ struct DrumSettings {
   DrumSettings() {
     fm1.pan = -0.1;
 
-    // hh2 (open hat) has different defaults from hh (closed hat)
-    hh2.decay = 100;
-    hh2.delay_ms = 13;
+    // oh (open hat) has different defaults from hh (closed hat)
+    oh.decay = 100;
+    oh.delay_ms = 13;
 
     // fm2 and fm3 have different defaults from fm1
     fm2.pan = 0.2;
@@ -231,7 +230,7 @@ struct DrumSettings {
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DrumSettings, name, volume, bd,
-                                                sd, hh, hh2, cp, fm1, fm2, fm3,
+                                                sd, hh, oh, cp, fm1, fm2, fm3,
                                                 lz)
 
 class DrumSynth : public SoundGenerator {
@@ -258,7 +257,7 @@ class DrumSynth : public SoundGenerator {
 
   void LoadSettings(DrumSettings settings);
   // Per-instrument preset I/O. part =
-  // "bd","sd","hh","hh2","cp","fm1"-"fm3","lz"
+  // "bd","sd","hh","oh","cp","fm1"-"fm3","lz"
   void SavePart(std::string preset_name, std::string part);
   bool LoadPart(std::string preset_name, std::string part);
 
@@ -267,7 +266,7 @@ class DrumSynth : public SoundGenerator {
   std::unique_ptr<BassDrum> bd_;
   std::unique_ptr<SnareDrum> sd_;
   std::unique_ptr<HiHat> hh_;
-  std::unique_ptr<HiHat> hh2_;
+  std::unique_ptr<HiHat> oh_;
   std::unique_ptr<HandClap> cp_;
   std::unique_ptr<FMDrum> fm1_;
   std::unique_ptr<FMDrum> fm2_;
