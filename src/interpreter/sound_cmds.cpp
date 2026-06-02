@@ -65,7 +65,6 @@ std::vector<std::shared_ptr<Fx>> ParseFXCmd(
           fx.push_back(std::make_shared<Diffuser>());
         } else if (str_obj->value_ == "sidechain") {
           if (args.size() > 2) {
-            std::cout << "Got a source!\n";
             auto soundgen_sidechain_src =
                 std::dynamic_pointer_cast<object::SoundGenerator>(args[2]);
             if (soundgen_sidechain_src &&
@@ -74,6 +73,19 @@ std::vector<std::shared_ptr<Fx>> ParseFXCmd(
               auto dp = std::make_shared<DynamicsProcessor>();
               dp->SetExternalSource(soundgen_sidechain_src->soundgen_id_);
               dp->SetDefaultSidechainParams();
+              // Optional 4th arg: drum voice name e.g. "bd", "sd", "hh"
+              if (args.size() > 3) {
+                auto voice_arg =
+                    std::dynamic_pointer_cast<object::String>(args[3]);
+                if (voice_arg) {
+                  static const std::unordered_map<std::string, int>
+                      kVoiceNames = {{"bd", 0},  {"sd", 1},  {"cp", 2},
+                                     {"hh", 3},  {"oh", 4},  {"fm1", 5},
+                                     {"fm2", 6}, {"fm3", 7}, {"lz", 8}};
+                  auto it = kVoiceNames.find(voice_arg->value_);
+                  if (it != kVoiceNames.end()) dp->SetExternalVoice(it->second);
+                }
+              }
               fx.push_back(dp);
             }
           }

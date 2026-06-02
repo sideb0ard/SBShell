@@ -7,6 +7,8 @@
 #include <memory>
 #include <sstream>
 
+#include "drum_synth.h"
+
 extern std::unique_ptr<Mixer> global_mixr;
 
 const char *dynamics_processor_type_to_char[] = {"COMP", "LIMIT", "EXPAND",
@@ -25,7 +27,8 @@ DynamicsProcessor::DynamicsProcessor() {
   m_knee_width_ = 0;         // 0 - 20
   m_processor_type_ = COMP;  // 0-3 COMP, LIMIT, EXPAND GATE
   m_time_constant_ = 0;      // digital, analog
-  m_external_source_ = -99;  //
+  m_external_source_ = -99;
+  m_external_voice_ = -1;
 
   Init();
 }
@@ -213,9 +216,20 @@ StereoVal DynamicsProcessor::Process(StereoVal input) {
   // double xn_r = 0.;
 
   double left_detector_input = input.left;
-  if (m_external_source_ >= 0)
-    left_detector_input =
-        global_mixr->soundgen_cur_val_[m_external_source_].left;
+  if (m_external_source_ >= 0) {
+    if (m_external_voice_ >= 0 && m_external_voice_ <= 8) {
+      auto *drum = dynamic_cast<SBAudio::DrumSynth *>(
+          global_mixr->sound_generators_[m_external_source_].get());
+      if (drum)
+        left_detector_input = drum->voice_cur_val_[m_external_voice_].left;
+      else
+        left_detector_input =
+            global_mixr->soundgen_cur_val_[m_external_source_].left;
+    } else {
+      left_detector_input =
+          global_mixr->soundgen_cur_val_[m_external_source_].left;
+    }
+  }
 
   double left_detector =
       envelope_detector_detect(&m_left_detector_, left_detector_input);
@@ -253,6 +267,11 @@ StereoVal DynamicsProcessor::Process(StereoVal input) {
   input.left = gn * lookahead_left * outputgain;
   input.right = gn * lookahead_right * outputgain;
   return input;
+}
+
+void DynamicsProcessor::SetExternalVoice(int voice) {
+  // -1 = full drum mix, 0-8 = individual voice index
+  m_external_voice_ = (voice >= -1 && voice <= 8) ? voice : -1;
 }
 
 void DynamicsProcessor::SetExternalSource(unsigned int val) {

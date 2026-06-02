@@ -549,22 +549,13 @@ void MiniSynth::Update() {
   m_global_synth_params.osc2_params.octave = m_settings.osc2_oct;
   m_global_synth_params.osc2_params.semitones = m_settings.osc2_semis;
 
-  double noise_amplitude = m_settings.m_noise_osc_db == -96.0
-                               ? 0.0
-                               : pow(10.0, m_settings.m_noise_osc_db / 20.0);
-  double sub_amplitude = m_settings.m_sub_osc_db == -96.0
-                             ? 0.0
-                             : pow(10.0, m_settings.m_sub_osc_db / 20.0);
-
   // --- osc3 is sub osc
-  m_global_synth_params.osc3_params.amplitude = sub_amplitude;
-  // m_global_synth_params.osc3_params.amplitude = m_settings.osc3_amp;
+  m_global_synth_params.osc3_params.amplitude = m_settings.osc3_amp;
   m_global_synth_params.osc3_params.octave = m_settings.osc3_oct;
   m_global_synth_params.osc3_params.semitones = m_settings.osc3_semis;
 
   // --- osc4 is noise osc
-  m_global_synth_params.osc4_params.amplitude = noise_amplitude;
-  // m_global_synth_params.osc4_params.amplitude = m_settings.osc4_amp;
+  m_global_synth_params.osc4_params.amplitude = m_settings.osc4_amp;
   m_global_synth_params.osc4_params.octave = m_settings.osc4_oct;
   m_global_synth_params.osc4_params.semitones = m_settings.osc4_semis;
 
@@ -1112,11 +1103,15 @@ void MiniSynth::LoadPreset(std::string preset_name,
     else if (key == "pulse_width_pct")
       m_settings.m_pulse_width_pct = val;
 
-    else if (key == "sub_osc_db")
+    else if (key == "sub_osc_db") {
       m_settings.m_sub_osc_db = val;
+      m_settings.osc3_amp = (val == -96.0) ? 0.0 : pow(10.0, val / 20.0);
+    }
 
-    else if (key == "noise_osc_db")
+    else if (key == "noise_osc_db") {
       m_settings.m_noise_osc_db = val;
+      m_settings.osc4_amp = (val == -96.0) ? 0.0 : pow(10.0, val / 20.0);
+    }
 
     else if (key == "eg1_osc_intensity")
       m_settings.m_eg1_osc_intensity = val;
@@ -1566,9 +1561,10 @@ void MiniSynth::SetNoteToDecayScaling(unsigned int val) {
 }
 
 void MiniSynth::SetNoiseOscDb(double val) {
-  if (val >= -96 && val <= 0)
+  if (val >= -96 && val <= 0) {
     m_settings.m_noise_osc_db = val;
-  else
+    m_settings.osc4_amp = (val == -96.0) ? 0.0 : pow(10.0, val / 20.0);
+  } else
     printf("val must be between -96 and 0\n");
 }
 
@@ -1601,9 +1597,10 @@ void MiniSynth::SetPulsewidthPct(double val) {
 }
 
 void MiniSynth::SetSubOscDb(double val) {
-  if (val >= -96 && val <= 0)
+  if (val >= -96 && val <= 0) {
     m_settings.m_sub_osc_db = val;
-  else
+    m_settings.osc3_amp = (val == -96.0) ? 0.0 : pow(10.0, val / 20.0);
+  } else
     printf("val must be between -96 and 0\n");
 }
 
@@ -1723,7 +1720,7 @@ void MiniSynth::SetParam(std::string name, double val) {
   else if (name == "osc3")
     std::cout << "Change voice to change osc types.\n";
   else if (name == "o3amp")
-    std::cout << "Use 'subosc' param to change osc3" << std::endl;
+    SetOscAmp(3, val);
   else if (name == "o3oct")
     SetOctave(val);
   else if (name == "o3semi")
@@ -1732,7 +1729,7 @@ void MiniSynth::SetParam(std::string name, double val) {
   else if (name == "osc4")
     std::cout << "Can't change noise ooooooosc\n";
   else if (name == "o4amp")
-    std::cout << "Use 'noisedb' param to change osc4" << std::endl;
+    SetOscAmp(4, val);
   else if (name == "o4oct")
     SetOctave(val);
   else if (name == "o4semi")

@@ -57,10 +57,15 @@ void Filter::Update() {
   }
   SetQControl(m_q_control);
 
-  m_fc = m_fc_control * pitch_shift_multiplier(m_fc_mod);
+  double fc_target = m_fc_control * pitch_shift_multiplier(m_fc_mod);
+  if (fc_target > FILTER_FC_MAX) fc_target = FILTER_FC_MAX;
+  if (fc_target < FILTER_FC_MIN) fc_target = FILTER_FC_MIN;
 
-  if (m_fc > FILTER_FC_MAX) m_fc = FILTER_FC_MAX;
-  if (m_fc < FILTER_FC_MIN) m_fc = FILTER_FC_MIN;
+  // One-pole smoother: ~10ms at 44100Hz — prevents crackling when filter
+  // cutoff jumps abruptly (e.g. high key-tracking on chord changes).
+  static constexpr double kFcSmooth = 0.9977;
+  m_fc_smooth = kFcSmooth * m_fc_smooth + (1.0 - kFcSmooth) * fc_target;
+  m_fc = m_fc_smooth;
 }
 
 void Filter::InitGlobalParameters(GlobalFilterParams *params) {

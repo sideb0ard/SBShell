@@ -75,6 +75,18 @@ StereoVal DrumSynth::GenNext(mixer_timing_info tinfo) {
   out.left += lz_out.left;
   out.right += lz_out.right;
 
+  // Cache per-voice outputs for sidechain tapping (0=bd 1=sd 2=cp 3=hh 4=oh
+  // 5=fm1 6=fm2 7=fm3 8=lz)
+  voice_cur_val_[0] = bd_out;
+  voice_cur_val_[1] = snare_out;
+  voice_cur_val_[2] = clap_out;
+  voice_cur_val_[3] = hh_out;
+  voice_cur_val_[4] = oh_out;
+  voice_cur_val_[5] = fm1_out;
+  voice_cur_val_[6] = fm2_out;
+  voice_cur_val_[7] = fm3_out;
+  voice_cur_val_[8] = lz_out;
+
   out.left = out.left * volume;
   out.right = out.right * volume;
 
@@ -140,6 +152,8 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.bd.osc2_waveform = val;
   else if (name == "bd_noise_attack")
     settings_.bd.noise_attack = val;
+  else if (name == "bd_noise_en")
+    settings_.bd.noise_enabled = val;
 
   else if (name == "hh_vol")
     settings_.hh.vol = val;
@@ -418,12 +432,13 @@ std::string DrumSynth::Info() {
      << " bd_delay_ratio:" << settings_.bd.delay_ratio << std::endl;
   ss << "     bd_delay_wetmix:" << settings_.bd.delay_wetmix
      << " bd_delay_sync_tempo:" << settings_.bd.delay_sync_tempo
-     << " bd_delay_sync_len:" << settings_.bd.delay_sync_len << std::endl;
-  ss << "     bd_pitch_env_range:" << settings_.bd.pitch_env_range
-     << " bd_attack:" << settings_.bd.attack
+     << " bd_delay_sync_len:" << settings_.bd.delay_sync_len
+     << " bd_pitch_env_range:" << settings_.bd.pitch_env_range << std::endl;
+  ss << "     bd_attack:" << settings_.bd.attack
      << " bd_osc1_wav:" << GetOscType(settings_.bd.osc1_waveform)
      << " bd_osc2_wav:" << GetOscType(settings_.bd.osc2_waveform)
-     << " bd_noise_attack:" << settings_.bd.noise_attack << std::endl;
+     << " bd_noise_attack:" << settings_.bd.noise_attack
+     << " bd_noise_en:" << settings_.bd.noise_enabled << std::endl;
   ss << COOL_COLOR_ORANGE "     sd(1): sd_vol:" << settings_.sd.vol
      << " sd_pan:" << settings_.sd.pan << " sd_nvol:" << settings_.sd.noise_vol
      << " sd_noise_decay:" << settings_.sd.noise_decay

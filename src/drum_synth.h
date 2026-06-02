@@ -273,6 +273,10 @@ class DrumSynth : public SoundGenerator {
   std::unique_ptr<FMDrum> fm3_;
   std::unique_ptr<Lazer> lz_;
 
+  // Per-voice output cache for sidechain tapping.
+  // Indices: 0=bd 1=sd 2=cp 3=hh 4=oh 5=fm1 6=fm2 7=fm3 8=lz
+  std::array<StereoVal, 9> voice_cur_val_{};
+
   DCA dca_;
 };
 

@@ -38,9 +38,11 @@ class Filter {
 
   unsigned m_filter_type{LPF1};
 
-  double m_fc{FILTER_FC_DEFAULT};  // current filter cut-off val
-  double m_q{FILTER_Q_DEFAULT};    // current q value
-  double m_fc_mod{0};              // frequency cutoff modulation input
+  double m_fc{FILTER_FC_DEFAULT};         // current filter cut-off val
+  double m_fc_smooth{FILTER_FC_DEFAULT};  // one-pole smoothed fc (prevents
+                                          // crackling on key changes)
+  double m_q{FILTER_Q_DEFAULT};           // current q value
+  double m_fc_mod{0};                     // frequency cutoff modulation input
 
  public:
   void SetFcMod(double d);

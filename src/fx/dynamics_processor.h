@@ -19,6 +19,7 @@ class DynamicsProcessor : public Fx {
   void SetParam(std::string name, double val) override;
 
   void SetExternalSource(unsigned int val);
+  void SetExternalVoice(int voice);  // -1 = full mix, 0-8 = drum voice index
   void SetDefaultSidechainParams();
 
  private:
@@ -60,6 +61,6 @@ class DynamicsProcessor : public Fx {
   unsigned int m_stereo_link_;     // on, off
   unsigned int m_processor_type_;  // comp, limit, expand, gate
   unsigned int m_time_constant_;   // digital, analog
-  int m_external_source_;  // a sound_generator id that will correspond to
-                           // mixer input cache
+  int m_external_source_;          // soundgen id for sidechain input
+  int m_external_voice_;           // -1=full mix, 0-8=specific drum voice
 };
