@@ -144,6 +144,22 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.bd.delay_sync_len = val;
   else if (name == "bd_pitch_env_range")
     settings_.bd.pitch_env_range = val;
+  else if (name == "bd_pitch_env2_range")
+    settings_.bd.pitch_env2_range = val;
+  else if (name == "bd_pitch_env2_attack")
+    settings_.bd.pitch_env2_attack = val;
+  else if (name == "bd_pitch_env2_decay")
+    settings_.bd.pitch_env2_decay = val;
+  else if (name == "bd_chirp_en")
+    settings_.bd.chirp_enabled = val;
+  else if (name == "bd_chirp_start")
+    settings_.bd.chirp_start_freq = val;
+  else if (name == "bd_chirp_end")
+    settings_.bd.chirp_end_freq = val;
+  else if (name == "bd_chirp_decay")
+    settings_.bd.chirp_decay = val;
+  else if (name == "bd_chirp_amp")
+    settings_.bd.chirp_amp = val;
   else if (name == "bd_attack")
     settings_.bd.attack = val;
   else if (name == "bd_osc1_wav")
@@ -434,6 +450,14 @@ std::string DrumSynth::Info() {
      << " bd_delay_sync_tempo:" << settings_.bd.delay_sync_tempo
      << " bd_delay_sync_len:" << settings_.bd.delay_sync_len
      << " bd_pitch_env_range:" << settings_.bd.pitch_env_range << std::endl;
+  ss << "     bd_pitch_env2_range:" << settings_.bd.pitch_env2_range
+     << " bd_pitch_env2_attack:" << settings_.bd.pitch_env2_attack
+     << " bd_pitch_env2_decay:" << settings_.bd.pitch_env2_decay << std::endl;
+  ss << "     bd_chirp_en:" << settings_.bd.chirp_enabled
+     << " bd_chirp_start:" << settings_.bd.chirp_start_freq
+     << " bd_chirp_end:" << settings_.bd.chirp_end_freq
+     << " bd_chirp_decay:" << settings_.bd.chirp_decay
+     << " bd_chirp_amp:" << settings_.bd.chirp_amp << std::endl;
   ss << "     bd_attack:" << settings_.bd.attack
      << " bd_osc1_wav:" << GetOscType(settings_.bd.osc1_waveform)
      << " bd_osc2_wav:" << GetOscType(settings_.bd.osc2_waveform)
@@ -796,10 +820,21 @@ void DrumSynth::Update() {
   bd_->delay_->SetSync(settings_.bd.delay_sync_tempo);
   bd_->delay_->SetSyncLen(settings_.bd.delay_sync_len);
   bd_->pitch_osc_range_ = settings_.bd.pitch_env_range;
+  bd_->pitch_osc_range2_ = settings_.bd.pitch_env2_range;
+  bd_->pitch_eg2_.SetAttackTimeMsec(settings_.bd.pitch_env2_attack);
+  bd_->pitch_eg2_.SetDecayTimeMsec(settings_.bd.pitch_env2_decay);
+  bd_->pitch_eg2_.Update();
   bd_->eg_.SetAttackTimeMsec(settings_.bd.attack);
   bd_->osc1_->m_waveform = settings_.bd.osc1_waveform;
   bd_->osc2_->m_waveform = settings_.bd.osc2_waveform;
   bd_->noise_eg_.SetAttackTimeMsec(settings_.bd.noise_attack);
+  bd_->chirp_enabled_ = settings_.bd.chirp_enabled;
+  bd_->chirp_start_freq_ = settings_.bd.chirp_start_freq;
+  bd_->chirp_end_freq_ = settings_.bd.chirp_end_freq;
+  bd_->chirp_decay_ms_ = settings_.bd.chirp_decay;
+  bd_->chirp_amplitude_ = settings_.bd.chirp_amp;
+  bd_->chirp_eg_.SetDecayTimeMsec(settings_.bd.chirp_decay);
+  bd_->chirp_eg_.Update();
 
   sd_->dca_.m_amplitude_control = settings_.sd.vol;
   sd_->dca_.m_pan_control = settings_.sd.pan;

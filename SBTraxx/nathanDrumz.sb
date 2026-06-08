@@ -1,0 +1,48 @@
+
+let dbblah_comp = comp()
+{
+  setup()
+  {
+    let rangz = [10, 20, 50, 80, 12, 100, 1, 5, 140, 16, 200];
+    let rx = 0;
+    let decz = [770, 1700, 600, 700, 300, 800, 100];
+    let dcx = 0;
+
+    let beat1 = [1, 0, 0, 0,  0, 0, 1, 0,  0, 1, 0, 0,  0, 0, 1, 0];
+    let beat2 = [1, 0, 0, 1,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0];
+    let beat3 = [0, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0,  0, 1, 0, 0];
+    let beatz = [beat1, beat1, beat2, beat3];
+    let bx = 0;
+  }
+  run()
+  {
+    let beat = beatz[bx];
+    bx = incr(bx, 0, len(beatz));
+    for (let i = 0; i < 16; i++) {
+      if (beat[i] == 1) {
+        # set sbdrum:bd_pitch_env_range rangz[rx] at = i * pp;
+        # rx = incr(rx, 0, len(rangz));
+        # set sbdrum:bd_decay decz[dcx] at = i * pp;
+        # dcx = incr(dcx, 0, len(decz));
+        note_on_at(sbdrum, 0, i * pp);
+      }
+    }
+
+  }
+}
+
+let dbchblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (i % 4 == 0) {
+        note_on_at(sbdrum, 0, i * pp);
+      }
+    }
+
+  }
+}

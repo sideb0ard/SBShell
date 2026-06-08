@@ -44,7 +44,29 @@ BassDrum::BassDrum() {
   eg_.SetEgMode(DIGITAL);
   eg_.SetAttackTimeMsec(1);
   eg_.SetDecayTimeMsec(180);
+  eg_.SetSustainLevel(0.0);
   eg_.Update();
+
+  pitch_eg2_.SetRampMode(true);
+  pitch_eg2_.m_reset_to_zero = true;
+  pitch_eg2_.SetEgMode(DIGITAL);
+  pitch_eg2_.SetAttackTimeMsec(1);
+  pitch_eg2_.SetDecayTimeMsec(10);
+  pitch_eg2_.SetSustainLevel(0.0);
+  pitch_eg2_.Update();
+
+  chirp_osc_ = std::make_unique<QBLimitedOscillator>();
+  chirp_osc_->m_waveform = SINE;
+  chirp_osc_->m_amplitude = 1.0;
+  chirp_osc_->Update();
+
+  chirp_eg_.SetRampMode(true);
+  chirp_eg_.m_reset_to_zero = true;
+  chirp_eg_.SetEgMode(DIGITAL);
+  chirp_eg_.SetAttackTimeMsec(0.1);
+  chirp_eg_.SetDecayTimeMsec(10.0);
+  chirp_eg_.SetSustainLevel(0.0);
+  chirp_eg_.Update();
 
   distortion_.SetParam("threshold", 0.5);
   delay_ = std::make_unique<StereoDelay>();
@@ -81,6 +103,15 @@ void BassDrum::DoRetrigger(double vel) {
   noise_eg_.StartEg();
 
   eg_.StartEg();
+  pitch_eg2_.StartEg();
+
+  if (chirp_enabled_) {
+    chirp_timer_ = 0;
+    chirp_duration_samples_ = (int)(chirp_decay_ms_ * 44100.0 / 1000.0);
+    chirp_osc_->m_osc_fo = chirp_start_freq_;
+    chirp_osc_->StartOscillator();
+    chirp_eg_.StartEg();
+  }
 }
 
 StereoVal BassDrum::Generate() {
@@ -98,7 +129,11 @@ StereoVal BassDrum::Generate() {
     double biased_eg_out = 0;
     double amp_eg_out = eg_.DoEnvelope(&biased_eg_out);
 
-    double eg_osc_mod = pitch_osc_range_ * biased_eg_out;
+    double biased_eg2_out = 0;
+    pitch_eg2_.DoEnvelope(&biased_eg2_out);
+
+    double eg_osc_mod =
+        pitch_osc_range_ * biased_eg_out + pitch_osc_range2_ * biased_eg2_out;
     osc1_->SetFoModExp(eg_osc_mod);
     osc1_->Update();
 
@@ -110,6 +145,21 @@ StereoVal BassDrum::Generate() {
     double osc2_out = osc2_->DoOscillate(nullptr) * amp_eg_out;
 
     double osc_mix = click_.GenNext() + osc1_out + osc2_out;
+
+    if (chirp_enabled_) {
+      double ratio = (chirp_duration_samples_ > 0)
+                         ? (double)chirp_timer_ / chirp_duration_samples_
+                         : 1.0;
+      if (ratio > 1.0) ratio = 1.0;
+      double chirp_freq =
+          chirp_start_freq_ * pow(chirp_end_freq_ / chirp_start_freq_, ratio);
+      chirp_osc_->m_osc_fo = chirp_freq;
+      chirp_osc_->Update();
+      double chirp_eg_out = chirp_eg_.DoEnvelope(nullptr);
+      osc_mix +=
+          chirp_osc_->DoOscillate(nullptr) * chirp_eg_out * chirp_amplitude_;
+      chirp_timer_++;
+    }
     if (noise_enabled_) osc_mix += noise_out;
 
     //// OUTPUT //////////////////////////

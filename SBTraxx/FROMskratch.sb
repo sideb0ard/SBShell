@@ -1,0 +1,279 @@
+# save_drum_part(sbdrum, "WUMPWUMP", "bd");
+# save_drum_part(sb2, "SKD2", "bd");
+
+let init= fn()
+{
+  load_drum_part(sbdrum, "WUMPWUMP", "bd");
+  load_drum_part(sb2, "SKD2", "bd");
+  load_drum_part(sbdrum, "TRASHY_CHH", "hh");
+  set sbdrum:hh_vol 0.3;
+  load_drum_part(sbdrum, "DRUMPY", "sd");
+  load_drum_part(sb2, "SCROT", "cp");
+  load_preset(dx, "ClockBone");
+  load_preset(dx3, "default");
+  load_drum_part(sbdrum, "CHIRP", "bd");
+}
+let dbblah_comp = comp()
+{
+  setup()
+  {
+    #let bdecz = [200, 170, 370, 450, 670, 890];
+    let bdecz = [200, 170, 370, 250];
+    let bdx = 0;
+    let basebeat1 = [1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0];
+    let basebeat2 = [1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+    let basedelz = [50, 100, 70, 20, 10];
+    let blx = 0;
+    let bdtnz = [100, 300, 700, 600, 100, 700];
+    let btx = 0;
+
+    let bd2decz = [10, 50, 60, 90, 70, 80];
+    let bd2x = 0;
+
+  }
+  run()
+  {
+
+    let basebeat = basebeat1;
+    if (count % 4 == 3) {
+      basebeat = basebeat2;
+    }
+    if (count % 4 == 0) {
+      set sbdrum:bd_decay bdecz[bdx];
+      bdx = incr(bdx, 0, len(bdecz));
+    }
+    let secondk = mask(rand_beat(), basebeat);
+
+    for (let i = 0; i < 16; i++) {
+      set sb2:bd_tone bdtnz[btx] at = i * pp;
+      btx = incr(btx, 0, len(bdtnz));
+      if (basebeat[i] == 1) {
+        note_on_at(sbdrum, 0, i * pp + basedelz[blx]);
+        blx = incr(blx, 0, len(basedelz));
+      }
+      # if (secondk[i] == 1) {
+        #   note_on_at(sb2, 0, i * pp);
+        #   set sb2:bd_decay bd2decz[bd2x] at = i * pp;
+        #   bd2x = incr(bd2x, 0, len(bd2decz));
+        # }
+    }
+  }
+}
+
+let dbFXblah_comp = comp()
+{
+  setup()
+  {
+    let bdntonez = [400, 4000, 5000, 11000];
+    let bdx = 0;
+    let bdnqz = [1, 3, 10, 4, 2, 5];
+    let bqx = 0;
+
+    let sb2_noise_en = false;
+    let sb2_nqz = [10, 1, 3, 5, 6];
+    let sb2nqx = 0;
+    let sb2_ntonez = [130, 1300, 13000];
+    let sb2ntx = 0;
+
+    let sboctz = [1, 8, 6, 4, 3, 2];
+    let sbox = 0;
+  }
+  run()
+  {
+    if (count % 3 == 0) {
+      set sbdrum:bd_nq bdnqz[bqx];
+      bqx = incr(bqx, 0, len(bdnqz));
+      # set sb2:bd_ntone sb2_ntonez[sb2ntx];
+      # sb2ntx = incr(sb2ntx, 0, len(sb2_ntonez));
+    }
+    if (count % 4 == 0) {
+      set sbdrum:bd_ntone bdntonez[bdx];
+      bdx = incr(bdx, 0, len(bdntonez));
+      # set sb2:bd_nq sb2_nqz[sb2nqx];
+      # sb2nqx = incr(sb2nqx, 0, len(sb2_nqz));
+    }
+    # if (count % 2 == 1) {
+      #   set sb2:bd_octave sboctz[sbox];
+      #   sbox = incr(sbox, 0, len(sboctz));
+      # }
+  }
+}
+
+# p4 < osc 7 "-0.2 0.3" "set sb2:hh_pan %"
+let hhhhblah_comp = comp()
+{
+  setup()
+  {
+    let hhz1 =  [1, 1, 0, 0,  1, 0, 0, 0,  1, 1, 1, 0,  0, 0, 1, 1];
+    let hhz2 =  [1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 0];
+    let hhz3 =  [1, 0, 0, 0,  1, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+    let hhx = 0;
+    let velz = [10, 20, 30, 70, 60, 80];
+    let vlx = 0;
+    let hifz = [1000, 2000, 3000, 2000];
+    let hfx = 0;
+    #let hpresetz = ["SIZZLE_CHH", "TRASHY_CHH", "CRYSTALYNC"];
+    #let hpx = 0;
+  }
+  run()
+  {
+    let hhz = hhz1;
+    if (count % 6 == 5) {
+      hhz = hhz2;
+    }
+    if (count % 13 == 7) {
+      hhz = hhz3;
+    }
+    #load_drum_part(sbdrum, hpresetz[hpx], "hh");
+    #hpx = incr(hpx, 0, len(hpresetz));
+    set sbdrum:hh_hif hifz[hfx];
+    hfx = incr(hfx, 0, len(hifz));
+    for (let i = 0; i < 16; i++) {
+      let off = 70;
+      if (i % 2 == 0) {
+        off = 0;
+      }
+      if (hhz[hhx] == 1) {
+        note_on_at(sbdrum, 3, i * pp + off, vel = velz[vlx]);
+        vlx = incr(vlx, 0, len(velz));
+      }
+      hhx = incr(hhx, 0, len(hhz));
+    }
+  }
+}
+
+# ClockBone
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let chrd1 = [55, 58, 62];
+    let chrd2 = [60, 63, 67, 71];
+    let chrd3 = [46, 43];
+    let op3outz = [30, 57, 90, 99, 70];
+    let opx = 0;
+  }
+  run()
+  {
+    if (count % 4 == 0) {
+      note_on_at(dx, chrd1, 0, dur = 3840);
+    }
+    if (count % 4 == 2) {
+      note_on_at(dx, chrd2, 0, dur = 2840);
+    }
+    if (count % 6 < 3) {
+      for (let i = 0; i < 16; i++) {
+        set dx:op3out op3outz[opx] at = i * pp;
+        opx = incr(opx, 0, len(op3outz));
+      }
+    }
+
+    if (count % 4 == 3) {
+      let pp = 3840 / 32;
+      let rf = rand_array(32, 0, 1);
+      for (let i = 0; i < 32; i++) {
+        if (rf[i] > 0) {
+          note_on_at(dx, chrd3, i * pp, dur = 240);
+        }
+      }
+    }
+  }
+}
+
+# save_drum_part(sbdrum, "SCUZSD", "sd");
+let cpblah_comp = comp()
+{
+  setup()
+  {
+    let ndecz = [20, 200, 20, 100, 150, 90, 220];
+    let nx = 0;
+  }
+  run()
+  {
+    if (count % 2 == 1) {
+      set sb2:cp_ndecay ndecz[nx];
+      nx = incr(nx, 0, len(ndecz));
+      note_on_at(sb2, 2, 8 * pp);
+    }
+  }
+}
+
+let dx3blah_comp = comp()
+{
+  setup()
+  {
+    let ntz = [22, 19];
+    let nx = 0;
+    let pat = [1, 0, 0, 1,  0, 0, 1, 0,  0, 1, 0, 0,  1, 0, 0, 0];
+    let durz = [50, 100, 250, 350, 500];
+    let drx = 0;
+    let outz = [30, 40, 50, 60, 70, 80, 95];
+    let ox = 0;
+  }
+
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      let offz = 100;
+      if (i % 2 == 0) {
+        offz = 0;
+      }
+      if (pat[i] == 1) {
+        note_on_at(dx3, ntz[nx], i * pp + offz, dur = durz[drx]);
+      }
+    }
+    nx = incr(nx, 0, len(ntz));
+    drx = incr(drx, 0, len(durz));
+
+    set dx3:op2out outz[ox];
+    ox = incr(ox, 0, len(outz));
+    set dx3:op3out outz[ox];
+  }
+}
+
+# dx3 - default
+let dx3blah_comp = comp()
+{
+  setup()
+  {
+    let notz = [29, 24];
+    let nx = 0;
+    let bjorkz = [5, 7, 9, 8, 11];
+    let bjx = 0;
+    let beat = bjork(bjorkz[bjx], 16);
+    let durz = [400, 60, 100, 120, 160, 50, 100, 400, 250, 700];
+    let drx = 0;
+    let velz = [100, 110, 120, 90, 90];
+    let vx = 0;
+    let dx3op2outz = [70, 60, 50, 30, 20, 7, 7, 25, 50];
+    let op2x = 0;
+    let dx3op3outz = [7, 20, 30, 20, 7, 0, 0, 0, 70, 25, 50];
+    let op3x = 0;
+
+
+  }
+  run()
+  {
+    set dx3:op2out dx3op2outz[op2x];
+    set dx3:op3out dx3op3outz[op3x];
+    op2x = incr(op2x, 0, len(dx3op2outz));
+    op3x = incr(op3x, 0, len(dx3op3outz));
+
+    if (count % 4 == 3) {
+      beat = bjork(bjorkz[bjx], 16);
+      bjx = incr(bjx, 0, len(bjorkz));
+    }
+    for (let i = 0; i < 16; i++) {
+      if (beat[i] == 1) {
+        note_on_at(dx3, notz[nx], i * pp, dur = durz[drx], vel = velz[vx]);
+        drx = incr(drx, 0, len(durz));
+        vx = incr(vx, 0, len(velz));
+      }
+    }
+    if (count % 2 == 1) {
+      nx = incr(nx, 0, len(notz));
+    }
+  }
+}
+
+# let awk = loop(hallow/awkwardBEAT.wav)

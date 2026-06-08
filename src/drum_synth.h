@@ -46,18 +46,28 @@ struct BdSettings {
   bool delay_sync_tempo{true};
   int delay_sync_len{0};  // 0 none, 1 - 1/4, 2 - 8th, 3 - 16th
   double pitch_env_range{2.0};
+  double pitch_env2_range{0.0};   // second fast pitch EG — 0 = off
+  double pitch_env2_attack{1.0};  // ms
+  double pitch_env2_decay{10.0};  // ms, default 10ms
   double attack{1.0};
   int osc1_waveform{0};  // SINE default
   int osc2_waveform{4};  // TRI default
   double noise_attack{5.0};
+  double chirp_enabled{false};
+  double chirp_start_freq{3000.0};
+  double chirp_end_freq{200.0};
+  double chirp_decay{10.0};
+  double chirp_amp{0.316};  // -10dB
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     BdSettings, vol, pan, tone, q, noise_enabled, noise_vol, ntone, nq, decay,
     octave, key, detune_cents, use_distortion, distortion_threshold, hard_sync,
     use_delay, delay_mode, delay_ms, delay_feedback_pct, delay_ratio,
-    delay_wetmix, delay_sync_tempo, delay_sync_len, pitch_env_range, attack,
-    osc1_waveform, osc2_waveform, noise_attack)
+    delay_wetmix, delay_sync_tempo, delay_sync_len, pitch_env_range,
+    pitch_env2_range, pitch_env2_attack, pitch_env2_decay, attack,
+    osc1_waveform, osc2_waveform, noise_attack, chirp_enabled, chirp_start_freq,
+    chirp_end_freq, chirp_decay, chirp_amp)
 
 struct SdSettings {
   double vol{1};

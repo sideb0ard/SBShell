@@ -1941,10 +1941,9 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            int args_size = args.size();
 
            auto show_paged = [](const std::vector<std::string>& names) {
-             FILE* pager = popen("less -FRX", "w");
-             if (!pager) pager = stdout;
-             for (const auto& p : names) fprintf(pager, "%s\n", p.c_str());
-             if (pager != stdout) pclose(pager);
+             std::string out;
+             for (const auto& p : names) out += p + "\n";
+             repl_queue.push(out);
            };
 
            if (args_size >= 2) {

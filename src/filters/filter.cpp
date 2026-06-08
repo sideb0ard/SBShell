@@ -10,7 +10,8 @@
 void Filter::SetFcControl(double val) {
   if (val >= FILTER_FC_MIN && val <= FILTER_FC_MAX) {
     m_fc_control = val;
-    //  Update();
+    m_fc_smooth = val;  // snap immediately — smoother only applies to real-time
+                        // key-tracking changes, not explicit configuration
   } else {
     std::cout << "FC must be between " << FILTER_FC_MIN << " and "
               << FILTER_FC_MAX << std::endl;

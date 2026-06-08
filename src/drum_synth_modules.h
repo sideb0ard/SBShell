@@ -140,8 +140,9 @@ class BassDrum : public DrumModule {
 
   bool hard_sync_{false};
   double frequency_{kDefaultKickFrequency};
-  double pitch_osc_range_{2.0};  // Pitch envelope range in semitones (default
-                                 // matches OSC_FO_MOD_RANGE)
+  double pitch_osc_range_{2.0};   // Pitch envelope range in semitones
+  double pitch_osc_range2_{0.0};  // Second (fast) pitch EG range — 0 = off
+  EnvelopeGenerator pitch_eg2_;   // Fast transient pitch envelope
 
   PulseTrigger click_;
 
@@ -156,7 +157,16 @@ class BassDrum : public DrumModule {
 
   std::unique_ptr<CKThreeFive> out_filter_;
 
-  // DCA dca_;
+  // Chirp: short exponential frequency sweep mixed into the attack transient
+  bool chirp_enabled_{false};
+  double chirp_start_freq_{3000.0};
+  double chirp_end_freq_{200.0};
+  double chirp_decay_ms_{10.0};
+  double chirp_amplitude_{0.316};  // -10dB
+  std::unique_ptr<QBLimitedOscillator> chirp_osc_;
+  EnvelopeGenerator chirp_eg_;
+  int chirp_timer_{0};
+  int chirp_duration_samples_{441};  // 10ms at 44100
 };
 
 const float kHighSnareFreq = 476;

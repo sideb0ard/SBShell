@@ -1,0 +1,56 @@
+
+# wzaupo // pacman // mufflyz
+# C#
+let key = 25;
+# minor
+let key_mod = 1;
+let notes = notes_in_key(key, key_mod);
+
+# vi-ii-V-I
+let chordprog = [5, 1, 4, 0];
+
+let mochordzblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    if (count % 8 == 0) {
+      let chord = notes_in_chord(notes[5], key, 1, key_mod);
+      note_on(mo, chord, dur = 3840 * 4 - 200);
+    }
+    if (count % 8 == 4) {
+      let chord = notes_in_chord(notes[1], key, 1, key_mod);
+      note_on(mo, chord, dur = 3840 * 2 - 100);
+    }
+    if (count % 8 == 6) {
+      let chord = notes_in_chord(notes[4], key, 1, key_mod);
+      note_on_at(mo, chord, 0,  dur = 3840 - 100);
+      chord = notes_in_chord(notes[0], key, 1, key_mod);
+      note_on_at(mo, chord, 3840,  dur = 3840  - 100);
+    }
+
+  }
+}
+
+let dbkblah_comp = comp()
+{
+  setup()
+  {
+    let kikz =  [1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0];
+    let clpz =  [0, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (kikz[i] == 1) {
+        note_on_at(sbdrum, 0, i * pp);
+      }
+      if (clpz[i] == 1) {
+        note_on_at(sbdrum, 1, i * pp - 50);
+      }
+    }
+
+  }
+}
