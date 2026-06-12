@@ -18,7 +18,7 @@ const std::unordered_map<std::string, TokenType> keywords{
     {"break", SLANG_BREAK},
     {"bpm", SLANG_BPM},
     {"digi", SLANG_DIGI_SYNTH},
-    {"drum", SLANG_DRUM_SYNTH},
+    {"drumsynth", SLANG_DRUM_SYNTH},
     {"dur", SLANG_DURATION},
     {"else", SLANG_ELSE},
     {"every", SLANG_EVERY},

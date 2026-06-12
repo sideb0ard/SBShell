@@ -934,7 +934,8 @@ void DrumSynth::Update() {
   hh_->SetAmplitude(settings_.hh.sqamp);
   hh_->mid_filter_->SetFcControl(settings_.hh.midf);
   hh_->mid_filter_->SetQControlGUI(settings_.hh.midf_q);
-  hh_->high_filter_->SetFcControl(settings_.hh.hif);
+  hh_->high_filter_->SetFcControl(
+      std::min(settings_.hh.hif, settings_.hh.midf));
   hh_->high_filter_->SetQControlGUI(settings_.hh.hif_q);
   hh_->distortion_.SetParam("threshold", settings_.hh.distortion_threshold);
   hh_->use_delay_ = settings_.hh.use_delay;
@@ -953,7 +954,8 @@ void DrumSynth::Update() {
   oh_->SetAmplitude(settings_.oh.sqamp);
   oh_->mid_filter_->SetFcControl(settings_.oh.midf);
   oh_->mid_filter_->SetQControlGUI(settings_.oh.midf_q);
-  oh_->high_filter_->SetFcControl(settings_.oh.hif);
+  oh_->high_filter_->SetFcControl(
+      std::min(settings_.oh.hif, settings_.oh.midf));
   oh_->high_filter_->SetQControlGUI(settings_.oh.hif_q);
   oh_->distortion_.SetParam("threshold", settings_.oh.distortion_threshold);
   oh_->use_delay_ = settings_.oh.use_delay;

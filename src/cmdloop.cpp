@@ -63,7 +63,7 @@ constexpr int kFileCheckInterval = 960;  // Check once per beat (PPQN)
 // ---------------------------------------------------------------------------
 static const char *kCompletionWords[] = {
     // Sound generators
-    "drum()", "minisynth()", "fmsynth()", "sbsynth()", "phasor(", "loop(",
+    "drumsynth()", "minisynth()", "fmsynth()", "sbsynth()", "phasor(", "loop(",
     "sample(",
     // Language keywords
     "let ", "if (", "else", "while (", "return", "true", "false", "NULL",

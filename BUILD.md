@@ -87,6 +87,12 @@ SoundB0ard uses the following libraries:
 - **Readline** - Command-line editing
 - **pkg-config** - Package configuration
 
+## IDE / Editor Support
+
+Running `cmake ..` automatically generates `compile_commands.json` in the build directory and symlinks it to the project root. This gives clangd (used by VS Code, Neovim, CLion, etc.) accurate include paths and compiler flags, eliminating false LSP errors.
+
+No extra steps needed — it happens as part of the normal build setup.
+
 ## Troubleshooting
 
 - **CMake fails to find libraries**: Install the development packages for your distribution

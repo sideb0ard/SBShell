@@ -50,6 +50,7 @@ sbsh_test
 sbsh_test.dSYM/
 !configure.ac
 build/
+compile_commands.json
 
 ## autotoolzz #########
 #

@@ -14,14 +14,14 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE  << "  FX_REFERENCE.md  " << COOL_COLOR_ORANGE << "- Quick reference for all effects\n\n";
 
   ss << COOL_COLOR_GREEN << "Quick Start:\n";
-  ss << ANSI_COLOR_WHITE  << "  let drums = drum();              " << COOL_COLOR_ORANGE << "// Create drum machine\n";
+  ss << ANSI_COLOR_WHITE  << "  let drums = drumsynth();              " << COOL_COLOR_ORANGE << "// Create drum machine\n";
   ss << ANSI_COLOR_WHITE  << "  load_preset(drums, \"TR808\");     " << COOL_COLOR_ORANGE << "// Load preset\n";
   ss << ANSI_COLOR_WHITE  << "  note_on(drums, 0);               " << COOL_COLOR_ORANGE << "// Trigger kick\n";
   ss << ANSI_COLOR_WHITE  << "  add_fx(drums, \"distort\");              " << COOL_COLOR_ORANGE << "// Add distortion\n";
   ss << ANSI_COLOR_WHITE  << "  set drums:fx0:mode 2;" << COOL_COLOR_ORANGE << "// Tube saturation\n\n";
 
   ss << COOL_COLOR_GREEN << "Sound Generators:\n";
-  ss << ANSI_COLOR_WHITE  << "  drum()       " << COOL_COLOR_ORANGE << "- Drum synthesizer (9 voices)\n";
+  ss << ANSI_COLOR_WHITE  << "  drumsynth()       " << COOL_COLOR_ORANGE << "- Drum synthesizer (9 voices)\n";
   ss << ANSI_COLOR_WHITE  << "  minisynth()  " << COOL_COLOR_ORANGE << "- Subtractive synthesizer\n";
   ss << ANSI_COLOR_WHITE  << "  fmsynth()    " << COOL_COLOR_ORANGE << "- FM synthesizer (4 operators)\n";
   ss << ANSI_COLOR_WHITE  << "  sbsynth()    " << COOL_COLOR_ORANGE << "- Wavetable/sample synth (8-voice poly)\n";

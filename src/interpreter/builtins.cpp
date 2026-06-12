@@ -2511,10 +2511,10 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
              -> std::shared_ptr<object::Object> {
            (void)args;
            std::string cmd =
-               "let sbdrum = drum(); load_preset(sbdrum,\"TR808\");";
+               "let sbdrum = drumsynth(); load_preset(sbdrum,\"TR808\");";
            eval_command_queue.push(cmd);
 
-           cmd = "let sb2 = drum(); load_preset(sb2,\"FMZ\");";
+           cmd = "let sb2 = drumsynth(); load_preset(sb2,\"FMZ\");";
            eval_command_queue.push(cmd);
 
            cmd = "let dx = fm(); vol dx 0.8; load_preset(dx,\"OCWARF2\");";

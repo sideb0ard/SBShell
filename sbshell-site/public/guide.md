@@ -237,11 +237,11 @@ note_on(sbdrum, 1, vel = 40);   // Quiet ghost note
 
 SoundB0ard has five types of sound generators:
 
-### Drum Machine - drum()
+### Drum Machine - drumsynth()
 Synthesized drums with 9 voices: kick, snare, closed hat, clap, open hat, 3 FM toms, and a laser zap.
 
 ```javascript
-let drums = drum();
+let drums = drumsynth();
 load_preset(drums, "TR808");   // Classic 808
 load_preset(drums, "TR909");   // Punchy 909
 load_preset(drums, "DILLA");   // Warm, lo-fi
@@ -474,7 +474,7 @@ note_on(dx, 20, vel = 120, dur = 2000);
 Every sound generator has dozens of parameters you can tweak:
 
 ```javascript
-let drums = drum();
+let drums = drumsynth();
 
 // See all available parameters
 info(drums);
@@ -686,7 +686,7 @@ let hats = [1, 0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0];
 ### Using Patterns in Loops
 
 ```javascript
-let drums = drum();
+let drums = drumsynth();
 let kicks = [1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0,  1, 0, 0, 0];
 
 for (let i = 0; i < 16; i++) {
@@ -799,7 +799,7 @@ Pat value:0
 ### Simple Drum Pattern
 
 ```javascript
-let drums = drum();
+let drums = drumsynth();
 load_preset(drums, "TR808");
 
 let kick_comp = comp()
@@ -910,7 +910,7 @@ let evolving_comp = comp()
 ### Volume and Panning
 
 ```javascript
-let drums = drum();
+let drums = drumsynth();
 let bass = fmsynth();
 let pad = minisynth();
 
@@ -1321,7 +1321,7 @@ Create files with `.sb` extension in the `SBTraxx/` directory:
 ```javascript
 # This is a comment
 
-let drums = drum();
+let drums = drumsynth();
 load_preset(drums, "TR808");
 
 let kick_comp = comp()
@@ -1388,7 +1388,7 @@ print("Welcome to my SoundB0ard setup!");
 bpm(120);
 
 // Load your default instruments
-let drums = drum();
+let drums = drumsynth();
 load_preset(drums, "TR808");
 ```
 
@@ -1400,7 +1400,7 @@ load_preset(drums, "TR808");
 
 ```javascript
 // Sound Generators
-drum()                  // Drum machine
+drumsynth()                  // Drum machine
 dxsynth()              // FM synth
 minisynth()            // Subtractive synth
 loop("path")           // Granular looper
