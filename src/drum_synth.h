@@ -31,8 +31,7 @@ struct BdSettings {
   double ntone{10000};
   double nq{1};
   double decay{180};
-  int octave{2};
-  int key{40};
+  double frequency{60};
   double detune_cents{0};
   bool use_distortion{true};
   double distortion_threshold{0.5};
@@ -58,16 +57,21 @@ struct BdSettings {
   double chirp_end_freq{200.0};
   double chirp_decay{10.0};
   double chirp_amp{0.316};  // -10dB
+  double mod_enabled{false};
+  double mod_freq{140.0};
+  double mod_index{200.0};
+  double mod_decay{200.0};
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     BdSettings, vol, pan, tone, q, noise_enabled, noise_vol, ntone, nq, decay,
-    octave, key, detune_cents, use_distortion, distortion_threshold, hard_sync,
+    frequency, detune_cents, use_distortion, distortion_threshold, hard_sync,
     use_delay, delay_mode, delay_ms, delay_feedback_pct, delay_ratio,
     delay_wetmix, delay_sync_tempo, delay_sync_len, pitch_env_range,
     pitch_env2_range, pitch_env2_attack, pitch_env2_decay, attack,
     osc1_waveform, osc2_waveform, noise_attack, chirp_enabled, chirp_start_freq,
-    chirp_end_freq, chirp_decay, chirp_amp)
+    chirp_end_freq, chirp_decay, chirp_amp, mod_enabled, mod_freq, mod_index,
+    mod_decay)
 
 struct SdSettings {
   double vol{1};
@@ -76,8 +80,7 @@ struct SdSettings {
   double noise_decay{22};
   double tone{1000};
   double decay{50};
-  int octave{3};
-  int key{7};
+  double frequency{200};
   int hi_osc_waveform{0};
   int lo_osc_waveform{0};
   double distortion_threshold{0.5};
@@ -93,14 +96,19 @@ struct SdSettings {
   double noise_attack{1.0};
   double pitch_eg_depth{0.0};   // semitones of upward pitch sweep on attack
   double pitch_eg_decay{30.0};  // ms for pitch to fall back to base
+  double hi_ratio{2.0};         // hi osc frequency = lo osc * hi_ratio
+  double parallel_sat_enabled{false};
+  double parallel_sat_drive{4.47};   // pre-gain, linear (13dB default)
+  double parallel_sat_blend{0.316};  // post-gain, linear (-10dB default)
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-    SdSettings, vol, pan, noise_vol, noise_decay, tone, decay, octave, key,
+    SdSettings, vol, pan, noise_vol, noise_decay, tone, decay, frequency,
     hi_osc_waveform, lo_osc_waveform, distortion_threshold, use_delay,
     delay_mode, delay_ms, delay_feedback_pct, delay_ratio, delay_wetmix,
     delay_sync_tempo, delay_sync_len, attack, noise_attack, pitch_eg_depth,
-    pitch_eg_decay)
+    pitch_eg_decay, hi_ratio, parallel_sat_enabled, parallel_sat_drive,
+    parallel_sat_blend)
 
 struct HhSettings {
   double vol{1};
@@ -150,13 +158,30 @@ struct CpSettings {
   double delay_wetmix{0.5};
   bool delay_sync_tempo{true};
   int delay_sync_len{0};
+  // Voice 2
+  double v2_delay_ms{12.0};
+  double v2_vol{0.7};
+  double v2_attack{15.0};
+  double v2_decay{150.0};
+  // Voice 3
+  double v3_delay_ms{20.0};
+  double v3_vol{0.6};
+  double v3_attack{10.0};
+  double v3_decay{200.0};
+  // Voice 4 (longer tail — reverb-like)
+  double v4_delay_ms{30.0};
+  double v4_vol{0.5};
+  double v4_attack{10.0};
+  double v4_decay{400.0};
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     CpSettings, vol, pan, nvol, nattack, ndecay, tone, fq, eg_attack, eg_decay,
     eg_sustain, eg_release, lfo_type, lfo_rate, distortion_threshold, use_delay,
     delay_mode, delay_ms, delay_feedback_pct, delay_ratio, delay_wetmix,
-    delay_sync_tempo, delay_sync_len)
+    delay_sync_tempo, delay_sync_len, v2_delay_ms, v2_vol, v2_attack, v2_decay,
+    v3_delay_ms, v3_vol, v3_attack, v3_decay, v4_delay_ms, v4_vol, v4_attack,
+    v4_decay)
 
 struct FmDrumSettings {
   double vol{0.4};

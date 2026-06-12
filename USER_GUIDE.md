@@ -132,6 +132,18 @@ SB#> [44, 48, 51]
 SB#> note_on(dx, notes_in_chord(44, 44))
 ```
 
+`notes_in_chord(root, key, mod, scale)` builds a chord from scale degrees in a key —
+chord quality (major/minor/dim) comes automatically from where the root sits in the scale.
+```javascript
+# mod:   0=triad  1=seventh  2=seventh_inv  3=root_inv  4=power  5=ninth
+# scale: 0=major  1=nat_minor  2=harm_minor  3=mel_minor  4=phrygian
+
+notes_in_chord(48, 36, 0)      # C3 triad in key of C major → major triad
+notes_in_chord(48, 36, 1)      # C3 seventh in key of C major → Cmaj7
+notes_in_chord(48, 36, 5)      # C3 ninth in key of C major → Cmaj9
+notes_in_chord(48, 45, 5, 1)   # C3 ninth in key of A natural minor → Cm9
+```
+
 `chord_notes(root, type, mod)` builds a chord from intervals only — no key needed. Useful when you know the chord but not the key:
 ```javascript
 # type: 0=major  1=minor  2=diminished  3=power  4=sus2  5=sus4
@@ -677,9 +689,60 @@ set drums:bd_vol 1.0;        // Kick volume
 set drums:bd_decay 200;      // Kick decay time
 set drums:bd_pitch_env_range 12;  // Kick pitch sweep depth (semitones)
 
+// Kick noise transient layer:
+set drums:bd_noise_en 1;          // Enable (0=off by default)
+set drums:bd_nvol 0.6;            // Noise volume
+set drums:bd_ntone 10000;         // Noise filter cutoff (Hz)
+set drums:bd_nq 1;                // Noise filter Q
+
+// Kick fast pitch spike (adds laser-style attack transient):
+set drums:bd_pitch_env2_range 38; // Semitone spike depth (0=off)
+set drums:bd_pitch_env2_attack 1; // Spike attack (ms)
+set drums:bd_pitch_env2_decay 8;  // Spike decay (ms) — keep short, 5-15ms
+
+// Kick chirp (exponential freq sweep mixed into attack):
+set drums:bd_chirp_en 1;          // Enable
+set drums:bd_chirp_start 3000;    // Start frequency (Hz)
+set drums:bd_chirp_end 200;       // End frequency (Hz)
+set drums:bd_chirp_decay 10;      // Sweep duration (ms)
+set drums:bd_chirp_amp 0.316;     // Amplitude (-10dB=0.316, -20dB=0.1)
+
+// Kick FM modulator (Operator-style — modulates carrier frequency):
+set drums:bd_mod_en 1;            // Enable
+set drums:bd_mod_freq 140;        // Modulator frequency (Hz) — try ratio of carrier
+set drums:bd_mod_index 200;       // FM depth in Hz at peak (50=subtle, 2000=aggressive)
+set drums:bd_mod_decay 200;       // FM envelope decay (ms) — shorter = punchier attack
+
 // Snare pitch envelope (upward sweep on attack — great for snap and crack):
 set drums:sd_pitch_eg_depth 8;    // Semitones of upward pitch sweep (0 = off)
 set drums:sd_pitch_eg_decay 25;   // How fast the sweep falls back (ms)
+
+// Snare hi oscillator ratio (inharmonic = more metallic/tense body):
+set drums:sd_hi_ratio 2.3;        // Default 2.0; try 2.3/3.5 for SC-style character
+
+// Snare parallel saturation (adds harmonic richness without losing transient):
+set drums:sd_psat_en 1;           // Enable
+set drums:sd_psat_drive 4.47;     // Pre-gain before tanh (13dB=4.47, higher=more sat)
+set drums:sd_psat_blend 0.316;    // Wet blend level (-10dB=0.316, lower=subtler)
+
+// Hand Clap — four-voice layered clap (TR-808 style, cp):
+// Four noise voices fire in rapid succession. Voice 4 has a long decay
+// that creates a natural reverb-like tail, as in the original TR-808.
+set drums:cp_v2_delay 12;    // Delay before voice 2 fires (ms)
+set drums:cp_v2_vol 0.7;     // Volume of voice 2
+set drums:cp_v2_attack 15;   // Voice 2 noise envelope attack (ms)
+set drums:cp_v2_decay 150;   // Voice 2 noise envelope decay (ms)
+set drums:cp_v3_delay 20;    // Delay before voice 3 fires (ms)
+set drums:cp_v3_vol 0.6;     // Volume of voice 3
+set drums:cp_v3_attack 10;   // Voice 3 noise envelope attack (ms)
+set drums:cp_v3_decay 200;   // Voice 3 noise envelope decay (ms)
+set drums:cp_v4_delay 30;    // Delay before voice 4 fires (ms)
+set drums:cp_v4_vol 0.5;     // Volume of voice 4
+set drums:cp_v4_attack 10;   // Voice 4 noise envelope attack (ms)
+set drums:cp_v4_decay 400;   // Voice 4 decay — longer = more reverb-like tail
+
+// Sidechain from a specific drum voice (rather than full mix):
+add_fx(inst, "sidechain", drums, "bd");  // bd/sd/cp/hh/oh/fm1/fm2/fm3/lz
 
 ```
 

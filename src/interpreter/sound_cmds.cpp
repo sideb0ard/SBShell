@@ -237,11 +237,16 @@ std::vector<int> GetNotesInChord(int chord_root, int key, int chord_modifier,
         GetNotesInKey(closest_power_of_key, key_modifier);
     auto next_octave_in_key =
         GetNotesInKey(closest_power_of_key + 12, key_modifier);
+    auto third_octave_in_key =
+        GetNotesInKey(closest_power_of_key + 24, key_modifier);
     std::vector<int> all_keys(first_octave_in_key.size() +
                               next_octave_in_key.size() - 1);
     merge(first_octave_in_key.begin(), first_octave_in_key.end(),
           next_octave_in_key.begin() + 1, next_octave_in_key.end(),
           all_keys.begin());
+    // Append third octave for 9th chord support
+    all_keys.insert(all_keys.end(), third_octave_in_key.begin() + 1,
+                    third_octave_in_key.end());
 
     auto el = std::find(all_keys.begin(), all_keys.end(), chord_root);
     if (el == all_keys.end()) {
@@ -260,6 +265,11 @@ std::vector<int> GetNotesInChord(int chord_root, int key, int chord_modifier,
         notes_in_chord[0] = all_keys[idx] - 12;
       if (chord_modifier == 4)  // power
         notes_in_chord[1] = all_keys[idx] + 12;
+      if (chord_modifier == 5) {  // ninth (7th + 9th)
+        assert(all_keys.size() > idx + 8);
+        notes_in_chord.push_back(all_keys[idx + 6]);
+        notes_in_chord.push_back(all_keys[idx + 8]);
+      }
     }
 
   } else {

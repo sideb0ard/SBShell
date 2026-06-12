@@ -55,6 +55,19 @@ BassDrum::BassDrum() {
   pitch_eg2_.SetSustainLevel(0.0);
   pitch_eg2_.Update();
 
+  mod_osc_ = std::make_unique<QBLimitedOscillator>();
+  mod_osc_->m_waveform = SINE;
+  mod_osc_->m_amplitude = 1.0;
+  mod_osc_->Update();
+
+  mod_eg_.SetRampMode(true);
+  mod_eg_.m_reset_to_zero = true;
+  mod_eg_.SetEgMode(DIGITAL);
+  mod_eg_.SetAttackTimeMsec(1);
+  mod_eg_.SetDecayTimeMsec(200);
+  mod_eg_.SetSustainLevel(0.0);
+  mod_eg_.Update();
+
   chirp_osc_ = std::make_unique<QBLimitedOscillator>();
   chirp_osc_->m_waveform = SINE;
   chirp_osc_->m_amplitude = 1.0;
@@ -105,6 +118,12 @@ void BassDrum::DoRetrigger(double vel) {
   eg_.StartEg();
   pitch_eg2_.StartEg();
 
+  if (mod_enabled_) {
+    mod_osc_->m_osc_fo = mod_freq_;
+    mod_osc_->StartOscillator();
+    mod_eg_.StartEg();
+  }
+
   if (chirp_enabled_) {
     chirp_timer_ = 0;
     chirp_duration_samples_ = (int)(chirp_decay_ms_ * 44100.0 / 1000.0);
@@ -134,7 +153,17 @@ StereoVal BassDrum::Generate() {
 
     double eg_osc_mod =
         pitch_osc_range_ * biased_eg_out + pitch_osc_range2_ * biased_eg2_out;
+
+    // FM: modulator oscillator modulates osc1_ frequency linearly
+    double fm_lin = 0.0;
+    if (mod_enabled_) {
+      mod_osc_->Update();
+      double mod_eg_out = mod_eg_.DoEnvelope(nullptr);
+      fm_lin = mod_osc_->DoOscillate(nullptr) * mod_eg_out * mod_index_;
+    }
+
     osc1_->SetFoModExp(eg_osc_mod);
+    osc1_->SetFoModLin(fm_lin);
     osc1_->Update();
 
     osc2_->SetFoModExp(eg_osc_mod);
@@ -242,6 +271,7 @@ SnareDrum::SnareDrum() {
   pitch_eg_.SetEgMode(DIGITAL);
   pitch_eg_.SetAttackTimeMsec(1);
   pitch_eg_.SetDecayTimeMsec(30);
+  pitch_eg_.SetSustainLevel(0.0);
   pitch_eg_.Update();
 
   distortion_.SetParam("threshold", 0.5);
@@ -297,6 +327,9 @@ StereoVal SnareDrum::Generate() {
 
     double osc_out = 0.5 * lo_osc_out + 0.5 * hi_osc_out + noise_out;
 
+    if (parallel_sat_enabled_)
+      osc_out += std::tanh(osc_out * parallel_sat_drive_) * parallel_sat_blend_;
+
     //// OUTPUT //////////////////////////
 
     // FILTER ////////////////////
@@ -335,24 +368,38 @@ StereoVal SnareDrum::Generate() {
 
 ///// CLAP /////////////////////////////
 
+void HandClap::InitVoice(ClapVoice &v, double attack_ms, double decay_ms,
+                         double fc, double lfo_rate) {
+  v.noise = std::make_unique<QBLimitedOscillator>();
+  v.noise->m_waveform = NOISE;
+  v.noise->m_amplitude = 0.6;
+  v.noise->Update();
+
+  v.noise_eg.SetRampMode(true);
+  v.noise_eg.m_reset_to_zero = true;
+  v.noise_eg.SetEgMode(DIGITAL);
+  v.noise_eg.SetAttackTimeMsec(attack_ms);
+  v.noise_eg.SetDecayTimeMsec(decay_ms);
+  v.noise_eg.SetSustainLevel(0.0);
+  v.noise_eg.Update();
+
+  v.noise_filter = std::make_unique<FilterSem>();
+  v.noise_filter->SetType(BPF2);
+  v.noise_filter->SetFcControl(fc);
+  v.noise_filter->SetQControlGUI(5);
+  v.noise_filter->Update();
+
+  v.lfo = std::make_unique<LFO>();
+  v.lfo->m_waveform = usaw;
+  v.lfo->m_osc_fo = lfo_rate;
+  v.lfo->Update();
+}
+
 HandClap::HandClap() {
-  noise_ = std::make_unique<QBLimitedOscillator>();
-  noise_->m_waveform = NOISE;
-  noise_->m_amplitude = 0.6;
-  noise_->Update();
-
-  noise_eg_.SetRampMode(true);
-  noise_eg_.m_reset_to_zero = true;
-  noise_eg_.SetEgMode(DIGITAL);
-  noise_eg_.SetAttackTimeMsec(10);
-  noise_eg_.SetDecayTimeMsec(207);
-  noise_eg_.Update();
-
-  noise_filter_ = std::make_unique<FilterSem>();
-  noise_filter_->SetType(BPF2);
-  noise_filter_->SetFcControl(1000);
-  noise_filter_->SetQControlGUI(5);
-  noise_filter_->Update();
+  InitVoice(voices_[0], 10, 207, 1000, 7);
+  InitVoice(voices_[1], 15, 150, 1000, 7);
+  InitVoice(voices_[2], 10, 200, 1000, 7);
+  InitVoice(voices_[3], 10, 400, 1000, 7);
 
   eg_.SetRampMode(true);
   eg_.m_reset_to_zero = true;
@@ -363,17 +410,13 @@ HandClap::HandClap() {
   eg_.SetReleaseTimeMsec(200);
   eg_.Update();
 
-  lfo_ = std::make_unique<LFO>();
-  lfo_->m_waveform = usaw;
-  lfo_->m_osc_fo = 7;
-  lfo_->Update();
-
   distortion_.SetParam("threshold", 0.5);
   delay_ = std::make_unique<StereoDelay>();
 }
 
 void HandClap::NoteOn(double vel) {
-  if (note_on_ || noise_->m_note_on || pending_retrigger_ || fadein_active_) {
+  if (note_on_ || voices_[0].noise->m_note_on || voices_[2].noise->m_note_on ||
+      pending_retrigger_ || fadein_active_) {
     RequestRetrigger(vel);
   } else {
     velocity_ = vel;
@@ -386,57 +429,111 @@ void HandClap::DoRetrigger(double vel) {
   velocity_ = vel;
   note_on_ = true;
 
-  noise_->StartOscillator();
-  lfo_->StartOscillator();
+  // Voice 1 fires immediately
+  voices_[0].noise->StartOscillator();
+  voices_[0].lfo->StartOscillator();
+  voices_[0].noise_eg.StartEg();
 
-  noise_eg_.StartEg();
+  // Voices 2-4 fire after their respective delays
+  voice2_pending_ = true;
+  voice2_delay_counter_ = (int)(voice2_delay_ms_ * 44100.0 / 1000.0);
+  voice3_pending_ = true;
+  voice3_delay_counter_ = (int)(voice3_delay_ms_ * 44100.0 / 1000.0);
+  voice4_pending_ = true;
+  voice4_delay_counter_ = (int)(voice4_delay_ms_ * 44100.0 / 1000.0);
 
   eg_.StartEg();
 }
 
+static double GenerateVoice(ClapVoice &v) {
+  v.noise->Update();
+  double noise_eg_out = v.noise_eg.DoEnvelope(nullptr);
+  double noise_out = v.noise->DoOscillate(nullptr) * noise_eg_out;
+  v.noise_filter->Update();
+  double filter_out = v.noise_filter->DoFilter(noise_out);
+  v.lfo->Update();
+  double lfo_out = v.lfo->DoOscillate(nullptr) * noise_out;
+  return lfo_out + filter_out;
+}
+
 StereoVal HandClap::Generate() {
   StereoVal out = {.left = 0, .right = 0};
-  if (noise_->m_note_on) {
-    noise_->Update();
-    double noise_eg_out = noise_eg_.DoEnvelope(nullptr);
-    double noise_out = noise_->DoOscillate(nullptr) * noise_eg_out;
-    noise_filter_->Update();
-    double filter_out = noise_filter_->DoFilter(noise_out);
 
-    lfo_->Update();
-    double lfo_out = lfo_->DoOscillate(nullptr) * noise_out;
+  // Trigger delayed voices after their respective delays
+  if (voice2_pending_) {
+    if (--voice2_delay_counter_ <= 0) {
+      voice2_pending_ = false;
+      voices_[1].noise_eg.SetAttackTimeMsec(voice2_attack_ms_);
+      voices_[1].noise_eg.SetDecayTimeMsec(voice2_decay_ms_);
+      voices_[1].noise_eg.Update();
+      voices_[1].noise->StartOscillator();
+      voices_[1].lfo->StartOscillator();
+      voices_[1].noise_eg.StartEg();
+    }
+  }
+  if (voice3_pending_) {
+    if (--voice3_delay_counter_ <= 0) {
+      voice3_pending_ = false;
+      voices_[2].noise_eg.SetAttackTimeMsec(voice3_attack_ms_);
+      voices_[2].noise_eg.SetDecayTimeMsec(voice3_decay_ms_);
+      voices_[2].noise_eg.Update();
+      voices_[2].noise->StartOscillator();
+      voices_[2].lfo->StartOscillator();
+      voices_[2].noise_eg.StartEg();
+    }
+  }
+  if (voice4_pending_) {
+    if (--voice4_delay_counter_ <= 0) {
+      voice4_pending_ = false;
+      voices_[3].noise_eg.SetAttackTimeMsec(voice4_attack_ms_);
+      voices_[3].noise_eg.SetDecayTimeMsec(voice4_decay_ms_);
+      voices_[3].noise_eg.Update();
+      voices_[3].noise->StartOscillator();
+      voices_[3].lfo->StartOscillator();
+      voices_[3].noise_eg.StartEg();
+    }
+  }
 
-    //// OUTPUT //////////////////////////
+  if (voices_[0].noise->m_note_on || voices_[1].noise->m_note_on ||
+      voices_[2].noise->m_note_on || voices_[3].noise->m_note_on) {
+    double osc_out = 0.0;
+    if (voices_[0].noise->m_note_on) osc_out += GenerateVoice(voices_[0]);
+    if (voices_[1].noise->m_note_on)
+      osc_out += GenerateVoice(voices_[1]) * voice2_vol_;
+    if (voices_[2].noise->m_note_on)
+      osc_out += GenerateVoice(voices_[2]) * voice3_vol_;
 
-    double osc_out = lfo_out + filter_out;
-    // double osc_out = lfo_out;
-    // double osc_out = filter_out;
-
-    // FILTER ////////////////////
+    // Voice 4 bypasses the shared eg_/DCA so its long tail is not attenuated
+    // or cut short by the shared envelope. Its noise_eg is its sole amplitude
+    // control.
+    double tail_out = 0.0;
+    if (voices_[3].noise->m_note_on)
+      tail_out = GenerateVoice(voices_[3]) * voice4_vol_;
 
     double out_left = 0.0;
     double out_right = 0.0;
 
     double amp_eg_out = eg_.DoEnvelope(nullptr);
-    double dca_mod_val = amp_eg_out;
-    dca_.SetEgMod(dca_mod_val);
+    dca_.SetEgMod(amp_eg_out);
     dca_.Update();
     dca_.DoDCA(osc_out, osc_out, &out_left, &out_right);
 
-    out = {.left = out_left * velocity_, .right = out_right * velocity_};
+    out_left += tail_out;
+    out_right += tail_out;
 
+    out = {.left = out_left * velocity_, .right = out_right * velocity_};
     out = distortion_.Process(out);
   }
 
-  // Apply retrigger fade OUTSIDE the generation block so it always runs
   out = ApplyRetriggerFade(out);
 
   if (eg_.GetState() == OFFF) {
-    noise_->StopOscillator();
-    lfo_->StopOscillator();
-
+    for (int i = 0; i < 4; ++i) {
+      voices_[i].noise->StopOscillator();
+      voices_[i].lfo->StopOscillator();
+      voices_[i].noise_eg.StopEg();
+    }
     eg_.StopEg();
-    noise_eg_.StopEg();
     note_on_ = false;
   }
 

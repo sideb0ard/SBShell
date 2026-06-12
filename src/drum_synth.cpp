@@ -114,11 +114,9 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.bd.nq = val;
   else if (name == "bd_decay")
     settings_.bd.decay = val;
-  else if (name == "bd_octave")
-    settings_.bd.octave = val;
-  else if (name == "bd_key") {
-    settings_.bd.key = val;
-  } else if (name == "bd_detune")
+  else if (name == "bd_freq")
+    settings_.bd.frequency = val;
+  else if (name == "bd_detune")
     settings_.bd.detune_cents = val;
   else if (name == "bd_hard_sync")
     settings_.bd.hard_sync = val;
@@ -160,6 +158,14 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.bd.chirp_decay = val;
   else if (name == "bd_chirp_amp")
     settings_.bd.chirp_amp = val;
+  else if (name == "bd_mod_en")
+    settings_.bd.mod_enabled = val;
+  else if (name == "bd_mod_freq")
+    settings_.bd.mod_freq = val;
+  else if (name == "bd_mod_index")
+    settings_.bd.mod_index = val;
+  else if (name == "bd_mod_decay")
+    settings_.bd.mod_decay = val;
   else if (name == "bd_attack")
     settings_.bd.attack = val;
   else if (name == "bd_osc1_wav")
@@ -253,10 +259,8 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.sd.tone = val;
   else if (name == "sd_decay")
     settings_.sd.decay = val;
-  else if (name == "sd_octave")
-    settings_.sd.octave = val;
-  else if (name == "sd_key")
-    settings_.sd.key = val;
+  else if (name == "sd_freq")
+    settings_.sd.frequency = val;
   else if (name == "sd_lo_osc_wav")
     settings_.sd.lo_osc_waveform = val;
   else if (name == "sd_hi_osc_wav")
@@ -287,6 +291,14 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.sd.pitch_eg_depth = val;
   else if (name == "sd_pitch_eg_decay")
     settings_.sd.pitch_eg_decay = val;
+  else if (name == "sd_hi_ratio")
+    settings_.sd.hi_ratio = val;
+  else if (name == "sd_psat_en")
+    settings_.sd.parallel_sat_enabled = val;
+  else if (name == "sd_psat_drive")
+    settings_.sd.parallel_sat_drive = val;
+  else if (name == "sd_psat_blend")
+    settings_.sd.parallel_sat_blend = val;
 
   else if (name == "cp_vol")
     settings_.cp.vol = val;
@@ -332,6 +344,30 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.cp.delay_sync_tempo = val;
   else if (name == "cp_delay_sync_len")
     settings_.cp.delay_sync_len = val;
+  else if (name == "cp_v2_delay")
+    settings_.cp.v2_delay_ms = val;
+  else if (name == "cp_v2_vol")
+    settings_.cp.v2_vol = val;
+  else if (name == "cp_v2_attack")
+    settings_.cp.v2_attack = val;
+  else if (name == "cp_v2_decay")
+    settings_.cp.v2_decay = val;
+  else if (name == "cp_v3_delay")
+    settings_.cp.v3_delay_ms = val;
+  else if (name == "cp_v3_vol")
+    settings_.cp.v3_vol = val;
+  else if (name == "cp_v3_attack")
+    settings_.cp.v3_attack = val;
+  else if (name == "cp_v3_decay")
+    settings_.cp.v3_decay = val;
+  else if (name == "cp_v4_delay")
+    settings_.cp.v4_delay_ms = val;
+  else if (name == "cp_v4_vol")
+    settings_.cp.v4_vol = val;
+  else if (name == "cp_v4_attack")
+    settings_.cp.v4_attack = val;
+  else if (name == "cp_v4_decay")
+    settings_.cp.v4_decay = val;
 
   else if (name == "fm1_vol")
     settings_.fm1.vol = val;
@@ -433,7 +469,7 @@ std::string DrumSynth::Info() {
      << " pan:" << pan << std::endl;
   ss << COOL_COLOR_YELLOW_MELLOW "     bd(0): bd_vol:" << settings_.bd.vol
      << " bd_pan:" << settings_.bd.pan << " bd_nvol:" << settings_.bd.noise_vol
-     << " bd_octave:" << settings_.bd.octave << " bd_key:" << settings_.bd.key
+     << " bd_freq:" << settings_.bd.frequency
      << " bd_detune:" << settings_.bd.detune_cents
      << " bd_hard_sync:" << settings_.bd.hard_sync << std::endl;
   ss << "     bd_tone:" << settings_.bd.tone << " bd_q:" << settings_.bd.q
@@ -458,6 +494,10 @@ std::string DrumSynth::Info() {
      << " bd_chirp_end:" << settings_.bd.chirp_end_freq
      << " bd_chirp_decay:" << settings_.bd.chirp_decay
      << " bd_chirp_amp:" << settings_.bd.chirp_amp << std::endl;
+  ss << "     bd_mod_en:" << settings_.bd.mod_enabled
+     << " bd_mod_freq:" << settings_.bd.mod_freq
+     << " bd_mod_index:" << settings_.bd.mod_index
+     << " bd_mod_decay:" << settings_.bd.mod_decay << std::endl;
   ss << "     bd_attack:" << settings_.bd.attack
      << " bd_osc1_wav:" << GetOscType(settings_.bd.osc1_waveform)
      << " bd_osc2_wav:" << GetOscType(settings_.bd.osc2_waveform)
@@ -468,10 +508,10 @@ std::string DrumSynth::Info() {
      << " sd_noise_decay:" << settings_.sd.noise_decay
      << " sd_tone:" << settings_.sd.tone << " sd_decay:" << settings_.sd.decay
      << std::endl;
-  ss << "     sd_octave:" << settings_.sd.octave
-     << " sd_key:" << settings_.sd.key
+  ss << "     sd_freq:" << settings_.sd.frequency
      << " sd_lo_osc_wav:" << settings_.sd.lo_osc_waveform
      << " sd_hi_osc_wav:" << settings_.sd.hi_osc_waveform
+     << " sd_hi_ratio:" << settings_.sd.hi_ratio
      << " sd_dist:" << settings_.sd.distortion_threshold << std::endl;
   ss << "     sd_delay_mode:" << settings_.sd.delay_mode
      << " sd_delay_en:" << settings_.sd.use_delay
@@ -485,6 +525,9 @@ std::string DrumSynth::Info() {
      << " sd_noise_attack:" << settings_.sd.noise_attack
      << " sd_pitch_eg_depth:" << settings_.sd.pitch_eg_depth
      << " sd_pitch_eg_decay:" << settings_.sd.pitch_eg_decay << std::endl;
+  ss << "     sd_psat_en:" << settings_.sd.parallel_sat_enabled
+     << " sd_psat_drive:" << settings_.sd.parallel_sat_drive
+     << " sd_psat_blend:" << settings_.sd.parallel_sat_blend << std::endl;
   ss << COOL_COLOR_YELLOW_MELLOW "     cp(2): cp_vol:" << settings_.cp.vol
      << " cp_pan:" << settings_.cp.pan << " cp_nvol:" << settings_.cp.nvol
      << " cp_nattack:" << settings_.cp.nattack
@@ -504,6 +547,19 @@ std::string DrumSynth::Info() {
   ss << "     cp_delay_wetmix:" << settings_.cp.delay_wetmix
      << " cp_delay_sync_tempo:" << settings_.cp.delay_sync_tempo
      << " cp_delay_sync_len:" << settings_.cp.delay_sync_len << std::endl;
+  ss << "     cp_v2_delay:" << settings_.cp.v2_delay_ms
+     << " cp_v2_vol:" << settings_.cp.v2_vol
+     << " cp_v2_attack:" << settings_.cp.v2_attack
+     << " cp_v2_decay:" << settings_.cp.v2_decay << std::endl;
+  ss << "     cp_v3_delay:" << settings_.cp.v3_delay_ms
+     << " cp_v3_vol:" << settings_.cp.v3_vol
+     << " cp_v3_attack:" << settings_.cp.v3_attack
+     << " cp_v3_decay:" << settings_.cp.v3_decay << std::endl;
+  ss << "     cp_v4_delay:" << settings_.cp.v4_delay_ms
+     << " cp_v4_vol:" << settings_.cp.v4_vol
+     << " cp_v4_attack:" << settings_.cp.v4_attack
+     << " cp_v4_decay:" << settings_.cp.v4_decay << " (reverb tail)"
+     << std::endl;
   ss << COOL_COLOR_ORANGE "     hh(3): hh_vol:" << settings_.hh.vol
      << " hh_pan:" << settings_.hh.pan << " hh_attack:" << settings_.hh.attack
      << " hh_decay:" << settings_.hh.decay << std::endl;
@@ -804,8 +860,7 @@ void DrumSynth::Update() {
   bd_->noise_filter_->SetFcControl(settings_.bd.ntone);
   bd_->noise_filter_->SetQControlGUI(settings_.bd.nq);
   bd_->eg_.SetDecayTimeMsec(settings_.bd.decay);
-  bd_->frequency_ =
-      Midi2Freq((settings_.bd.octave + 1) * 12 + (settings_.bd.key % 12));
+  bd_->frequency_ = settings_.bd.frequency;
   bd_->osc1_->m_cents = settings_.bd.detune_cents;
   bd_->osc2_->m_cents = -(settings_.bd.detune_cents);
   bd_->hard_sync_ = settings_.bd.hard_sync;
@@ -835,6 +890,11 @@ void DrumSynth::Update() {
   bd_->chirp_amplitude_ = settings_.bd.chirp_amp;
   bd_->chirp_eg_.SetDecayTimeMsec(settings_.bd.chirp_decay);
   bd_->chirp_eg_.Update();
+  bd_->mod_enabled_ = settings_.bd.mod_enabled;
+  bd_->mod_freq_ = settings_.bd.mod_freq;
+  bd_->mod_index_ = settings_.bd.mod_index;
+  bd_->mod_eg_.SetDecayTimeMsec(settings_.bd.mod_decay);
+  bd_->mod_eg_.Update();
 
   sd_->dca_.m_amplitude_control = settings_.sd.vol;
   sd_->dca_.m_pan_control = settings_.sd.pan;
@@ -843,10 +903,12 @@ void DrumSynth::Update() {
   sd_->noise_filter_->SetFcControl(settings_.sd.tone);
   sd_->eg_.SetDecayTimeMsec(settings_.sd.decay);
   sd_->lo_osc_->m_waveform = settings_.sd.lo_osc_waveform;
-  sd_->lo_osc_->m_osc_fo =
-      Midi2Freq((settings_.sd.octave + 1) * 12 + (settings_.sd.key % 12));
+  sd_->lo_osc_->m_osc_fo = settings_.sd.frequency;
   sd_->hi_osc_->m_waveform = settings_.sd.hi_osc_waveform;
-  sd_->hi_osc_->m_osc_fo = sd_->lo_osc_->m_osc_fo * 2;
+  sd_->hi_osc_->m_osc_fo = sd_->lo_osc_->m_osc_fo * settings_.sd.hi_ratio;
+  sd_->parallel_sat_enabled_ = settings_.sd.parallel_sat_enabled;
+  sd_->parallel_sat_drive_ = settings_.sd.parallel_sat_drive;
+  sd_->parallel_sat_blend_ = settings_.sd.parallel_sat_blend;
   sd_->distortion_.SetParam("threshold", settings_.sd.distortion_threshold);
   sd_->use_delay_ = settings_.sd.use_delay;
   sd_->delay_->SetMode(settings_.sd.delay_mode);
@@ -899,17 +961,17 @@ void DrumSynth::Update() {
 
   cp_->dca_.m_amplitude_control = settings_.cp.vol;
   cp_->dca_.m_pan_control = settings_.cp.pan;
-  cp_->noise_->m_amplitude = settings_.cp.nvol;
-  cp_->noise_eg_.SetAttackTimeMsec(settings_.cp.nattack);
-  cp_->noise_eg_.SetDecayTimeMsec(settings_.cp.ndecay);
-  cp_->noise_filter_->SetFcControl(settings_.cp.tone);
-  cp_->noise_filter_->SetQControlGUI(settings_.cp.fq);
+  cp_->voices_[0].noise->m_amplitude = settings_.cp.nvol;
+  cp_->voices_[0].noise_eg.SetAttackTimeMsec(settings_.cp.nattack);
+  cp_->voices_[0].noise_eg.SetDecayTimeMsec(settings_.cp.ndecay);
+  cp_->voices_[0].noise_filter->SetFcControl(settings_.cp.tone);
+  cp_->voices_[0].noise_filter->SetQControlGUI(settings_.cp.fq);
+  cp_->voices_[0].lfo->m_waveform = settings_.cp.lfo_type;
+  cp_->voices_[0].lfo->m_osc_fo = settings_.cp.lfo_rate;
   cp_->eg_.SetAttackTimeMsec(settings_.cp.eg_attack);
   cp_->eg_.SetDecayTimeMsec(settings_.cp.eg_decay);
   cp_->eg_.SetSustainLevel(settings_.cp.eg_sustain);
   cp_->eg_.SetReleaseTimeMsec(settings_.cp.eg_release);
-  cp_->lfo_->m_waveform = settings_.cp.lfo_type;
-  cp_->lfo_->m_osc_fo = settings_.cp.lfo_rate;
   cp_->distortion_.SetParam("threshold", settings_.cp.distortion_threshold);
   cp_->use_delay_ = settings_.cp.use_delay;
   cp_->delay_->SetMode(settings_.cp.delay_mode);
@@ -919,6 +981,18 @@ void DrumSynth::Update() {
   cp_->delay_->SetWetMix(settings_.cp.delay_wetmix);
   cp_->delay_->SetSync(settings_.cp.delay_sync_tempo);
   cp_->delay_->SetSyncLen(settings_.cp.delay_sync_len);
+  cp_->voice2_delay_ms_ = settings_.cp.v2_delay_ms;
+  cp_->voice2_vol_ = settings_.cp.v2_vol;
+  cp_->voice2_attack_ms_ = settings_.cp.v2_attack;
+  cp_->voice2_decay_ms_ = settings_.cp.v2_decay;
+  cp_->voice3_delay_ms_ = settings_.cp.v3_delay_ms;
+  cp_->voice3_vol_ = settings_.cp.v3_vol;
+  cp_->voice3_attack_ms_ = settings_.cp.v3_attack;
+  cp_->voice3_decay_ms_ = settings_.cp.v3_decay;
+  cp_->voice4_delay_ms_ = settings_.cp.v4_delay_ms;
+  cp_->voice4_vol_ = settings_.cp.v4_vol;
+  cp_->voice4_attack_ms_ = settings_.cp.v4_attack;
+  cp_->voice4_decay_ms_ = settings_.cp.v4_decay;
 
   fm1_->dca_.m_amplitude_control = settings_.fm1.vol;
   fm1_->dca_.m_pan_control = settings_.fm1.pan;

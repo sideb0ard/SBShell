@@ -46,3 +46,44 @@ let dbchblah_comp = comp()
 
   }
 }
+# SC snare code
+# SynthDef(\snare, {
+#     var snd;
+#     snd = SinOsc.ar(200 * (1 + (2 * Env.perc(0.001, 0.03).ar)) * [1, 2.3, 3.5, 5.8]);
+#     snd = snd * [0, -6, -12, -24].dbamp;
+#     snd = snd.sum;
+#     snd = snd + (BPF.ar(Hasher.ar(Sweep.ar), 2120, 0.3) * Env.perc(0.05, 0.1).ar *-3.dbamp);
+#     snd = snd + ((snd * 13.dbamp).tanh * -10.dbamp);
+#     snd = snd * Env.perc(0.001, 0.4, curve: -4).ar(Done.freeSelf);
+#     snd = snd * -5.dbamp;
+#     snd = Pan2.ar(snd, \pan.kr(0));
+#     Out.ar(\out.kr(0), snd);
+#     }).add;
+
+# minor 9th
+# g sharp - double it up
+
+
+# dx - club_organ
+# g#
+let key = 44;
+# minor
+let key_mod = 1;
+# 9th
+let chord_mod = 5;
+let notez = notes_in_key(44, 1);
+
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let chordprog = [0, 3, 3, 4];
+    let chx = 0;
+  }
+  run()
+  {
+    let chrd = notes_in_chord(notez[chordprog[chx]], key, chord_mod, key_mod);
+    chx = incr(chx, 0, len(chordprog));
+    note_on(dx, chrd, dur = 3000);
+  }
+}

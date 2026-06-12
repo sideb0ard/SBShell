@@ -157,6 +157,14 @@ class BassDrum : public DrumModule {
 
   std::unique_ptr<CKThreeFive> out_filter_;
 
+  // FM modulator: modulates osc1_ frequency for Operator-style FM kick
+  bool mod_enabled_{false};
+  double mod_freq_{140.0};   // modulator frequency in Hz
+  double mod_index_{200.0};  // peak FM swing in Hz
+  double mod_decay_ms_{200.0};
+  std::unique_ptr<QBLimitedOscillator> mod_osc_;
+  EnvelopeGenerator mod_eg_;
+
   // Chirp: short exponential frequency sweep mixed into the attack transient
   bool chirp_enabled_{false};
   double chirp_start_freq_{3000.0};
@@ -193,6 +201,18 @@ class SnareDrum : public DrumModule {
 
   EnvelopeGenerator pitch_eg_;
   double pitch_eg_depth_{0.0};  // semitones; 0 = no sweep
+
+  // Parallel tanh saturation: clean + tanh(clean * drive) * blend
+  bool parallel_sat_enabled_{false};
+  double parallel_sat_drive_{4.47};   // linear pre-gain (13dB)
+  double parallel_sat_blend_{0.316};  // linear post-gain (-10dB)
+};
+
+struct ClapVoice {
+  std::unique_ptr<QBLimitedOscillator> noise;
+  EnvelopeGenerator noise_eg;
+  std::unique_ptr<FilterSem> noise_filter;
+  std::unique_ptr<LFO> lfo;
 };
 
 class HandClap : public DrumModule {
@@ -204,11 +224,34 @@ class HandClap : public DrumModule {
   void DoRetrigger(double vel) override;
   StereoVal Generate() override;
 
-  std::unique_ptr<QBLimitedOscillator> noise_;
-  EnvelopeGenerator noise_eg_;
-  std::unique_ptr<FilterSem> noise_filter_;
+  void InitVoice(ClapVoice &v, double attack_ms, double decay_ms, double fc,
+                 double lfo_rate);
 
-  std::unique_ptr<LFO> lfo_;
+  ClapVoice voices_[4];
+
+  // Voice 2 delayed trigger
+  bool voice2_pending_{false};
+  int voice2_delay_counter_{0};
+  double voice2_delay_ms_{12.0};
+  double voice2_vol_{0.7};
+  double voice2_attack_ms_{15.0};
+  double voice2_decay_ms_{150.0};
+
+  // Voice 3 delayed trigger
+  bool voice3_pending_{false};
+  int voice3_delay_counter_{0};
+  double voice3_delay_ms_{20.0};
+  double voice3_vol_{0.6};
+  double voice3_attack_ms_{10.0};
+  double voice3_decay_ms_{200.0};
+
+  // Voice 4 delayed trigger (longer tail — reverb-like)
+  bool voice4_pending_{false};
+  int voice4_delay_counter_{0};
+  double voice4_delay_ms_{30.0};
+  double voice4_vol_{0.5};
+  double voice4_attack_ms_{10.0};
+  double voice4_decay_ms_{400.0};
 };
 
 class HiHat : public DrumModule {
