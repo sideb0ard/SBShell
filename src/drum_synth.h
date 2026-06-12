@@ -97,7 +97,7 @@ struct SdSettings {
   double pitch_eg_depth{0.0};   // semitones of upward pitch sweep on attack
   double pitch_eg_decay{30.0};  // ms for pitch to fall back to base
   double hi_ratio{2.0};         // hi osc frequency = lo osc * hi_ratio
-  double parallel_sat_enabled{false};
+  double parallel_sat_enabled{0.0};
   double parallel_sat_drive{4.47};   // pre-gain, linear (13dB default)
   double parallel_sat_blend{0.316};  // post-gain, linear (-10dB default)
 };

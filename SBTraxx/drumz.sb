@@ -1,0 +1,41 @@
+
+let dbblah_comp = comp()
+{
+  setup()
+  {
+    let bdz = [1, 0, 0, 0,  0, 0, 1, 0,  1, 0, 0, 1,  0, 0, 0, 0];
+    let snz = [0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0];
+    let cpz = [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 1, 0,  0, 1, 1, 0];
+    let hhz = [1, 0, 1, 0,  1, 0, 1, 1,  1, 0, 1, 0,  1, 1, 1, 0];
+    let ohz = [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (count % 8 < 7) {
+        if (bdz[i] == 1) {
+          note_on_at(sbdrum, 0, i * pp);
+        }
+      }
+      if (count % 16 < 15) {
+        if (snz[i] == 1) {
+          note_on_at(sbdrum, 1, i * pp);
+        }
+      }
+      if (count % 4 < 3) {
+        if (hhz[i] == 1) {
+          note_on_at(sbdrum, 3, i * pp);
+        }
+      }
+      if (count % 2 == 1) {
+        if (ohz[i] == 1) {
+          note_on_at(sbdrum, 4, i * pp);
+        }
+        if (cpz[i] == 1) {
+          note_on_at(sbdrum, 2, i * pp);
+        }
+      }
+    }
+
+  }
+}
