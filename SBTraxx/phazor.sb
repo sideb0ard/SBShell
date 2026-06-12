@@ -76,7 +76,7 @@ let init = fn()
   for (let i = 0; i < len(pentz); i++) {
     push(phzz, phasor(basephs * pentz[i]));
   }
-  load_preset(sbdrum, "CRAKZ2");
+#   load_preset(sbdrum, "CRAKZ2");
   # load_preset(dx, "SMOOUTH2");
   stop = sample(noises/soulIIsoulSTOP.wav);
   set stop:pitch 4;

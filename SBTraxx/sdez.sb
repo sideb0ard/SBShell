@@ -8,7 +8,7 @@ let init = fn()
 {
   backz = loop(qebo/QEBO-LOCKDOWNFM-23FMPERCUSSION1.wav); set backz:len 4;
   note_off(backz, 0);
-  load_preset(sbdrum, "SNDX3");
+#   load_preset(sbdrum, "SNDX3");
   send(delay, backz);
   add_fx(backz, sculptor);
 }

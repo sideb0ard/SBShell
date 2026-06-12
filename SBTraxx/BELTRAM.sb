@@ -29,7 +29,7 @@ bpm 120;
 load_preset(dx, "BELTRAMz");
 add_fx(dx, "distort");
 add_fx(dx, "compressor");
-load_preset(sbdrum, "beltram");
+# load_preset(sbdrum, "beltram");
 set sbdrum:bd_vol 0.4;
 add_fx(dx, "sidechain", sbdrum);
 let dx4 = fm();

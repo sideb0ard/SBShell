@@ -63,7 +63,7 @@ let init = fn()
 
   add_fx(str, "nnirror");
   add_fx(str, "sidechain", sbdrum);
-  load_preset(sbdrum, "V3");
+#   load_preset(sbdrum, "V3");
 
   set sbdrum:bd_key 15;
   set sbdrum:bd_decay 100;

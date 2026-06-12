@@ -11,7 +11,7 @@ let key = NULL;
 
 let init = fn()
 {
-  load_preset(sbdrum, "V4");
+#   load_preset(sbdrum, "V4");
   key = 52;
 
   pesh = loop(dloops/peshayBrwak.aiff);

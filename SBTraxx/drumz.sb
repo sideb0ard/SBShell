@@ -1,3 +1,10 @@
+let wavv = NULL;
+
+let init = fn()
+{
+  wavv = wavsynth();
+  add_buf(wavv, "notes/stabbY.aiff");
+}
 
 let dbblah_comp = comp()
 {
@@ -34,6 +41,31 @@ let dbblah_comp = comp()
         if (cpz[i] == 1) {
           note_on_at(sbdrum, 2, i * pp);
         }
+      }
+    }
+
+  }
+}
+
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let mel1 = [0, 0, 70, 0,  0, 0, 0, 70,  0, 0, 0, 0,  70, 80, 0, 0];
+    let mel2 = [0, 0, 0, 0,  0, 0, 0, 0,  70, 0, 0, 70,  0, 70, 0, 0];
+    let durz = [200, 400, 100, 50, 90];
+    let drx = 0;
+  }
+  run()
+  {
+    let mel = mel1;
+    if (count % 3 == 2) {
+      mel = mel2;
+    }
+    for (let i = 0; i < 16; i++) {
+      if (mel[i] > 0) {
+        note_on_at(wavv, mel[i], i * pp, dur = durz[drx]);
+        drx = incr(drx, 0, len(durz));
       }
     }
 

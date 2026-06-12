@@ -22,18 +22,18 @@ static const char DRUM_LZ_PRESETS_FILENAME[] = "settings/drum_lz_presets.json";
 namespace SBAudio {
 
 struct BdSettings {
-  double vol{1};
+  double vol{0.8};
   double pan{0};
-  double tone{10000};
+  double tone{2500};
   double q{1};
   double noise_enabled{false};
-  double noise_vol{0.3};
+  double noise_vol{0.7};
   double ntone{10000};
   double nq{1};
-  double decay{180};
-  double frequency{60};
+  double decay{600};
+  double frequency{50};
   double detune_cents{0};
-  bool use_distortion{true};
+  bool use_distortion{false};
   double distortion_threshold{0.5};
   bool hard_sync{false};
   bool use_delay{false};
@@ -44,14 +44,14 @@ struct BdSettings {
   double delay_wetmix{0.5};
   bool delay_sync_tempo{true};
   int delay_sync_len{0};  // 0 none, 1 - 1/4, 2 - 8th, 3 - 16th
-  double pitch_env_range{2.0};
-  double pitch_env2_range{0.0};   // second fast pitch EG — 0 = off
-  double pitch_env2_attack{1.0};  // ms
-  double pitch_env2_decay{10.0};  // ms, default 10ms
+  double pitch_env_range{18.0};
+  double pitch_env2_range{64.0};
+  double pitch_env2_attack{1.0};   // ms
+  double pitch_env2_decay{150.0};  // ms
   double attack{1.0};
-  int osc1_waveform{0};  // SINE default
-  int osc2_waveform{4};  // TRI default
-  double noise_attack{5.0};
+  int osc1_waveform{0};  // SINE
+  int osc2_waveform{0};  // SINE
+  double noise_attack{0.5};
   double chirp_enabled{false};
   double chirp_start_freq{3000.0};
   double chirp_end_freq{200.0};
@@ -74,16 +74,16 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     mod_decay)
 
 struct SdSettings {
-  double vol{1};
+  double vol{0.8};
   double pan{0};
-  double noise_vol{0.5};
-  double noise_decay{22};
-  double tone{1000};
-  double decay{50};
-  double frequency{200};
-  int hi_osc_waveform{0};
-  int lo_osc_waveform{0};
-  double distortion_threshold{0.5};
+  double noise_vol{0.6};
+  double noise_decay{40};
+  double tone{2500};
+  double decay{110};
+  double frequency{180};
+  int hi_osc_waveform{6};  // NOISE
+  int lo_osc_waveform{0};  // SINE
+  double distortion_threshold{0.3};
   bool use_delay{false};
   int delay_mode{0};
   double delay_ms{23};
@@ -92,12 +92,12 @@ struct SdSettings {
   double delay_wetmix{0.5};
   bool delay_sync_tempo{true};
   int delay_sync_len{0};
-  double attack{1.0};
-  double noise_attack{1.0};
-  double pitch_eg_depth{0.0};   // semitones of upward pitch sweep on attack
-  double pitch_eg_decay{30.0};  // ms for pitch to fall back to base
-  double hi_ratio{2.0};         // hi osc frequency = lo osc * hi_ratio
-  double parallel_sat_enabled{0.0};
+  double attack{2.0};
+  double noise_attack{2.0};
+  double pitch_eg_depth{12.0};  // semitones of upward pitch sweep on attack
+  double pitch_eg_decay{22.0};  // ms for pitch to fall back to base
+  double hi_ratio{0.7};         // hi osc frequency = lo osc * hi_ratio
+  double parallel_sat_enabled{1.0};
   double parallel_sat_drive{4.47};   // pre-gain, linear (13dB default)
   double parallel_sat_blend{0.316};  // post-gain, linear (-10dB default)
 };
@@ -111,14 +111,14 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     parallel_sat_blend)
 
 struct HhSettings {
-  double vol{1};
-  double pan{0};
+  double vol{0.6};
+  double pan{-0.2};
   double sqamp{0.5};
   double attack{1};
-  double decay{10};
+  double decay{50};
   double midf{8000};
   double midf_q{3};
-  double hif{7000};
+  double hif{6000};
   double hif_q{1};
   double distortion_threshold{0.5};
   bool use_delay{false};
@@ -137,19 +137,19 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     delay_ratio, delay_wetmix, delay_sync_tempo, delay_sync_len)
 
 struct CpSettings {
-  double vol{1};
+  double vol{0.75};
   double pan{0};
-  double nvol{0.6};
-  double nattack{10};
-  double ndecay{207};
-  double tone{1000};
+  double nvol{0.7};
+  double nattack{12};
+  double ndecay{110};
+  double tone{1200};
   double fq{5};
-  double eg_attack{10};
-  double eg_decay{100};
-  double eg_sustain{0.3};
-  double eg_release{100};
+  double eg_attack{12};
+  double eg_decay{85};
+  double eg_sustain{0.35};
+  double eg_release{110};
   int lfo_type{usaw};
-  double lfo_rate{5};
+  double lfo_rate{4};
   double distortion_threshold{0.5};
   bool use_delay{false};
   int delay_mode{0};
@@ -186,7 +186,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 
 struct FmDrumSettings {
   double vol{0.4};
-  double pan{0};
+  double pan{-0.1};
   double carrier_freq{43};
   double carrier_eg_attack{10};
   double carrier_eg_decay{1};
@@ -218,7 +218,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(LazerSettings, vol, pan, freq,
                                                 attack, decay, osc_range)
 
 struct DrumSettings {
-  std::string name{"Default"};
+  std::string name{"DEFAULT"};
   double volume{1};
 
   BdSettings bd;

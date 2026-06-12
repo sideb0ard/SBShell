@@ -1,6 +1,6 @@
 
 bpm 96;
-load_preset(sbdrum, "TWULB");
+# load_preset(sbdrum, "TWULB");
 # kazzzing
 load_preset(dx, "WAYNWATN");
 load_preset(dx2, "garage");

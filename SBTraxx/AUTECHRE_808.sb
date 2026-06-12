@@ -2,7 +2,7 @@
 
 let init = fn()
 {
-  load_preset(sbdrum, "glitchhh808");
+#   load_preset(sbdrum, "glitchhh808");
   load_preset(dx2, "LOWES");
   bpm 110;
 }

@@ -55,7 +55,7 @@ let init = fn()
 {
   ayeh = loop(dloops2/AHyeah.wav); set ayeh:len 2; set ayeh:pitch 1.3; note_off(ayeh, 0);
   gangs = loop(loops2/gangstarr.wav); note_off(gangs, 0);
-  load_preset(sbdrum, "BOOMBAP1");
+#   load_preset(sbdrum, "BOOMBAP1");
   load_preset(mo, "boardy");
   load_preset(dx, "SMMTH2");
   p3 < osc 7 "80 7000" "set sbdrum:sd_tone %";

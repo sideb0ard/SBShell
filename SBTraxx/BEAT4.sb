@@ -18,7 +18,7 @@ load_preset(dx, "OCWAR2"); vol dx 1; set dx:e2att 2000;
 load_preset(dx2, "SMURFc"); set dx2:e2att 300; vol dx2 0.5;
 load_preset(dx3, "pgnal");
 load_preset(mo, "zzang");
-load_preset(sbdrum, "BEAT42");
+# load_preset(sbdrum, "BEAT42");
 
 # load_preset(dx, "fnord0");
 
