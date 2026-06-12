@@ -25,8 +25,8 @@ class Link;
 #include "defjams.h"
 #include "fmsynth.h"
 #include "fx/fx.h"
-#include "minisynth.h"
 #include "soundgenerator.h"
+#include "subsynth.h"
 #include "websocket/web_socket_server.h"
 // #include "websocket/web_socket_server.h"  // TODO: Fix websocket compilation
 // issues

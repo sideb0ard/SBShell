@@ -89,7 +89,7 @@ let init = fn()
   set walkin:fx0:threshold 0.4; set walkin:len 8;
   add_fx(walkin, "djeq");
 
-  sbs = sbsynth();
+  sbs = wavsynth();
   # add_buf(sbs, "notes/slaveChord3.aiff");
   # add_buf(sbs, "notes/garageyChord.aiff");
   # add_buf(sbs, "notes/noteWitMAWWelp.aiff");

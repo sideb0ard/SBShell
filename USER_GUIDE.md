@@ -335,11 +335,11 @@ C D E F G A B
 
 ```
 
-### Subtractive Synth - minisynth()
+### Subtractive Synth - subsynth()
 Classic analog-style synthesis with oscillators and filters.
 
 ```javascript
-let synth = minisynth();
+let synth = subsynth();
 load_preset(synth, "PAD");
 note_on(synth, notes_in_chord(24, 24), vel = 100, dur = 2000);
 ```
@@ -543,7 +543,7 @@ SBSynth is an 8-voice polyphonic synth with two modes: **wavetable** (cycles a l
 #### Creating and loading
 
 ```javascript
-let s = sbsynth();
+let s = wavsynth();
 
 // Load one or more buffers (wavs/ prefix is implicit)
 add_buf(s, "waves/sine.wav");       // wavetable mode — best with single-cycle waveforms
@@ -602,7 +602,7 @@ play_array(s, arp);
 Load multiple waveforms and blend between them with `morph`:
 
 ```javascript
-let s = sbsynth();
+let s = wavsynth();
 add_buf(s, "waves/sine.wav");
 add_buf(s, "waves/saw.wav");
 add_buf(s, "waves/square.wav");
@@ -622,7 +622,7 @@ let morph_comp = comp() {
 #### Sample mode example — vocal stab played chromatically
 
 ```javascript
-let s = sbsynth();
+let s = wavsynth();
 add_buf(s, "perc/vocal.wav");
 set s:mode 1;
 set s:root 60;      // sample was recorded at C4
@@ -1117,7 +1117,7 @@ let evolving_comp = comp()
 ```javascript
 let drums = drumsynth();
 let bass = fmsynth();
-let pad = minisynth();
+let pad = subsynth();
 
 // Set volumes (0.0 to 1.0+)
 vol drums 0.9;
@@ -1916,7 +1916,7 @@ load_preset(drums, "TR808");
 // Sound Generators
 drumsynth()                  // Drum machine
 dxsynth()              // FM synth
-minisynth()            // Subtractive synth
+subsynth()            // Subtractive synth
 loop("path")           // Granular looper
 sample("path")           // Load audio sample
 
@@ -2001,7 +2001,7 @@ Use `help()` to explore functions by category:
 - **Random**: rand, rincr
 - **Control**: incr, dincr
 - **Timing**: note_on, note_on_at, bpm
-- **Sound**: drum, sample, dxsynth, minisynth
+- **Sound**: drum, sample, dxsynth, subsynth
 - **Effects**: set, getparam
 - **File I/O**: run, track, save_preset, load_preset
 - **Debug**: print, info

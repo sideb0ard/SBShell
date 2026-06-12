@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hand-crafted classic Minimoog-style presets for SoundB0ard's minisynth.
+Hand-crafted classic Minimoog-style presets for SoundB0ard's subsynth.
 
 Voice modes:  0=Saw3  1=Sqr3  2=Saw2Sqr  3=Tri2Saw  4=Tri2Sqr  5=Sin2Sqr
 Filter types: 6=LPF4 (Moog ladder, default)

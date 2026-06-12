@@ -3,7 +3,7 @@ let sbs = NULL;
 
 let init = fn()
 {
-  sbs = sbsynth();
+  sbs = wavsynth();
   add_buf(sbs, "notes/slaveChord3.aiff");
   add_buf(sbs, "notes/garageyChord.aiff");
 }

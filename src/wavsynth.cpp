@@ -1,5 +1,5 @@
 #include <math.h>
-#include <sbsynth.h>
+#include <wavsynth.h>
 
 #include <algorithm>
 #include <cstdlib>
@@ -11,8 +11,8 @@
 
 namespace SBAudio {
 
-SBSynth::SBSynth() {
-  type = SBSYNTH_TYPE;
+WavSynth::WavSynth() {
+  type = WAVSYNTH_TYPE;
   active = true;
 
   filter_.SetFcControl(filter_cutoff_);
@@ -20,28 +20,28 @@ SBSynth::SBSynth() {
   filter_.Update();
 }
 
-void SBSynth::AddBuffer(std::unique_ptr<FileBuffer> fb) {
+void WavSynth::AddBuffer(std::unique_ptr<FileBuffer> fb) {
   file_buffers_.push_back(std::move(fb));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Voice management
 
-int SBSynth::FindFreeVoice(int note) const {
+int WavSynth::FindFreeVoice(int note) const {
   // 1. Retrigger same note if it's already playing
-  for (int i = 0; i < kSBSynthNumVoices; i++)
+  for (int i = 0; i < kWavSynthNumVoices; i++)
     if (voices_[i].active && voices_[i].note == note) return i;
   // 2. Find a truly idle voice
-  for (int i = 0; i < kSBSynthNumVoices; i++)
+  for (int i = 0; i < kWavSynthNumVoices; i++)
     if (!voices_[i].active) return i;
   // 3. Steal a voice that's in release
-  for (int i = 0; i < kSBSynthNumVoices; i++)
+  for (int i = 0; i < kWavSynthNumVoices; i++)
     if (voices_[i].eg.m_state == RELEASE) return i;
   // 4. Last resort: steal voice 0
   return 0;
 }
 
-double SBSynth::CalcIncrement(int note) const {
+double WavSynth::CalcIncrement(int note) const {
   if (file_buffers_.empty()) return 1.0;
 
   // Always use the first buffer as the reference for pitch calculation.
@@ -62,7 +62,7 @@ double SBSynth::CalcIncrement(int note) const {
   }
 }
 
-void SBSynth::InitVoice(SBSynthVoice &v, int note, int velocity) {
+void WavSynth::InitVoice(WavSynthVoice &v, int note, int velocity) {
   v.note = note;
   v.velocity = velocity;
   // Scatter: randomise start position within the buffer on each note-on
@@ -99,13 +99,13 @@ void SBSynth::InitVoice(SBSynthVoice &v, int note, int velocity) {
   v.morph_eg.StartEg();
 }
 
-void SBSynth::NoteOn(midi_event ev) {
+void WavSynth::NoteOn(midi_event ev) {
   if (file_buffers_.empty()) return;
   int idx = FindFreeVoice(ev.data1);
   InitVoice(voices_[idx], ev.data1, ev.data2 > 0 ? ev.data2 : 100);
 }
 
-void SBSynth::NoteOff(midi_event ev) {
+void WavSynth::NoteOff(midi_event ev) {
   for (auto &v : voices_)
     if (v.active && v.note == ev.data1) {
       v.eg.NoteOff();
@@ -114,7 +114,7 @@ void SBSynth::NoteOff(midi_event ev) {
     }
 }
 
-void SBSynth::AllNotesOff() {
+void WavSynth::AllNotesOff() {
   for (auto &v : voices_)
     if (v.active) {
       v.eg.NoteOff();
@@ -147,7 +147,7 @@ static void ReadSample(const std::vector<double> *buf, int num_ch,
   }
 }
 
-StereoVal SBSynth::GenNext(mixer_timing_info tinfo) {
+StereoVal WavSynth::GenNext(mixer_timing_info tinfo) {
   (void)tinfo;
 
   StereoVal out{0.0, 0.0};
@@ -264,7 +264,7 @@ StereoVal SBSynth::GenNext(mixer_timing_info tinfo) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Parameters
 
-void SBSynth::SetParam(std::string name, double val) {
+void WavSynth::SetParam(std::string name, double val) {
   if (name == "attack") {
     attack_ms_ = val;
   } else if (name == "decay") {
@@ -314,24 +314,25 @@ void SBSynth::SetParam(std::string name, double val) {
   }
 }
 
-void SBSynth::Start() {
+void WavSynth::Start() {
   active = true;
 }
-void SBSynth::Stop() {
+void WavSynth::Stop() {
   AllNotesOff();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Info / Status
 
-std::string SBSynth::Status() {
+std::string WavSynth::Status() {
   std::stringstream ss;
   ss << std::fixed << std::setprecision(2);
   if (!active || volume == 0)
     ss << ANSI_COLOR_RESET;
   else
     ss << COOL_COLOR_BLUE_BLUEPINK2;
-  ss << "SBSynth(" << (mode_ == Mode::WAVETABLE ? "wavetable" : "sample") << ")"
+  ss << "WavSynth(" << (mode_ == Mode::WAVETABLE ? "wavetable" : "sample")
+     << ")"
      << " bufs:" << file_buffers_.size() << " vol:" << volume << " pan:" << pan
      << " cut:" << (int)filter_cutoff_ << " q:" << filter_q_;
   if (mode_ == Mode::WAVETABLE && file_buffers_.size() > 1)
@@ -348,10 +349,10 @@ std::string SBSynth::Status() {
   return ss.str();
 }
 
-std::string SBSynth::Info() {
+std::string WavSynth::Info() {
   std::stringstream ss;
   ss << std::fixed << std::setprecision(2);
-  ss << COOL_COLOR_BLUE_BLUEPINK2 << "## SBSynth ##\n" << ANSI_COLOR_WHITE;
+  ss << COOL_COLOR_BLUE_BLUEPINK2 << "## WavSynth ##\n" << ANSI_COLOR_WHITE;
   ss << "  mode:    "
      << (mode_ == Mode::WAVETABLE ? "0 (wavetable)" : "1 (sample)") << "\n";
   if (file_buffers_.empty()) {
@@ -361,7 +362,7 @@ std::string SBSynth::Info() {
       ss << "  buf[" << i << "]:  " << file_buffers_[i]->filename_ << "\n";
   }
   ss << COOL_COLOR_BLUE_BLUEPINK2;
-  ss << "  voices:  " << kSBSynthNumVoices << " max";
+  ss << "  voices:  " << kWavSynthNumVoices << " max";
   int av = 0;
   for (auto &v : voices_)
     if (v.active) av++;

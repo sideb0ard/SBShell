@@ -22,9 +22,9 @@ std::string build_help() {
 
   ss << COOL_COLOR_GREEN << "Sound Generators:\n";
   ss << ANSI_COLOR_WHITE  << "  drumsynth()       " << COOL_COLOR_ORANGE << "- Drum synthesizer (9 voices)\n";
-  ss << ANSI_COLOR_WHITE  << "  minisynth()  " << COOL_COLOR_ORANGE << "- Subtractive synthesizer\n";
+  ss << ANSI_COLOR_WHITE  << "  subsynth()   " << COOL_COLOR_ORANGE << "- Subtractive synthesizer\n";
   ss << ANSI_COLOR_WHITE  << "  fmsynth()    " << COOL_COLOR_ORANGE << "- FM synthesizer (4 operators)\n";
-  ss << ANSI_COLOR_WHITE  << "  sbsynth()    " << COOL_COLOR_ORANGE << "- Wavetable/sample synth (8-voice poly)\n";
+  ss << ANSI_COLOR_WHITE  << "  wavsynth()   " << COOL_COLOR_ORANGE << "- Wavetable/sample synth (8-voice poly)\n";
   ss << ANSI_COLOR_WHITE  << "  loop(<sample_name>)   " << COOL_COLOR_ORANGE << "- Granular sampler\n";
   ss << ANSI_COLOR_WHITE  << "  sample(path) " << COOL_COLOR_ORANGE << "- Load audio sample\n\n";
 
@@ -204,9 +204,9 @@ std::string build_help() {
   ss << COOL_COLOR_GREEN << "  Sidechain from individual drum voice:\n";
   ss << ANSI_COLOR_WHITE << "  add_fx(inst, \"sidechain\", drums, \"bd\") " << COOL_COLOR_ORANGE << "- Sidechain from kick only (bd/sd/cp/hh/oh/fm1-3/lz)\n\n";
 
-  ss << COOL_COLOR_GREEN << "SBSYNTH — WAVETABLE / SAMPLE SYNTH\n"
+  ss << COOL_COLOR_GREEN << "WAVSYNTH — WAVETABLE / SAMPLE SYNTH\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
-  ss << ANSI_COLOR_WHITE << "  let s = sbsynth()            " << COOL_COLOR_ORANGE << "- Create synth (8-voice polyphonic)\n";
+  ss << ANSI_COLOR_WHITE << "  let s = wavsynth()            " << COOL_COLOR_ORANGE << "- Create synth (8-voice polyphonic)\n";
   ss << ANSI_COLOR_WHITE << "  add_buf(s, \"waves/sine.wav\") " << COOL_COLOR_ORANGE << "- Load waveform or sample into buffer\n\n";
   ss << COOL_COLOR_GREEN << "  Modes:\n";
   ss << ANSI_COLOR_WHITE << "  set s:mode 0  " << COOL_COLOR_ORANGE << "- Wavetable: cycles through buffer at note frequency (default)\n";
@@ -226,7 +226,7 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  add_buf(s, \"waves/saw.wav\")   " << COOL_COLOR_ORANGE << "- Add a second buffer\n";
   ss << ANSI_COLOR_WHITE << "  set s:morph 0.5              " << COOL_COLOR_ORANGE << "- Crossfade between buffers (0.0=first, 1.0=last)\n\n";
   ss << COOL_COLOR_GREEN << "  Example:\n";
-  ss << COOL_COLOR_ORANGE << "    let s = sbsynth();\n";
+  ss << COOL_COLOR_ORANGE << "    let s = wavsynth();\n";
   ss << COOL_COLOR_ORANGE << "    add_buf(s, \"perc/vocal.wav\");    " << ANSI_COLOR_WHITE << "// sample mode\n";
   ss << COOL_COLOR_ORANGE << "    set s:mode 1; set s:root 60;\n";
   ss << COOL_COLOR_ORANGE << "    note_on(s, 60); note_on(s, 64); note_on(s, 67);  " << ANSI_COLOR_WHITE << "// chord\n\n";

@@ -14,10 +14,10 @@
 
 namespace SBAudio {
 
-constexpr int kSBSynthNumVoices = 8;
+constexpr int kWavSynthNumVoices = 8;
 
 // One voice: a read position into the shared buffer + its own envelope.
-struct SBSynthVoice {
+struct WavSynthVoice {
   bool active{false};
   int note{-1};
   int velocity{100};
@@ -27,7 +27,7 @@ struct SBSynthVoice {
   EnvelopeGenerator morph_eg;  // per-voice timbral sweep
 };
 
-// SBSynth — dual-mode polyphonic synth
+// WavSynth — dual-mode polyphonic synth
 //
 // WAVETABLE mode (default):
 //   Loads any audio file as a waveform and cycles through it at the
@@ -52,12 +52,12 @@ struct SBSynthVoice {
 //   set s:cutoff  8000;  // filter cutoff Hz
 //   set s:q       0.7;   // filter resonance
 //   note_on(s, 60);
-class SBSynth : public SoundGenerator {
+class WavSynth : public SoundGenerator {
  public:
   enum class Mode { WAVETABLE, SAMPLE };
 
-  SBSynth();
-  virtual ~SBSynth() = default;
+  WavSynth();
+  virtual ~WavSynth() = default;
 
   StereoVal GenNext(mixer_timing_info tinfo) override;
   std::string Info() override;
@@ -75,7 +75,7 @@ class SBSynth : public SoundGenerator {
 
   std::vector<std::unique_ptr<FileBuffer>> file_buffers_;
 
-  std::array<SBSynthVoice, kSBSynthNumVoices> voices_{};
+  std::array<WavSynthVoice, kWavSynthNumVoices> voices_{};
 
   // ADSR params shared across all voices (applied on NoteOn)
   double attack_ms_{10.0};
@@ -117,7 +117,7 @@ class SBSynth : public SoundGenerator {
 
   int FindFreeVoice(int note) const;
   double CalcIncrement(int note) const;
-  void InitVoice(SBSynthVoice &v, int note, int velocity);
+  void InitVoice(WavSynthVoice &v, int note, int velocity);
 };
 
 }  // namespace SBAudio

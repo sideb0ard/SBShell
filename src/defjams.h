@@ -139,12 +139,12 @@ enum {
 };
 
 typedef enum {
-  MINISYNTH_TYPE,
+  SUBSYNTH_TYPE,
   FMSYNTH_TYPE,
   LOOPER_TYPE,
   DRUMSAMPLER_TYPE,
   DRUMSYNTH_TYPE,
-  SBSYNTH_TYPE,
+  WAVSYNTH_TYPE,
   NUM_SOUNDGEN_TYPE
 } sound_generator_type;
 

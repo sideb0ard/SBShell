@@ -9,7 +9,6 @@
 #include <fx/fx.h>
 #include <fx/reverb.h>
 #include <granular_looper.h>
-#include <minisynth.h>
 #include <mixer.h>
 #include <obliquestrategies.h>
 #include <portaudio.h>
@@ -18,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <subsynth.h>
 #include <unistd.h>
 #include <utils.h>
 
@@ -760,7 +760,7 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
   } else if (action->type == AudioAction::ADD_BUFFER) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];
-      if (sg && (sg->type == LOOPER_TYPE || sg->type == SBSYNTH_TYPE)) {
+      if (sg && (sg->type == LOOPER_TYPE || sg->type == WAVSYNTH_TYPE)) {
         sg->AddBuffer(std::move(action->fb));
       }
     }

@@ -1,4 +1,4 @@
-#include "minisynth.h"
+#include "subsynth.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -21,12 +21,12 @@ extern const char *s_dest_enum_to_name[];
 const char *S_VOICES[] = {"SAW3",    "SQR3",    "SAW2SQR",
                           "TRI2SAW", "TRI2SQR", "SIN2SQR"};
 
-MiniSynth::MiniSynth() {
-  type = MINISYNTH_TYPE;
+SubSynth::SubSynth() {
+  type = SUBSYNTH_TYPE;
   m_midi_rx_channel = 0;
 
   for (int i = 0; i < MAX_VOICES; i++) {
-    voices_[i] = std::make_shared<MiniSynthVoice>();
+    voices_[i] = std::make_shared<SubSynthVoice>();
     voices_[i]->InitGlobalParameters(&m_global_synth_params);
   }
 
@@ -46,7 +46,7 @@ MiniSynth::MiniSynth() {
   active = true;
 }
 
-StereoVal MiniSynth::GenNext(mixer_timing_info tinfo) {
+StereoVal SubSynth::GenNext(mixer_timing_info tinfo) {
   (void)tinfo;
   if (!active) return (StereoVal){0, 0};
 
@@ -78,13 +78,13 @@ StereoVal MiniSynth::GenNext(mixer_timing_info tinfo) {
   return out;
 }
 
-std::string MiniSynth::Status() {
+std::string SubSynth::Status() {
   std::stringstream ss;
   if (!active || volume == 0)
     ss << ANSI_COLOR_RESET;
   else
     ss << ANSI_COLOR_CYAN;
-  ss << "MiniSynth(" << m_settings.m_settings_name << ")"
+  ss << "SubSynth(" << m_settings.m_settings_name << ")"
      << " vol:" << volume << " pan:" << pan
      << " voice:" << S_VOICES[m_settings.m_voice_mode] << "("
      << m_settings.m_voice_mode << ")" << ANSI_COLOR_RESET;
@@ -92,7 +92,7 @@ std::string MiniSynth::Status() {
   return ss.str();
 }
 
-std::string MiniSynth::Info() {
+std::string SubSynth::Info() {
   std::stringstream ss;
   ss << std::setprecision(2) << std::fixed;
 
@@ -221,16 +221,16 @@ std::string MiniSynth::Info() {
 
   return ss.str();
 }
-void MiniSynth::Start() {
+void SubSynth::Start() {
   active = true;
 }
 
-void MiniSynth::Stop() {
+void SubSynth::Stop() {
   active = false;
   AllNotesOff();
 }
 
-void MiniSynth::LoadDefaults() {
+void SubSynth::LoadDefaults() {
   snprintf(m_settings.m_settings_name, sizeof(m_settings.m_settings_name), "%s",
            "default");
 
@@ -364,7 +364,7 @@ void MiniSynth::LoadDefaults() {
   m_settings.m_generate_src = -99;
 }
 
-void MiniSynth::Control(midi_event ev) {
+void SubSynth::Control(midi_event ev) {
   double scaley_val = 0;
   switch (ev.data1) {
     case (1):
@@ -409,7 +409,7 @@ void MiniSynth::Control(midi_event ev) {
   Update();
 }
 
-void MiniSynth::NoteOn(midi_event ev) {
+void SubSynth::NoteOn(midi_event ev) {
   unsigned int midinote = ev.data1;
   unsigned int velocity = ev.data2;
 
@@ -444,20 +444,20 @@ void MiniSynth::NoteOn(midi_event ev) {
   }
 }
 
-void MiniSynth::AllNotesOff() {
+void SubSynth::AllNotesOff() {
   for (int i = 0; i < MAX_VOICES; i++) {
     if (voices_[i]) voices_[i]->NoteOff(-1);
   }
 }
 
-void MiniSynth::NoteOff(midi_event ev) {
+void SubSynth::NoteOff(midi_event ev) {
   for (int i = 0; i < MAX_VOICES; i++) {
     auto msv = GetOldestVoiceWithNote(ev.data1);
     if (msv) msv->NoteOff(ev.data1);
   }
 }
 
-void MiniSynth::PitchBend(midi_event ev) {
+void SubSynth::PitchBend(midi_event ev) {
   unsigned int data1 = ev.data1;
   unsigned int data2 = ev.data2;
   int actual_pitch_bent_val = (int)((data1 & 0x7F) | ((data2 & 0x7F) << 7));
@@ -488,7 +488,7 @@ void MiniSynth::PitchBend(midi_event ev) {
 
 ////////////////////////////////////
 
-bool MiniSynth::PrepareForPlay() {
+bool SubSynth::PrepareForPlay() {
   for (int i = 0; i < MAX_VOICES; i++) {
     if (voices_[i]) voices_[i]->PrepareForPlay();
   }
@@ -498,7 +498,7 @@ bool MiniSynth::PrepareForPlay() {
   return true;
 }
 
-void MiniSynth::Update() {
+void SubSynth::Update() {
   m_global_synth_params.voice_params.hard_sync = m_settings.hard_sync;
   m_global_synth_params.voice_params.voice_mode = m_settings.m_voice_mode;
   m_global_synth_params.voice_params.portamento_time_msec =
@@ -757,18 +757,18 @@ void MiniSynth::Update() {
     if (voices_[i]) voices_[i]->Update();
 }
 
-void MiniSynth::ResetVoices() {
+void SubSynth::ResetVoices() {
   for (int i = 0; i < MAX_VOICES; i++) voices_[i]->Reset();
 }
 
-void MiniSynth::IncrementVoiceTimestamps() {
+void SubSynth::IncrementVoiceTimestamps() {
   for (int i = 0; i < MAX_VOICES; i++) {
     if (voices_[i]->m_note_on) voices_[i]->m_timestamp++;
   }
 }
-std::shared_ptr<MiniSynthVoice> MiniSynth::GetOldestVoice() {
+std::shared_ptr<SubSynthVoice> SubSynth::GetOldestVoice() {
   int timestamp = -1;
-  std::shared_ptr<MiniSynthVoice> found_voice = NULL;
+  std::shared_ptr<SubSynthVoice> found_voice = NULL;
   for (int i = 0; i < MAX_VOICES; i++) {
     if (voices_[i]) {
       if (voices_[i]->m_note_on && (int)voices_[i]->m_timestamp > timestamp) {
@@ -781,10 +781,9 @@ std::shared_ptr<MiniSynthVoice> MiniSynth::GetOldestVoice() {
   return found_voice;
 }
 
-std::shared_ptr<MiniSynthVoice> MiniSynth::GetOldestVoiceWithNote(
-    int midi_note) {
+std::shared_ptr<SubSynthVoice> SubSynth::GetOldestVoiceWithNote(int midi_note) {
   int timestamp = -1;
-  std::shared_ptr<MiniSynthVoice> found_voice = NULL;
+  std::shared_ptr<SubSynthVoice> found_voice = NULL;
   for (auto v : voices_) {
     if (v->CanNoteOff() && v->m_timestamp > timestamp &&
         v->m_midi_note_number == midi_note) {
@@ -795,7 +794,7 @@ std::shared_ptr<MiniSynthVoice> MiniSynth::GetOldestVoiceWithNote(
   return found_voice;
 }
 
-void MiniSynth::Randomize() {
+void SubSynth::Randomize() {
   // printf("Randomizing SYNTH!\n");
 
   snprintf(m_settings.m_settings_name, sizeof(m_settings.m_settings_name), "%s",
@@ -952,7 +951,7 @@ nlohmann::json MoogSettingsToJson(const SBAudio::synthsettings &s,
 }
 }  // namespace
 
-void MiniSynth::Save(std::string new_preset_name) {
+void SubSynth::Save(std::string new_preset_name) {
   if (new_preset_name.empty()) {
     printf("Play tha game, pal, need a name to save yer synth settings with\n");
     return;
@@ -972,11 +971,11 @@ void MiniSynth::Save(std::string new_preset_name) {
   root[new_preset_name] = MoogSettingsToJson(m_settings, volume);
   std::ofstream outfile(MOOG_PRESET_FILENAME_JSON);
   outfile << root.dump(2) << "\n";
-  printf("MiniSynth -- saved preset '%s'\n", new_preset_name.c_str());
+  printf("SubSynth -- saved preset '%s'\n", new_preset_name.c_str());
 }
 
-void MiniSynth::LoadPreset(std::string preset_name,
-                           std::map<std::string, double> preset) {
+void SubSynth::LoadPreset(std::string preset_name,
+                          std::map<std::string, double> preset) {
   snprintf(m_settings.m_settings_name, sizeof(m_settings.m_settings_name), "%s",
            preset_name.c_str());
   for (const auto &[key, val] : preset) {
@@ -1173,11 +1172,11 @@ void MiniSynth::LoadPreset(std::string preset_name,
   Update();
 }
 
-void MiniSynth::SetFilterMod(double mod) {
+void SubSynth::SetFilterMod(double mod) {
   for (auto v : voices_) v->SetFilterMod(mod);
 }
 
-void MiniSynth::SetEgAttackTimeMs(unsigned int eg_num, double val) {
+void SubSynth::SetEgAttackTimeMs(unsigned int eg_num, double val) {
   if (val >= EG_MINTIME_MS && val <= EG_MAXTIME_MS) {
     if (eg_num == 1)
       m_settings.m_eg1_attack_time_msec = val;
@@ -1187,7 +1186,7 @@ void MiniSynth::SetEgAttackTimeMs(unsigned int eg_num, double val) {
     printf("val must be between %d and %d\n", EG_MINTIME_MS, EG_MAXTIME_MS);
 }
 
-void MiniSynth::SetEgDecayTimeMs(unsigned int eg_num, double val) {
+void SubSynth::SetEgDecayTimeMs(unsigned int eg_num, double val) {
   if (val >= EG_MINTIME_MS && val <= EG_MAXTIME_MS) {
     if (eg_num == 1)
       m_settings.m_eg1_decay_time_msec = val;
@@ -1197,7 +1196,7 @@ void MiniSynth::SetEgDecayTimeMs(unsigned int eg_num, double val) {
     printf("val must be between %d and %d\n", EG_MINTIME_MS, EG_MAXTIME_MS);
 }
 
-void MiniSynth::SetEgReleaseTimeMs(unsigned int eg_num, double val) {
+void SubSynth::SetEgReleaseTimeMs(unsigned int eg_num, double val) {
   if (val >= EG_MINTIME_MS && val <= EG_MAXTIME_MS) {
     if (eg_num == 1)
       m_settings.m_eg1_release_time_msec = val;
@@ -1207,7 +1206,7 @@ void MiniSynth::SetEgReleaseTimeMs(unsigned int eg_num, double val) {
     printf("val must be between %d and %d\n", EG_MINTIME_MS, EG_MAXTIME_MS);
 }
 
-void MiniSynth::SetOscAmp(unsigned int osc_num, double val) {
+void SubSynth::SetOscAmp(unsigned int osc_num, double val) {
   if (osc_num == 0 || osc_num > 4) return;
 
   if (val >= -1 && val <= 1) {
@@ -1229,14 +1228,14 @@ void MiniSynth::SetOscAmp(unsigned int osc_num, double val) {
     printf("val must be between -1 and 1\n");
 }
 
-void MiniSynth::SetDetune(double val) {
+void SubSynth::SetDetune(double val) {
   if (val >= -100 && val <= 100)
     m_settings.m_detune_cents = val;
   else
     printf("val must be between -100 and 100\n");
 }
 
-void MiniSynth::SetEgDcaEnable(unsigned int osc_num, int val) {
+void SubSynth::SetEgDcaEnable(unsigned int osc_num, int val) {
   if (val == 0 || val == 1) {
     if (osc_num == 1)
       m_settings.m_eg1_dca_enabled = val;
@@ -1246,7 +1245,7 @@ void MiniSynth::SetEgDcaEnable(unsigned int osc_num, int val) {
     printf("val must be boolean 0 or 1\n");
 }
 
-void MiniSynth::SetEgDcaInt(unsigned int eg_num, double val) {
+void SubSynth::SetEgDcaInt(unsigned int eg_num, double val) {
   if (val >= -1 && val <= 1) {
     if (eg_num == 1)
       m_settings.m_eg1_dca_intensity = val;
@@ -1256,7 +1255,7 @@ void MiniSynth::SetEgDcaInt(unsigned int eg_num, double val) {
     printf("val must be between -1 and 1\n");
 }
 
-void MiniSynth::SetEgFilterEnable(unsigned int eg_num, int val) {
+void SubSynth::SetEgFilterEnable(unsigned int eg_num, int val) {
   if (val == 0 || val == 1) {
     if (eg_num == 1)
       m_settings.m_eg1_filter_enabled = val;
@@ -1266,7 +1265,7 @@ void MiniSynth::SetEgFilterEnable(unsigned int eg_num, int val) {
     printf("val must be boolean 0 or 1\n");
 }
 
-void MiniSynth::SetEgFilterInt(unsigned int eg_num, double val) {
+void SubSynth::SetEgFilterInt(unsigned int eg_num, double val) {
   if (val >= -1 && val <= 1) {
     if (eg_num == 1)
       m_settings.m_eg1_filter_intensity = val;
@@ -1276,7 +1275,7 @@ void MiniSynth::SetEgFilterInt(unsigned int eg_num, double val) {
     printf("val must be between -1 and 1\n");
 }
 
-void MiniSynth::SetEgOscEnable(unsigned int eg_num, int val) {
+void SubSynth::SetEgOscEnable(unsigned int eg_num, int val) {
   if (val == 0 || val == 1) {
     if (eg_num == 1)
       m_settings.m_eg1_osc_enabled = val;
@@ -1286,7 +1285,7 @@ void MiniSynth::SetEgOscEnable(unsigned int eg_num, int val) {
     printf("val must be boolean 0 or 1\n");
 }
 
-void MiniSynth::SetEgOscInt(unsigned int eg_num, double val) {
+void SubSynth::SetEgOscInt(unsigned int eg_num, double val) {
   if (val >= -1 && val <= 1) {
     if (eg_num == 1)
       m_settings.m_eg1_osc_intensity = val;
@@ -1296,21 +1295,21 @@ void MiniSynth::SetEgOscInt(unsigned int eg_num, double val) {
     printf("val must be between -1 and 1\n");
 }
 
-void MiniSynth::SetFilterFc(double val) {
+void SubSynth::SetFilterFc(double val) {
   if (val >= 80 && val <= 18000)
     m_settings.m_fc_control = val;
   else
     printf("val must be between 80 and 18000\n");
 }
 
-void MiniSynth::SetFilterFq(double val) {
+void SubSynth::SetFilterFq(double val) {
   if (val >= 1 && val <= 10)
     m_settings.m_q_control = val;
   else
     printf("val must be between 1 and 10\n");
 }
 
-void MiniSynth::SetFilterType(unsigned int val) {
+void SubSynth::SetFilterType(unsigned int val) {
   if (val == BSF2 || val == LPF1 || val == HPF1)
     printf("warning! useless change - %u not possible with moog\n", val);
   if (val < NUM_FILTER_TYPES)
@@ -1319,28 +1318,28 @@ void MiniSynth::SetFilterType(unsigned int val) {
     printf("Val must be between 0 and %d\n", NUM_FILTER_TYPES - 1);
 }
 
-void MiniSynth::SetFilterSaturation(double val) {
+void SubSynth::SetFilterSaturation(double val) {
   if (val >= 0 && val <= 100)
     m_settings.m_filter_saturation = val;
   else
     printf("Val must be between 0 and 100\n");
 }
 
-void MiniSynth::SetFilterNlp(unsigned int val) {
+void SubSynth::SetFilterNlp(unsigned int val) {
   if (val < 2)
     m_settings.m_nlp = val;
   else
     printf("Val must be 0 or 1\n");
 }
 
-void MiniSynth::SetKeytrackInt(double val) {
+void SubSynth::SetKeytrackInt(double val) {
   if (val >= 0.5 && val <= 10)
     m_settings.m_filter_keytrack_intensity = val;
   else
     printf("val must be between 0.5 and 10\n");
 }
 
-void MiniSynth::SetKeytrack(unsigned int val) {
+void SubSynth::SetKeytrack(unsigned int val) {
   if (val != 0 && val != 1) {
     printf("Val must be zero or one\n");
     return;
@@ -1348,7 +1347,7 @@ void MiniSynth::SetKeytrack(unsigned int val) {
   m_settings.m_filter_keytrack = val;
 }
 
-void MiniSynth::SetLegatoMode(unsigned int val) {
+void SubSynth::SetLegatoMode(unsigned int val) {
   if (val != 0 && val != 1) {
     printf("Val must be zero or one\n");
     return;
@@ -1356,7 +1355,7 @@ void MiniSynth::SetLegatoMode(unsigned int val) {
   m_settings.m_legato_mode = val;
 }
 
-void MiniSynth::SetLFOOscEnable(int lfo_num, int val) {
+void SubSynth::SetLFOOscEnable(int lfo_num, int val) {
   if (val == 0 || val == 1) {
     switch (lfo_num) {
       case (1):
@@ -1370,7 +1369,7 @@ void MiniSynth::SetLFOOscEnable(int lfo_num, int val) {
     printf("Must be a boolean 0 or 1\n");
 }
 
-void MiniSynth::SetLFOAmpEnable(int lfo_num, int val) {
+void SubSynth::SetLFOAmpEnable(int lfo_num, int val) {
   if (val == 0 || val == 1) {
     switch (lfo_num) {
       case (1):
@@ -1384,7 +1383,7 @@ void MiniSynth::SetLFOAmpEnable(int lfo_num, int val) {
     printf("Must be a boolean 0 or 1\n");
 }
 
-void MiniSynth::SetLFOFilterEnable(int lfo_num, int val) {
+void SubSynth::SetLFOFilterEnable(int lfo_num, int val) {
   if (val == 0 || val == 1) {
     switch (lfo_num) {
       case (1):
@@ -1398,7 +1397,7 @@ void MiniSynth::SetLFOFilterEnable(int lfo_num, int val) {
     printf("Must be a boolean 0 or 1\n");
 }
 
-void MiniSynth::SetLFOPanEnable(int lfo_num, int val) {
+void SubSynth::SetLFOPanEnable(int lfo_num, int val) {
   if (val == 0 || val == 1) {
     switch (lfo_num) {
       case (1):
@@ -1412,7 +1411,7 @@ void MiniSynth::SetLFOPanEnable(int lfo_num, int val) {
     printf("Must be a boolean 0 or 1\n");
 }
 
-void MiniSynth::SetLFOPulsewidthEnable(int lfo_num, unsigned int val) {
+void SubSynth::SetLFOPulsewidthEnable(int lfo_num, unsigned int val) {
   if (val == 0 || val == 1) {
     switch (lfo_num) {
       case (1):
@@ -1426,7 +1425,7 @@ void MiniSynth::SetLFOPulsewidthEnable(int lfo_num, unsigned int val) {
     printf("Must be a boolean 0 or 1\n");
 }
 
-void MiniSynth::SetLFOAmpInt(int lfo_num, double val) {
+void SubSynth::SetLFOAmpInt(int lfo_num, double val) {
   if (val >= 0 && val <= 1) {
     switch (lfo_num) {
       case (1):
@@ -1440,7 +1439,7 @@ void MiniSynth::SetLFOAmpInt(int lfo_num, double val) {
     printf("val must be between 0 and 1\n");
 }
 
-void MiniSynth::SetLFOAmp(int lfo_num, double val) {
+void SubSynth::SetLFOAmp(int lfo_num, double val) {
   if (val >= 0 && val <= 1) {
     switch (lfo_num) {
       case (1):
@@ -1454,7 +1453,7 @@ void MiniSynth::SetLFOAmp(int lfo_num, double val) {
     printf("val must be between 0 and 1\n");
 }
 
-void MiniSynth::SetLFOFilterFcInt(int lfo_num, double val) {
+void SubSynth::SetLFOFilterFcInt(int lfo_num, double val) {
   if (val >= -1 && val <= 1) {
     switch (lfo_num) {
       case (1):
@@ -1468,7 +1467,7 @@ void MiniSynth::SetLFOFilterFcInt(int lfo_num, double val) {
     printf("val must be between -1 and 1\n");
 }
 
-void MiniSynth::SetLFOPulsewidthInt(int lfo_num, double val) {
+void SubSynth::SetLFOPulsewidthInt(int lfo_num, double val) {
   if (val >= -1 && val <= 1) {
     switch (lfo_num) {
       case (1):
@@ -1482,7 +1481,7 @@ void MiniSynth::SetLFOPulsewidthInt(int lfo_num, double val) {
     printf("val must be between -1 and 1\n");
 }
 
-void MiniSynth::SetLFORate(int lfo_num, double val) {
+void SubSynth::SetLFORate(int lfo_num, double val) {
   if (val >= 0.02 && val <= 20) {
     switch (lfo_num) {
       case (1):
@@ -1496,7 +1495,7 @@ void MiniSynth::SetLFORate(int lfo_num, double val) {
     printf("val must be between 0.02 and 20\n");
 }
 
-void MiniSynth::SetLFOPanInt(int lfo_num, double val) {
+void SubSynth::SetLFOPanInt(int lfo_num, double val) {
   if (val >= 0 && val <= 1) {
     switch (lfo_num) {
       case (1):
@@ -1510,7 +1509,7 @@ void MiniSynth::SetLFOPanInt(int lfo_num, double val) {
     printf("val must be between 0 and 1\n");
 }
 
-void MiniSynth::SetLFOOscInt(int lfo_num, double val) {
+void SubSynth::SetLFOOscInt(int lfo_num, double val) {
   if (val >= -1 && val <= 1) {
     switch (lfo_num) {
       case (1):
@@ -1524,7 +1523,7 @@ void MiniSynth::SetLFOOscInt(int lfo_num, double val) {
     printf("val must be between -1 and 1\n");
 }
 
-void MiniSynth::SetLFOWave(int lfo_num, unsigned int val) {
+void SubSynth::SetLFOWave(int lfo_num, unsigned int val) {
   if (val < MAX_LFO_OSC) {
     switch (lfo_num) {
       case (1):
@@ -1538,7 +1537,7 @@ void MiniSynth::SetLFOWave(int lfo_num, unsigned int val) {
     printf("val must be between 0 and %d\n", MAX_LFO_OSC);
 }
 
-void MiniSynth::SetLFOMode(int lfo_num, unsigned int val) {
+void SubSynth::SetLFOMode(int lfo_num, unsigned int val) {
   if (val < LFO_MAX_MODE) {
     switch (lfo_num) {
       case (1):
@@ -1552,7 +1551,7 @@ void MiniSynth::SetLFOMode(int lfo_num, unsigned int val) {
     printf("val must be between 0 and %d\n", LFO_MAX_MODE - 1);
 }
 
-void MiniSynth::SetNoteToDecayScaling(unsigned int val) {
+void SubSynth::SetNoteToDecayScaling(unsigned int val) {
   if (val != 0 && val != 1) {
     printf("Val must be zero or one\n");
     return;
@@ -1560,7 +1559,7 @@ void MiniSynth::SetNoteToDecayScaling(unsigned int val) {
   m_settings.m_note_number_to_decay_scaling = val;
 }
 
-void MiniSynth::SetNoiseOscDb(double val) {
+void SubSynth::SetNoiseOscDb(double val) {
   if (val >= -96 && val <= 0) {
     m_settings.m_noise_osc_db = val;
     m_settings.osc4_amp = (val == -96.0) ? 0.0 : pow(10.0, val / 20.0);
@@ -1568,35 +1567,35 @@ void MiniSynth::SetNoiseOscDb(double val) {
     printf("val must be between -96 and 0\n");
 }
 
-void MiniSynth::SetOctave(int val) {
+void SubSynth::SetOctave(int val) {
   if (val >= -4 && val <= 4)
     m_settings.m_octave = val;
   else
     printf("val must be between -4 and 4\n");
 }
 
-void MiniSynth::SetPitchbendRange(int val) {
+void SubSynth::SetPitchbendRange(int val) {
   if (val >= 0 && val <= 12)
     m_settings.m_pitchbend_range = val;
   else
     printf("val must be between 0 and 12\n");
 }
 
-void MiniSynth::SetPortamentoTimeMs(double val) {
+void SubSynth::SetPortamentoTimeMs(double val) {
   if (val >= 0 && val <= 5000)
     m_settings.m_portamento_time_msec = val;
   else
     printf("val must be between 0 and 5000\n");
 }
 
-void MiniSynth::SetPulsewidthPct(double val) {
+void SubSynth::SetPulsewidthPct(double val) {
   if (val >= 1 && val <= 99)
     m_settings.m_pulse_width_pct = val;
   else
     printf("val must be between 1 and 99\n");
 }
 
-void MiniSynth::SetSubOscDb(double val) {
+void SubSynth::SetSubOscDb(double val) {
   if (val >= -96 && val <= 0) {
     m_settings.m_sub_osc_db = val;
     m_settings.osc3_amp = (val == -96.0) ? 0.0 : pow(10.0, val / 20.0);
@@ -1604,7 +1603,7 @@ void MiniSynth::SetSubOscDb(double val) {
     printf("val must be between -96 and 0\n");
 }
 
-void MiniSynth::SetEgSustain(unsigned int eg_num, double val) {
+void SubSynth::SetEgSustain(unsigned int eg_num, double val) {
   if (val >= 0 && val <= 1) {
     if (eg_num == 1)
       m_settings.m_eg1_sustain_level = val;
@@ -1614,14 +1613,14 @@ void MiniSynth::SetEgSustain(unsigned int eg_num, double val) {
     printf("val must be between 0 and 1\n");
 }
 
-void MiniSynth::SetEgSustainOverride(unsigned int eg_num, bool b) {
+void SubSynth::SetEgSustainOverride(unsigned int eg_num, bool b) {
   if (eg_num == 1)
     m_settings.m_eg1_sustain_override = b;
   else if (eg_num == 2)
     m_settings.m_eg2_sustain_override = b;
 }
 
-void MiniSynth::SetVelocityToAttackScaling(unsigned int val) {
+void SubSynth::SetVelocityToAttackScaling(unsigned int val) {
   if (val != 0 && val != 1) {
     printf("Val must be zero or one\n");
     return;
@@ -1629,14 +1628,14 @@ void MiniSynth::SetVelocityToAttackScaling(unsigned int val) {
   m_settings.m_velocity_to_attack_scaling = val;
 }
 
-void MiniSynth::SetVoiceMode(unsigned int val) {
+void SubSynth::SetVoiceMode(unsigned int val) {
   if (val < MAX_VOICE_CHOICE)
     m_settings.m_voice_mode = val;
   else
     printf("val must be between 0 and %d\n", MAX_VOICE_CHOICE);
 }
 
-void MiniSynth::SetResetToZero(unsigned int val) {
+void SubSynth::SetResetToZero(unsigned int val) {
   if (val != 0 && val != 1) {
     printf("Val must be zero or one\n");
     return;
@@ -1644,14 +1643,14 @@ void MiniSynth::SetResetToZero(unsigned int val) {
   m_settings.m_reset_to_zero = val;
 }
 
-void MiniSynth::SetMonophonic(bool b) {
+void SubSynth::SetMonophonic(bool b) {
   m_settings.m_monophonic = b;
 }
-void MiniSynth::SetGenerate(bool b) {
+void SubSynth::SetGenerate(bool b) {
   m_settings.m_generate_active = b;
 }
 
-void MiniSynth::SetOscSemitones(unsigned int osc, int semitones) {
+void SubSynth::SetOscSemitones(unsigned int osc, int semitones) {
   if (osc > 0 && osc < 4 && semitones > -100 && semitones < 100) {
     switch (osc) {
       case (1):
@@ -1670,12 +1669,12 @@ void MiniSynth::SetOscSemitones(unsigned int osc, int semitones) {
   }
 }
 
-void MiniSynth::SetHardSync(bool val) {
+void SubSynth::SetHardSync(bool val) {
   // TODO - add to export / load functions
   m_settings.hard_sync = val;
 }
 
-void MiniSynth::SetParam(std::string name, double val) {
+void SubSynth::SetParam(std::string name, double val) {
   if (name == "vol")
     SetVolume(val);
   else if (name == "pan")

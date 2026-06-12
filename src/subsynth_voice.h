@@ -16,11 +16,11 @@ typedef enum {
   Tri2Sqr,
   Sin2Sqr,
   MAX_VOICE_CHOICE
-} minisynth_voice_choice;
+} subsynth_voice_choice;
 
-struct MiniSynthVoice : Voice {
-  MiniSynthVoice();
-  ~MiniSynthVoice() = default;
+struct SubSynthVoice : Voice {
+  SubSynthVoice();
+  ~SubSynthVoice() = default;
 
   QBLimitedOscillator m_op1;
   QBLimitedOscillator m_op2;

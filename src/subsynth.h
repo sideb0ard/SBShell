@@ -5,11 +5,11 @@
 #include <envelope_generator.h>
 #include <filter.h>
 #include <midimaaan.h>
-#include <minisynth_voice.h>
 #include <modmatrix.h>
 #include <oscillator.h>
 #include <soundgenerator.h>
 #include <stdbool.h>
+#include <subsynth_voice.h>
 
 #include <array>
 
@@ -174,10 +174,10 @@ typedef struct synthsettings {
   unsigned m_generate_src{0};
 } synthsettings;
 
-class MiniSynth : public SoundGenerator {
+class SubSynth : public SoundGenerator {
  public:
-  MiniSynth();
-  ~MiniSynth() override = default;
+  SubSynth();
+  ~SubSynth() override = default;
 
   StereoVal GenNext(mixer_timing_info tinfo) override;
   std::string Info() override;
@@ -197,7 +197,7 @@ class MiniSynth : public SoundGenerator {
 
   void LoadDefaults();
 
-  std::array<std::shared_ptr<MiniSynthVoice>, MAX_VOICES> voices_;
+  std::array<std::shared_ptr<SubSynthVoice>, MAX_VOICES> voices_;
 
   // global modmatrix, core is shared by all voices
   ModulationMatrix modmatrix;  // routing structure for sound generation
@@ -215,8 +215,8 @@ class MiniSynth : public SoundGenerator {
   void MidiControl(unsigned int data1, unsigned int data2);
 
   void IncrementVoiceTimestamps();
-  std::shared_ptr<MiniSynthVoice> GetOldestVoice();
-  std::shared_ptr<MiniSynthVoice> GetOldestVoiceWithNote(int midi_note);
+  std::shared_ptr<SubSynthVoice> GetOldestVoice();
+  std::shared_ptr<SubSynthVoice> GetOldestVoiceWithNote(int midi_note);
 
   void ResetVoices();
 

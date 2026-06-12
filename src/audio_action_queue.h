@@ -88,7 +88,7 @@ struct AudioActionItem {
 
   // ADD varz
   unsigned int soundgenerator_type{static_cast<unsigned int>(-1)};
-  std::string filepath;  // used for sample and digisynth
+  std::string filepath;
 
   // STATUS varz
   bool status_all{false};

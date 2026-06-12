@@ -4,10 +4,10 @@
 #include <drumsampler.h>
 #include <fmsynth.h>
 #include <granular_looper.h>
-#include <minisynth.h>
 #include <mixer.h>
-#include <sbsynth.h>
+#include <subsynth.h>
 #include <utils.h>
+#include <wavsynth.h>
 
 #include <interpreter/object.hpp>
 #include <iostream>
@@ -26,8 +26,8 @@ int AddSoundGenerator(unsigned int type, std::string filepath = "",
                       int loop_mode = 0) {
   std::unique_ptr<SBAudio::SoundGenerator> sg;
   switch (type) {
-    case (MINISYNTH_TYPE):
-      sg = std::make_unique<SBAudio::MiniSynth>();
+    case (SUBSYNTH_TYPE):
+      sg = std::make_unique<SBAudio::SubSynth>();
       break;
     case (FMSYNTH_TYPE):
       sg = std::make_unique<SBAudio::FMSynth>();
@@ -41,8 +41,8 @@ int AddSoundGenerator(unsigned int type, std::string filepath = "",
     case (DRUMSAMPLER_TYPE):
       sg = std::make_unique<SBAudio::DrumSampler>(filepath);
       break;
-    case (SBSYNTH_TYPE):
-      sg = std::make_unique<SBAudio::SBSynth>();
+    case (WAVSYNTH_TYPE):
+      sg = std::make_unique<SBAudio::WavSynth>();
       break;
   }
   auto action = std::make_unique<AudioActionItem>(AudioAction::ADD);
@@ -174,25 +174,25 @@ object::HashKey SoundGenerator::GetHashKey() {
   return object::HashKey(Type(), (uint64_t)soundgen_id_);
 }
 
-SBSynth::SBSynth() {
-  soundgen_id_ = AddSoundGenerator(SBSYNTH_TYPE);
-  soundgenerator_type = SBSYNTH_TYPE;
+WavSynth::WavSynth() {
+  soundgen_id_ = AddSoundGenerator(WAVSYNTH_TYPE);
+  soundgenerator_type = WAVSYNTH_TYPE;
 }
-std::string SBSynth::Inspect() {
+std::string WavSynth::Inspect() {
   return "SB synth.";
 }
-ObjectType SBSynth::Type() {
+ObjectType WavSynth::Type() {
   return SYNTH_OBJ;
 }
 
-MoogSynth::MoogSynth() {
-  soundgen_id_ = AddSoundGenerator(MINISYNTH_TYPE);
-  soundgenerator_type = MINISYNTH_TYPE;
+SubSynth::SubSynth() {
+  soundgen_id_ = AddSoundGenerator(SUBSYNTH_TYPE);
+  soundgenerator_type = SUBSYNTH_TYPE;
 }
-std::string MoogSynth::Inspect() {
+std::string SubSynth::Inspect() {
   return "Moog synth.";
 }
-ObjectType MoogSynth::Type() {
+ObjectType SubSynth::Type() {
   return SYNTH_OBJ;
 }
 

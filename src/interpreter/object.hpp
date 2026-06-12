@@ -435,10 +435,10 @@ class DrumSynth : public SoundGenerator {
   std::string Inspect() override;
 };
 
-class MoogSynth : public SoundGenerator {
+class SubSynth : public SoundGenerator {
  public:
-  MoogSynth();
-  ~MoogSynth() = default;
+  SubSynth();
+  ~SubSynth() = default;
   ObjectType Type() override;
   std::string Inspect() override;
 };
@@ -460,10 +460,10 @@ class Granular : public SoundGenerator {
   std::string Inspect() override;
 };
 
-class SBSynth : public SoundGenerator {
+class WavSynth : public SoundGenerator {
  public:
-  SBSynth();
-  ~SBSynth() = default;
+  WavSynth();
+  ~WavSynth() = default;
   ObjectType Type() override;
   std::string Inspect() override;
 };

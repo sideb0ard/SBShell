@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include "fmsynth.h"
-#include "minisynth.h"
+#include "subsynth.h"
 
 namespace {
 
@@ -81,7 +81,7 @@ std::map<std::string, double> GetPreset(int id, std::string preset_name) {
 
   if (id == FMSYNTH_TYPE)
     return ReadPresetFromJson(FM_PRESET_FILENAME_JSON, preset_name);
-  if (id == MINISYNTH_TYPE)
+  if (id == SUBSYNTH_TYPE)
     return ReadPresetFromJson(MOOG_PRESET_FILENAME_JSON, preset_name);
 
   return preset_vals;

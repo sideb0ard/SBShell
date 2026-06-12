@@ -45,8 +45,8 @@ SoundB0ard is a text based interactive music-making environment. It is a program
 ### Synthesis Engines
 
 - **FMSynth** (`fmsynth.cpp/h`): FM-style synthesis engine
-- **MiniSynth** (`minisynth.cpp/h`): Subtractive synthesis engine
-- **SBSynth** (`sbsynth.cpp/h`): Custom synthesis engine
+- **SubSynth** (`subsynth.cpp/h`): Subtractive synthesis engine
+- **WavSynth** (`wavsynth.cpp/h`): Wavetable/sample synthesis engine
 - **DrumSynth** (`drum_synth.cpp/h`): Drum synthesis
 - **DrumSampler** (`drumsampler.cpp/h`): Sample-based drums
 

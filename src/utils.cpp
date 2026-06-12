@@ -21,8 +21,8 @@ namespace fs = std::filesystem;
 #include "defjams.h"
 #include "drum_synth.h"
 #include "fmsynth.h"
-#include "minisynth.h"
 #include "mixer.h"
+#include "subsynth.h"
 #include "utils.h"
 // #include "lookuptables.h"
 
@@ -901,7 +901,7 @@ std::vector<std::string> GetSynthPresets(unsigned int synthtype) {
   } else if (synthtype == FMSYNTH_TYPE) {
     read_json_names(FM_PRESET_FILENAME_JSON);
     if (!preset_names.empty()) return preset_names;
-  } else if (synthtype == MINISYNTH_TYPE) {
+  } else if (synthtype == SUBSYNTH_TYPE) {
     read_json_names(MOOG_PRESET_FILENAME_JSON);
     if (!preset_names.empty()) return preset_names;
   }

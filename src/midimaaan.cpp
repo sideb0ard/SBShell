@@ -4,13 +4,13 @@
 #include <math.h>
 #include <midi_freq_table.h>
 #include <midimaaan.h>
-#include <minisynth.h>
 #include <mixer.h>
 #include <portmidi.h>
 #include <porttime.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <subsynth.h>
 #include <utils.h>
 
 #include <iostream>

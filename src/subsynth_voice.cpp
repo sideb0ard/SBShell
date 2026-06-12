@@ -1,11 +1,11 @@
-#include "minisynth_voice.h"
+#include "subsynth_voice.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <iostream>
 
-MiniSynthVoice::MiniSynthVoice() {
+SubSynthVoice::SubSynthVoice() {
   // attach oscillators to base class
   m_osc1 = &m_op1;
   m_osc2 = &m_op2;
@@ -30,7 +30,7 @@ MiniSynthVoice::MiniSynthVoice() {
   m_dca.m_mod_source_eg = DEST_DCA_EG;
 }
 
-void MiniSynthVoice::InitializeModMatrix(ModulationMatrix *matrix) {
+void SubSynthVoice::InitializeModMatrix(ModulationMatrix *matrix) {
   Voice::InitializeModMatrix(matrix);
 
   std::shared_ptr<ModMatrixRow> row = NULL;
@@ -155,7 +155,7 @@ void MiniSynthVoice::InitializeModMatrix(ModulationMatrix *matrix) {
   matrix->AddMatrixRow(row);
 }
 
-void MiniSynthVoice::InitGlobalParameters(GlobalSynthParams *sp) {
+void SubSynthVoice::InitGlobalParameters(GlobalSynthParams *sp) {
   Voice::InitGlobalParameters(sp);
 
   m_global_voice_params->lfo1_osc_mod_intensity = 1.0;
@@ -181,12 +181,12 @@ void MiniSynthVoice::InitGlobalParameters(GlobalSynthParams *sp) {
   m_global_voice_params->eg2_dca_amp_mod_intensity = 1.0;
 }
 
-void MiniSynthVoice::PrepareForPlay() {
+void SubSynthVoice::PrepareForPlay() {
   Voice::PrepareForPlay();
   Reset();
 }
 
-void MiniSynthVoice::Update() {
+void SubSynthVoice::Update() {
   if (!m_global_voice_params) return;
 
   // save this as base class will override
@@ -243,7 +243,7 @@ void MiniSynthVoice::Update() {
   }
 }
 
-void MiniSynthVoice::Reset() {
+void SubSynthVoice::Reset() {
   Voice::Reset();
   m_portamento_inc = 0.0;
   m_osc1->m_waveform = SAW1;
@@ -252,7 +252,7 @@ void MiniSynthVoice::Reset() {
   m_osc1->m_waveform = NOISE;
 }
 
-bool MiniSynthVoice::DoVoice(double *left_output, double *right_output) {
+bool SubSynthVoice::DoVoice(double *left_output, double *right_output) {
   if (!Voice::DoVoice(left_output, right_output)) {
     return false;
   }
@@ -303,6 +303,6 @@ bool MiniSynthVoice::DoVoice(double *left_output, double *right_output) {
   return true;
 }
 
-void MiniSynthVoice::SetFilterMod(double mod) {
+void SubSynthVoice::SetFilterMod(double mod) {
   m_filter.SetFcMod(mod);
 }

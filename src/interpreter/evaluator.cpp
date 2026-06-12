@@ -611,12 +611,12 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
   std::shared_ptr<ast::SynthExpression> synth =
       std::dynamic_pointer_cast<ast::SynthExpression>(node);
   if (synth) {
-    if (synth->token_.type_ == token::SLANG_MOOG_SYNTH)
-      return std::make_shared<object::MoogSynth>();
+    if (synth->token_.type_ == token::SLANG_SUB_SYNTH)
+      return std::make_shared<object::SubSynth>();
     else if (synth->token_.type_ == token::SLANG_FM_SYNTH)
       return std::make_shared<object::FMSynth>();
-    else if (synth->token_.type_ == token::SLANG_SB_SYNTH)
-      return std::make_shared<object::SBSynth>();
+    else if (synth->token_.type_ == token::SLANG_WAV_SYNTH)
+      return std::make_shared<object::WavSynth>();
     else if (synth->token_.type_ == token::SLANG_DRUM_SYNTH)
       return std::make_shared<object::DrumSynth>();
   }
@@ -624,8 +624,8 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
   std::shared_ptr<ast::SynthPresetExpression> synth_preset =
       std::dynamic_pointer_cast<ast::SynthPresetExpression>(node);
   if (synth_preset) {
-    if (synth_preset->token_.type_ == token::SLANG_MOOG_SYNTH) {
-      GetSynthPresets(MINISYNTH_TYPE);
+    if (synth_preset->token_.type_ == token::SLANG_SUB_SYNTH) {
+      GetSynthPresets(SUBSYNTH_TYPE);
       std::cout << "NOOP - FIX ME?\n";
     } else if (synth_preset->token_.type_ == token::SLANG_FM_SYNTH) {
       GetSynthPresets(FMSYNTH_TYPE);
