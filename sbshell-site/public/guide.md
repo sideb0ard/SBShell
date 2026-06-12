@@ -520,6 +520,17 @@ set drums:sd_psat_en 1;           // Enable
 set drums:sd_psat_drive 4.47;     // Pre-gain before tanh (13dB=4.47, higher=more sat)
 set drums:sd_psat_blend 0.316;    // Wet blend level (-10dB=0.316, lower=subtler)
 
+// Hi-Hat / Open Hat (hh/oh share the same params, prefix with hh_ or oh_):
+// The oscillator bank runs through a BPF (body) then HPF (cut lows).
+// BPF resonance (midf_q) is the main tonal knob — higher = more metallic sizzle.
+set drums:hh_decay 10;       // Short = closed hat tight snap; try 150-400 for open hat feel
+set drums:hh_sqamp 0.5;      // Square bank amplitude
+set drums:hh_midf 8000;      // BPF centre (Hz) — shapes the metallic body frequency
+set drums:hh_midf_q 3;       // BPF resonance — 1=broad/airy, 5+=tight/metallic ping
+set drums:hh_hif 7000;       // HPF cutoff — raises this to thin out the hat
+set drums:oh_decay 200;      // Open hat — needs much longer decay than closed
+set drums:oh_midf_q 2;       // Open hat often benefits from slightly wider BPF
+
 // Hand Clap — four-voice layered clap (TR-808 style, cp):
 // Four noise voices fire in rapid succession. Voice 4 has a long decay
 // that creates a natural reverb-like tail, as in the original TR-808.

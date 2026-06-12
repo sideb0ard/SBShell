@@ -588,8 +588,8 @@ HiHat::HiHat() {
   // mid_filter_ = std::make_unique<FilterSem>();
   mid_filter_ = std::make_unique<MoogLadder>();
   mid_filter_->SetType(BPF2);
-  mid_filter_->SetFcControl(10000);
-  mid_filter_->SetQControlGUI(1);
+  mid_filter_->SetFcControl(8000);
+  mid_filter_->SetQControlGUI(3);
   mid_filter_->Update();
 
   high_filter_ = std::make_unique<FilterSem>();
@@ -602,9 +602,9 @@ HiHat::HiHat() {
   eg_.SetRampMode(true);
   eg_.m_reset_to_zero = true;
   eg_.SetEgMode(ANALOG);
-  eg_.SetAttackTimeMsec(20);
+  eg_.SetAttackTimeMsec(1);
   eg_.SetDecayTimeMsec(10);
-  eg_.SetSustainLevel(0.3);
+  eg_.SetSustainLevel(0.0);  // must be 0: ramp mode stalls at sustain floor
   eg_.SetReleaseTimeMsec(270);
   eg_.Update();
 

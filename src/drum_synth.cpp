@@ -189,6 +189,8 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.hh.sqamp = val;
   else if (name == "hh_midf")
     settings_.hh.midf = val;
+  else if (name == "hh_midf_q")
+    settings_.hh.midf_q = val;
   else if (name == "hh_hif")
     settings_.hh.hif = val;
   else if (name == "hh_hif_q")
@@ -224,6 +226,8 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.oh.sqamp = val;
   else if (name == "oh_midf")
     settings_.oh.midf = val;
+  else if (name == "oh_midf_q")
+    settings_.oh.midf_q = val;
   else if (name == "oh_hif")
     settings_.oh.hif = val;
   else if (name == "oh_hif_q")
@@ -564,8 +568,8 @@ std::string DrumSynth::Info() {
      << " hh_pan:" << settings_.hh.pan << " hh_attack:" << settings_.hh.attack
      << " hh_decay:" << settings_.hh.decay << std::endl;
   ss << "     hh_sqamp:" << settings_.hh.sqamp
-     << " hh_midf:" << settings_.hh.midf << " hh_hif:" << settings_.hh.hif
-     << " hh_hif_q:" << settings_.hh.hif_q
+     << " hh_midf:" << settings_.hh.midf << " hh_midf_q:" << settings_.hh.midf_q
+     << " hh_hif:" << settings_.hh.hif << " hh_hif_q:" << settings_.hh.hif_q
      << " hh_dist:" << settings_.hh.distortion_threshold << std::endl;
   ss << "     hh_delay_mode:" << settings_.hh.delay_mode
      << " hh_delay_ms:" << settings_.hh.delay_ms
@@ -578,8 +582,8 @@ std::string DrumSynth::Info() {
      << " oh_pan:" << settings_.oh.pan << " oh_attack:" << settings_.oh.attack
      << " oh_decay:" << settings_.oh.decay << std::endl;
   ss << "     oh_sqamp:" << settings_.oh.sqamp
-     << " oh_midf:" << settings_.oh.midf << " oh_hif:" << settings_.oh.hif
-     << " oh_hif_q:" << settings_.oh.hif_q
+     << " oh_midf:" << settings_.oh.midf << " oh_midf_q:" << settings_.oh.midf_q
+     << " oh_hif:" << settings_.oh.hif << " oh_hif_q:" << settings_.oh.hif_q
      << " oh_dist:" << settings_.oh.distortion_threshold << std::endl;
   ss << "     oh_delay_mode:" << settings_.oh.delay_mode
      << " oh_delay_ms:" << settings_.oh.delay_ms
@@ -929,6 +933,7 @@ void DrumSynth::Update() {
   hh_->eg_.SetDecayTimeMsec(settings_.hh.decay);
   hh_->SetAmplitude(settings_.hh.sqamp);
   hh_->mid_filter_->SetFcControl(settings_.hh.midf);
+  hh_->mid_filter_->SetQControlGUI(settings_.hh.midf_q);
   hh_->high_filter_->SetFcControl(settings_.hh.hif);
   hh_->high_filter_->SetQControlGUI(settings_.hh.hif_q);
   hh_->distortion_.SetParam("threshold", settings_.hh.distortion_threshold);
@@ -947,6 +952,7 @@ void DrumSynth::Update() {
   oh_->eg_.SetDecayTimeMsec(settings_.oh.decay);
   oh_->SetAmplitude(settings_.oh.sqamp);
   oh_->mid_filter_->SetFcControl(settings_.oh.midf);
+  oh_->mid_filter_->SetQControlGUI(settings_.oh.midf_q);
   oh_->high_filter_->SetFcControl(settings_.oh.hif);
   oh_->high_filter_->SetQControlGUI(settings_.oh.hif_q);
   oh_->distortion_.SetParam("threshold", settings_.oh.distortion_threshold);

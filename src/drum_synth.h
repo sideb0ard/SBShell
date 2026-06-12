@@ -114,10 +114,11 @@ struct HhSettings {
   double vol{1};
   double pan{0};
   double sqamp{0.5};
-  double attack{20};
+  double attack{1};
   double decay{10};
-  double midf{10000};
-  double hif{6000};
+  double midf{8000};
+  double midf_q{3};
+  double hif{7000};
   double hif_q{1};
   double distortion_threshold{0.5};
   bool use_delay{false};
@@ -131,7 +132,7 @@ struct HhSettings {
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-    HhSettings, vol, pan, sqamp, attack, decay, midf, hif, hif_q,
+    HhSettings, vol, pan, sqamp, attack, decay, midf, midf_q, hif, hif_q,
     distortion_threshold, use_delay, delay_mode, delay_ms, delay_feedback_pct,
     delay_ratio, delay_wetmix, delay_sync_tempo, delay_sync_len)
 

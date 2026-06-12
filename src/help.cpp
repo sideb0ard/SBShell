@@ -180,6 +180,14 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  set d:sd_psat_en 1                   " << COOL_COLOR_ORANGE << "- Enable parallel tanh saturation\n";
   ss << ANSI_COLOR_WHITE << "  set d:sd_psat_drive 4.47             " << COOL_COLOR_ORANGE << "- Saturation pre-gain (linear, 13dB=4.47)\n";
   ss << ANSI_COLOR_WHITE << "  set d:sd_psat_blend 0.316            " << COOL_COLOR_ORANGE << "- Saturation wet blend (linear, -10dB=0.316)\n";
+  ss << COOL_COLOR_GREEN << "  Hi-Hat / Open Hat (hh/oh) — shared params, replace hh_ with oh_ for open hat:\n";
+  ss << ANSI_COLOR_WHITE << "  set d:hh_attack 1                    " << COOL_COLOR_ORANGE << "- Attack (ms, default 1)\n";
+  ss << ANSI_COLOR_WHITE << "  set d:hh_decay 10                    " << COOL_COLOR_ORANGE << "- Decay (ms — short=closed, long=open)\n";
+  ss << ANSI_COLOR_WHITE << "  set d:hh_sqamp 0.5                   " << COOL_COLOR_ORANGE << "- Square oscillator bank amplitude\n";
+  ss << ANSI_COLOR_WHITE << "  set d:hh_midf 8000                   " << COOL_COLOR_ORANGE << "- BPF centre frequency (Hz, shapes metallic body)\n";
+  ss << ANSI_COLOR_WHITE << "  set d:hh_midf_q 3                    " << COOL_COLOR_ORANGE << "- BPF resonance (higher=more metallic sizzle, 1-10)\n";
+  ss << ANSI_COLOR_WHITE << "  set d:hh_hif 7000                    " << COOL_COLOR_ORANGE << "- HPF cutoff (Hz, cuts low body)\n";
+  ss << ANSI_COLOR_WHITE << "  set d:hh_hif_q 1                     " << COOL_COLOR_ORANGE << "- HPF resonance\n";
   ss << COOL_COLOR_GREEN << "  Hand Clap — four-voice layered clap (TR-808 style, cp):\n";
   ss << ANSI_COLOR_WHITE << "  set d:cp_v2_delay 12                 " << COOL_COLOR_ORANGE << "- Voice 2 trigger delay (ms, default 12)\n";
   ss << ANSI_COLOR_WHITE << "  set d:cp_v2_vol 0.7                  " << COOL_COLOR_ORANGE << "- Voice 2 volume (0-1, default 0.7)\n";
