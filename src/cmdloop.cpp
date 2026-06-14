@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <synth_cmds.h>
+#include <sys/ioctl.h>
 #include <sys/select.h>
+#include <unistd.h>
 #include <utils.h>
 
 #include <algorithm>
@@ -263,12 +265,14 @@ int event_hook() {
           }
         }
       } else {
-        // In-place display messages end with \r (current line) or ESC-8
-        // (save/restore cursor for row= positioning) — skip readline redraw
+        // In-place display messages end with \r, ESC-8 (DEC restore cursor),
+        // or ESC-[-u (ANSI restore cursor) — skip readline redraw for these.
         bool is_inplace = !msg.empty() &&
                           (msg.back() == '\r' ||
                            (msg.size() >= 2 && msg[msg.size() - 2] == '\033' &&
-                            msg.back() == '8'));
+                            msg.back() == '8') ||
+                           (msg.size() >= 3 && msg[msg.size() - 3] == '\033' &&
+                            msg[msg.size() - 2] == '[' && msg.back() == 'u'));
         if (is_inplace) {
           std::cout << msg << std::flush;
         } else {
@@ -292,10 +296,23 @@ static std::string expand_history_path() {
 }
 
 void *loopy() {
-  // Reserve row 1 for the fixed timing header — print a blank line first so
-  // the logo and all subsequent output start on row 2+.
-  std::cout << "\n";
   std::cout << get_string_logo();
+
+  // Reserve the bottom row as a fixed status bar.  We save the cursor, set
+  // the scroll region (DECSTBM may reset the cursor to row 1 on some
+  // terminals), then restore the cursor so readline starts right below the
+  // logo rather than jumping to the bottom of the screen.
+  // term_rows_ is written here once; EmitTimingDisplay just reads it.
+  {
+    struct winsize ws = {};
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 1) {
+      int rows = static_cast<int>(ws.ws_row);
+      global_mixr->term_rows_ = rows;
+      printf("\033[s\033[1;%dr\033[u", rows - 1);
+      fflush(stdout);
+    }
+  }
+
   std::string history_path = expand_history_path();
   read_history(history_path.c_str());
   int history_base_len = history_length;  // entries loaded from disk
@@ -348,6 +365,10 @@ void *loopy() {
       eval_command_queue.push(strip_line_comment(current_line));
     }
   }
+
+  // Reset scroll region before exiting so the terminal is clean
+  printf("\033[r\033[?25h");
+  fflush(stdout);
 
   printf(COOL_COLOR_PINK
          "\nBeat it, ya val jerk!\n" ANSI_COLOR_RESET);  // Thrashin'

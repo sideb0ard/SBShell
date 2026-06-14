@@ -156,6 +156,7 @@ struct Mixer {
   bool midi_loop_{false};
   bool midi_print = {false};
   int record_bars_{1};
+  int term_rows_{0};  // cached terminal height for status bar placement
   std::unordered_map<int, int>
       pending_note_ons_;  // note -> abs pos in multi-bar buffer
   std::unordered_map<int, std::string> midi_mapped_controls_ = {};

@@ -1626,31 +1626,70 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)
              -> std::shared_ptr<object::Object> {
-           auto at_obj = std::find_if(args.begin(), args.end(),
-                                      [](std::shared_ptr<object::Object> o) {
-                                        return o->Type() == object::AT_OBJ;
-                                      });
+           // Find optional @ delay
            int delayed_by{0};
-           if (at_obj != args.end()) {
-             auto at = std::dynamic_pointer_cast<object::At>(*at_obj);
-             if (at) {
-               delayed_by = at->value_;
-               int dif_til_next_loop = (3840 - delayed_by) % 3840;
-               auto action =
-                   std::make_unique<AudioActionItem>(AudioAction::UNSOLO);
-               action->delayed_by = delayed_by + dif_til_next_loop;
-               audio_queue.push(std::move(action));
+           for (auto& a : args) {
+             if (a->Type() == object::AT_OBJ) {
+               auto at = std::dynamic_pointer_cast<object::At>(a);
+               if (at) delayed_by = at->value_;
+               break;
              }
            }
-           for (size_t i = 0; i < args.size(); i++) {
-             auto soundgen =
-                 std::dynamic_pointer_cast<object::SoundGenerator>(args[i]);
-             if (soundgen) {
-               auto action =
-                   std::make_unique<AudioActionItem>(AudioAction::SOLO);
-               action->soundgen_num = soundgen->soundgen_id_;
-               action->delayed_by = delayed_by;
-               audio_queue.push(std::move(action));
+
+           // Find optional dur=N (bars) — DURATION_OBJ from "dur=N" syntax
+           int unsolo_after_ticks{-1};
+           for (auto& a : args) {
+             if (a->Type() == object::DURATION_OBJ) {
+               auto dur = std::dynamic_pointer_cast<object::Duration>(a);
+               if (dur && dur->value_ > 0)
+                 unsolo_after_ticks = static_cast<int>(dur->value_);
+               break;
+             }
+           }
+
+           // Schedule UNSOLO: after explicit duration, or at next loop start.
+           // We read the current absolute midi tick so the "next bar" calc
+           // accounts for where we actually are in the bar right now.
+           {
+             auto unsolo =
+                 std::make_unique<AudioActionItem>(AudioAction::UNSOLO);
+             if (unsolo_after_ticks >= 0) {
+               unsolo->delayed_by = delayed_by + unsolo_after_ticks;
+             } else {
+               // Compute ticks from the solo-start position to the next bar
+               // boundary.  Never returns 0 so delayed_by is always > 0.
+               int cur = global_mixr->midi_tick_.load();
+               int pos_at_solo_start = (cur + delayed_by) % PPBAR;
+               int ticks_to_bar = (pos_at_solo_start == 0)
+                                      ? PPBAR
+                                      : (PPBAR - pos_at_solo_start);
+               unsolo->delayed_by = delayed_by + ticks_to_bar;
+             }
+             audio_queue.push(std::move(unsolo));
+           }
+
+           // Helper: push a SOLO action for one soundgen id
+           auto solo_one = [&](int id) {
+             auto action = std::make_unique<AudioActionItem>(AudioAction::SOLO);
+             action->soundgen_num = id;
+             action->delayed_by = delayed_by;
+             audio_queue.push(std::move(action));
+           };
+
+           // Accept individual SoundGenerators and/or arrays of them
+           for (auto& a : args) {
+             auto sg = std::dynamic_pointer_cast<object::SoundGenerator>(a);
+             if (sg) {
+               solo_one(sg->soundgen_id_);
+               continue;
+             }
+             auto arr = std::dynamic_pointer_cast<object::Array>(a);
+             if (arr) {
+               for (auto& elem : arr->elements_) {
+                 auto esg =
+                     std::dynamic_pointer_cast<object::SoundGenerator>(elem);
+                 if (esg) solo_one(esg->soundgen_id_);
+               }
              }
            }
            return evaluator::NULLL;

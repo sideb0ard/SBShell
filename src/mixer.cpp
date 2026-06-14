@@ -1105,10 +1105,9 @@ void Mixer::EmitTimingDisplay() {
 
   // ── Measure visible widths (terminal columns, not UTF-8 bytes) ──────────
   // Total line width is fixed at 80 cols:
-  //   ":: soundb0ard" = 13 cols  |  timing (right-aligned)  |  "  ::" = 4 cols
-  // padding = 80 - 13 - 4 - timing_visible = 63 - timing_visible
+  //   left colon-fill  |  timing (right-aligned)  |  "  ::" = 4 cols
+  // left_fill = 80 - 4 - timing_visible
   constexpr int kLineWidth = 80;
-  constexpr int kLeftWidth = 13;  // ":: soundb0ard"
   constexpr int kRightWidth = 4;  // "  ::"
 
   char bpm_buf[16];
@@ -1131,19 +1130,21 @@ void Mixer::EmitTimingDisplay() {
   if (midi_recording) timing_vis += 5;  // " ⏺REC"  → 1+1+3 = 5 cols
   if (midi_loop_) timing_vis += 6;      // " ▶LOOP" → 1+1+4 = 6 cols
 
-  int padding = kLineWidth - kLeftWidth - kRightWidth - timing_vis;
-  if (padding < 1) padding = 1;
+  int left_fill = kLineWidth - kRightWidth - timing_vis;
+  if (left_fill < 1) left_fill = 1;
+
+  // term_rows_ is set once at startup by cmdloop; we just read it here.
+  int status_row = (term_rows_ > 1) ? term_rows_ : 24;
 
   // ── Build output ─────────────────────────────────────────────────────────
   std::stringstream ss;
-  ss << "\0337\033[1;1H";  // save cursor → absolute row 1 col 1
+  ss << "\033[s"                         // save cursor position only
+     << "\033[" << status_row << ";1H";  // move to fixed bottom row
 
-  // Left: ":: soundb0ard" (green :: , magenta label)
-  ss << COOL_COLOR_GREEN << "::" << ANSI_COLOR_RESET << " "
-     << ANSI_COLOR_MAGENTA << "soundb0ard" << ANSI_COLOR_RESET;
-
-  // Padding pushes timing to the right
-  ss << std::string(padding, ' ');
+  // Left: colon-fill up to the BPM field (dim green)
+  ss << COOL_COLOR_GREEN;
+  for (int i = 0; i < left_fill; i++) ss << ':';
+  ss << ANSI_COLOR_RESET;
 
   // BPM (blue)
   ss << COOL_COLOR_BLUE << bpm_buf << " BPM" << ANSI_COLOR_RESET << "  ";
@@ -1167,8 +1168,8 @@ void Mixer::EmitTimingDisplay() {
   if (midi_recording) ss << ANSI_COLOR_RED << " ⏺REC" << ANSI_COLOR_RESET;
   if (midi_loop_) ss << COOL_COLOR_GREEN << " ▶LOOP" << ANSI_COLOR_RESET;
 
-  // Right: "  ::" then clear to EOL and restore cursor
-  ss << "  " << COOL_COLOR_GREEN << "::" << ANSI_COLOR_RESET << "\033[K\0338";
+  // Right: "  ::" then clear to EOL and restore cursor (position only)
+  ss << "  " << COOL_COLOR_GREEN << "::" << ANSI_COLOR_RESET << "\033[K\033[u";
 
   repl_queue.push(ss.str());
 }
