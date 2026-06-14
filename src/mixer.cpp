@@ -487,8 +487,13 @@ void Mixer::MidiTick() {
   CheckForAudioActionQueueMessages();
   CheckForExternalMidiEvents();
 
+  if (midi_loop_ && !midi_recording) {
+    PlaybackMidiLoopTick();
+  }
+
   midi_tick_ = timing_info.midi_tick;
   repl_queue.push("tick:" + std::to_string(timing_info.midi_tick));
+  if (timing_info.is_sixteenth) EmitTimingDisplay();
   EmitEvent((broadcast_event){.type = TIME_MIDI_TICK, .sequencer_src = 0});
   // lo_send(processing_addr, "/bpm", NULL);
   CheckForDelayedEvents();
@@ -945,7 +950,16 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
 }
 
 void Mixer::ResetMidiRecording() {
-  recording_buffer_.fill({});
+  recording_buffer_.assign(record_bars_, MultiEventMidiPattern{});
+  pending_note_ons_.clear();
+}
+
+void Mixer::SetRecordBars(int bars) {
+  if (bars < 1) bars = 1;
+  if (bars > 32) bars = 32;
+  record_bars_ = bars;
+  ResetMidiRecording();
+  repl_queue.push("MIDI record bars: " + std::to_string(bars) + "\n");
 }
 
 void Mixer::AssignSoundGeneratorToMidiController(int soundgen_id) {
@@ -957,10 +971,31 @@ void Mixer::AssignSoundGeneratorToMidiController(int soundgen_id) {
 }
 
 void Mixer::RecordMidiToggle() {
-  if (midi_recording && IsValidSoundgenNum(midi_target)) {
-    sound_generators_[midi_target]->AllNotesOff();
+  if (midi_recording) {
+    if (IsValidSoundgenNum(midi_target))
+      sound_generators_[midi_target]->AllNotesOff();
+    pending_note_ons_.clear();
+    repl_queue.push("MIDI REC off\n");
+  } else {
+    repl_queue.push("MIDI REC on\n");
   }
-  midi_recording = 1 - midi_recording;
+  midi_recording = !midi_recording;
+}
+
+void Mixer::MidiLoopToggle() {
+  midi_loop_ = !midi_loop_;
+  if (!midi_loop_ && IsValidSoundgenNum(midi_target))
+    sound_generators_[midi_target]->AllNotesOff();
+  repl_queue.push(midi_loop_ ? "MIDI LOOP on\n" : "MIDI LOOP off\n");
+}
+
+void Mixer::MidiStop() {
+  midi_recording = false;
+  midi_loop_ = false;
+  pending_note_ons_.clear();
+  if (IsValidSoundgenNum(midi_target))
+    sound_generators_[midi_target]->AllNotesOff();
+  repl_queue.push("MIDI stop\n");
 }
 
 void Mixer::PrintMidiToggle() {
@@ -981,11 +1016,15 @@ void Mixer::HandleMidiControlMessage(int data1, int data2) {
 void Mixer::CheckForExternalMidiEvents() {
   if (!have_midi_controller) return;
 
-  auto tic = timing_info.midi_tick % PPBAR;
+  int total_ticks = record_bars_ * PPBAR;
+  int pos =
+      timing_info.midi_tick % total_ticks;  // position in multi-bar buffer
+  int cur_bar = pos / PPBAR;
+  int tic = pos % PPBAR;
 
   PmEvent msg[32];
-  if (Pm_Poll(global_mixr->midi_stream)) {
-    int cnt = Pm_Read(global_mixr->midi_stream, msg, 32);
+  if (Pm_Poll(midi_stream)) {
+    int cnt = Pm_Read(midi_stream, msg, 32);
     for (int i = 0; i < cnt; i++) {
       int status = Pm_MessageStatus(msg[i].message);
       int data1 = Pm_MessageData1(msg[i].message);
@@ -995,31 +1034,157 @@ void Mixer::CheckForExternalMidiEvents() {
       ev.original_tick = timing_info.midi_tick;
 
       if (midi_recording) {
-        recording_buffer_[tic].push_back(ev);
+        if (status == MIDI_ON) {
+          pending_note_ons_[data1] = pos;  // absolute position in multi-bar
+          recording_buffer_[cur_bar][tic].push_back(ev);
+        } else if (status == MIDI_OFF) {
+          auto it = pending_note_ons_.find(data1);
+          if (it != pending_note_ons_.end()) {
+            int on_pos = it->second;
+            int on_bar = on_pos / PPBAR;
+            int on_tic = on_pos % PPBAR;
+            int dur = (pos - on_pos + total_ticks) % total_ticks;
+            if (dur == 0) dur = 1;
+            for (auto &recorded_ev : recording_buffer_[on_bar][on_tic]) {
+              if (recorded_ev.event_type == MIDI_ON &&
+                  recorded_ev.data1 == data1) {
+                recorded_ev.dur = dur;
+                break;
+              }
+            }
+            pending_note_ons_.erase(it);
+          }
+          // MIDI_OFF not stored; reconstructed from dur on playback
+        }
       }
+
       if (midi_print) {
         std::cout << (timing_info.sixteenth_note_tick % 16) << " - MIDI -- "
                   << status << " " << data1 << " " << data2 << std::endl;
       }
 
-      // TODO - THESE SHOULD BE SHARED WITH MIDI MESSAGE PARSING
-      if (status == MIDI_ON || status == MIDI_OFF) {
-        sound_generators_[midi_target]->ParseMidiEvent(ev, timing_info);
-      }
-
-      if (status == MIDI_CONTROL) {
-        HandleMidiControlMessage(data1, data2);
+      // Live routing to synth (always, regardless of record state)
+      if (IsValidSoundgenNum(midi_target)) {
+        if (status == MIDI_ON || status == MIDI_OFF) {
+          sound_generators_[midi_target]->ParseMidiEvent(ev, timing_info);
+        } else if (status == MIDI_CONTROL) {
+          HandleMidiControlMessage(data1, data2);
+        }
       }
     }
   }
-  if (midi_recording) {
-    for (auto e : recording_buffer_[tic]) {
-      if (e.event_type == MIDI_CONTROL) {
-        HandleMidiControlMessage(e.data1, e.data2);
-      } else {
-        sound_generators_[midi_target]->ParseMidiEvent(e, timing_info);
+}
+
+void Mixer::PlaybackMidiLoopTick() {
+  if (!IsValidSoundgenNum(midi_target)) return;
+  int pos = timing_info.midi_tick % (record_bars_ * PPBAR);
+  int cur_bar = pos / PPBAR;
+  int tic = pos % PPBAR;
+  auto &sg = sound_generators_[midi_target];
+  for (const auto &ev : recording_buffer_[cur_bar][tic]) {
+    if (ev.event_type == MIDI_ON || ev.event_type == MIDI_OFF) {
+      sg->ParseMidiEvent(ev, timing_info);
+      if (ev.event_type == MIDI_ON && ev.dur > 0) {
+        auto note_off = new_midi_event(MIDI_OFF, ev.data1, 0);
+        auto action =
+            std::make_unique<AudioActionItem>(AudioAction::RECORDED_MIDI_EVENT);
+        action->event = note_off;
+        action->mixer_soundgen_idx = midi_target;
+        action->start_at = timing_info.midi_tick + ev.dur;
+        delayed_action_items_.push_back(std::move(action));
       }
     }
+  }
+}
+
+void Mixer::EmitTimingDisplay() {
+  int step = timing_info.sixteenth_note_tick % 16;        // 0..15 within bar
+  int beat = (timing_info.midi_tick % PPBAR) / PPQN + 1;  // 1..4
+  int sub = (step % 4) + 1;  // 1..4 sixteenth within beat
+  int cur_bar = (timing_info.midi_tick % (record_bars_ * PPBAR)) / PPBAR + 1;
+
+  // ── Measure visible widths (terminal columns, not UTF-8 bytes) ──────────
+  // Total line width is fixed at 80 cols:
+  //   ":: soundb0ard" = 13 cols  |  timing (right-aligned)  |  "  ::" = 4 cols
+  // padding = 80 - 13 - 4 - timing_visible = 63 - timing_visible
+  constexpr int kLineWidth = 80;
+  constexpr int kLeftWidth = 13;  // ":: soundb0ard"
+  constexpr int kRightWidth = 4;  // "  ::"
+
+  char bpm_buf[16];
+  snprintf(bpm_buf, sizeof(bpm_buf), "%.1f",
+           static_cast<double>(timing_info.bpm));
+
+  // Position string (all ASCII, so size() == visible cols)
+  std::string pos_str;
+  if (record_bars_ > 1)
+    pos_str =
+        std::to_string(cur_bar) + "/" + std::to_string(record_bars_) + " ";
+  pos_str += std::to_string(beat) + "." + std::to_string(sub);
+
+  // "140.0 BPM  2.3  [################]" — block chars are 1 terminal col each
+  int timing_vis = (int)strlen(bpm_buf) + 4  // "140.0 BPM"
+                   + 2                       // "  "
+                   + (int)pos_str.size()     // "2.3" or "2/4 3.2"
+                   + 3 + 16 + 1;             // "  [" + 16 steps + "]"
+  // ⏺ (U+23FA) and ▶ (U+25B6) are each 3 UTF-8 bytes but 1 terminal col
+  if (midi_recording) timing_vis += 5;  // " ⏺REC"  → 1+1+3 = 5 cols
+  if (midi_loop_) timing_vis += 6;      // " ▶LOOP" → 1+1+4 = 6 cols
+
+  int padding = kLineWidth - kLeftWidth - kRightWidth - timing_vis;
+  if (padding < 1) padding = 1;
+
+  // ── Build output ─────────────────────────────────────────────────────────
+  std::stringstream ss;
+  ss << "\0337\033[1;1H";  // save cursor → absolute row 1 col 1
+
+  // Left: ":: soundb0ard" (green :: , magenta label)
+  ss << COOL_COLOR_GREEN << "::" << ANSI_COLOR_RESET << " "
+     << ANSI_COLOR_MAGENTA << "soundb0ard" << ANSI_COLOR_RESET;
+
+  // Padding pushes timing to the right
+  ss << std::string(padding, ' ');
+
+  // BPM (blue)
+  ss << COOL_COLOR_BLUE << bpm_buf << " BPM" << ANSI_COLOR_RESET << "  ";
+
+  // Position (cyan)
+  ss << ANSI_COLOR_CYAN << pos_str << ANSI_COLOR_RESET << "  ";
+
+  // 16-step bar progress
+  ss << "[";
+  for (int i = 0; i < 16; i++) {
+    if (i < step)
+      ss << COOL_COLOR_GREEN << "█";
+    else if (i == step)
+      ss << COOL_COLOR_YELLOW << "▌";
+    else
+      ss << ANSI_COLOR_WHITE << "░";
+  }
+  ss << ANSI_COLOR_RESET << "]";
+
+  // Transport status
+  if (midi_recording) ss << ANSI_COLOR_RED << " ⏺REC" << ANSI_COLOR_RESET;
+  if (midi_loop_) ss << COOL_COLOR_GREEN << " ▶LOOP" << ANSI_COLOR_RESET;
+
+  // Right: "  ::" then clear to EOL and restore cursor
+  ss << "  " << COOL_COLOR_GREEN << "::" << ANSI_COLOR_RESET << "\033[K\0338";
+
+  repl_queue.push(ss.str());
+}
+
+void Mixer::QuantizeMidiRecording(int subdivisions) {
+  int grid = PPBAR / subdivisions;
+  if (grid <= 0) return;
+  for (auto &bar : recording_buffer_) {
+    MultiEventMidiPattern quantized{};
+    for (int i = 0; i < PPBAR; i++) {
+      for (auto &ev : bar[i]) {
+        int q_tick = ((i + grid / 2) / grid) * grid % PPBAR;
+        quantized[q_tick].push_back(ev);
+      }
+    }
+    bar = quantized;
   }
 }
 
@@ -1091,7 +1256,10 @@ void Mixer::CheckForDelayedEvents() {
 }
 
 void Mixer::PrintRecordingBuffer() {
-  PrintMultiMidi(recording_buffer_);
+  for (int b = 0; b < record_bars_; b++) {
+    std::cout << "--- bar " << (b + 1) << " ---\n";
+    PrintMultiMidi(recording_buffer_[b]);
+  }
 }
 void Mixer::AddMidiMapping(int id, std::string param) {
   midi_mapped_controls_[id] = param;

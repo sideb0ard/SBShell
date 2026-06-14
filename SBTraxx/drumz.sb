@@ -4,6 +4,7 @@ let init = fn()
 {
   wavv = wavsynth();
   add_buf(wavv, "notes/stabbY.aiff");
+  load_preset(dx, "simplePiano");
 }
 
 let dbblah_comp = comp()
@@ -47,7 +48,7 @@ let dbblah_comp = comp()
   }
 }
 
-let dxblah_comp = comp()
+let wavblah_comp = comp()
 {
   setup()
   {
@@ -68,6 +69,41 @@ let dxblah_comp = comp()
         drx = incr(drx, 0, len(durz));
       }
     }
+  }
+}
 
+let key = 44;
+let key_mod = 1;
+let chord_mod = 5;
+
+let dxblah_comp = comp()
+{
+  setup()
+  {
+    let mel1 =  [0, 0, 0, 1,  1, 0, 0, 1,  0, 1, 1, 0,  0, 0, 0, 0];
+    let mel2 = [1, 0, 1, 0,  0, 1, 0, 0,  0, 1, 0, 0,  1, 0, 0, 1];
+    let chrdz = [ 44, 47 ];
+    let chx = 0;
+    let durz = [50, 100, 200, 80, 510];
+    let drx = 0;
+  }
+  run()
+  {
+    if (count % 6 < 4) {
+      let mel = mel1;
+      if (count % 2 == 0) {
+        let chord = notes_in_chord(chrdz[0], key, chord_mod, key_mod);
+      } else {
+        mel = mel2;
+        let chord = notes_in_chord(chrdz[1], key, chord_mod, key_mod);
+      }
+
+      for (let i = 0; i < 16; i++) {
+        if (mel[i] == 1) {
+          note_on_at(dx, chord, i * pp, dur = durz[drx]);
+          drx = incr(drx, 0, len(durz));
+        }
+      }
+    }
   }
 }

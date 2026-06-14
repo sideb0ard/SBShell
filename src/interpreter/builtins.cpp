@@ -3166,6 +3166,44 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            global_mixr->ResetMidiRecording();
            return evaluator::NULLL;
          })},
+    {"midi_stop",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           (void)args;
+           global_mixr->MidiStop();
+           return evaluator::NULLL;
+         })},
+    {"midi_bars",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (!args.empty()) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[0]);
+             if (num) global_mixr->SetRecordBars(static_cast<int>(num->value_));
+           }
+           return evaluator::NULLL;
+         })},
+    {"midi_loop",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           (void)args;
+           global_mixr->MidiLoopToggle();
+           return evaluator::NULLL;
+         })},
+    {"midi_quantize",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           int subdivisions = 16;
+           if (!args.empty()) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[0]);
+             if (num) subdivisions = static_cast<int>(num->value_);
+           }
+           global_mixr->QuantizeMidiRecording(subdivisions);
+           return evaluator::NULLL;
+         })},
     {"midi_dump",
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)

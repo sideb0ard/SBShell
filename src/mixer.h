@@ -10,6 +10,7 @@
 #include <array>
 #include <chrono>
 #include <shared_mutex>
+#include <unordered_map>
 
 // Forward declarations to avoid namespace issues
 namespace ableton {
@@ -152,7 +153,11 @@ struct Mixer {
   int midi_target;
   // std::vector<int> midi_targets{};  // sound_generators_ idx
   bool midi_recording = {false};
+  bool midi_loop_{false};
   bool midi_print = {false};
+  int record_bars_{1};
+  std::unordered_map<int, int>
+      pending_note_ons_;  // note -> abs pos in multi-bar buffer
   std::unordered_map<int, std::string> midi_mapped_controls_ = {};
 
   WebsocketServer *websocket_server_{nullptr};
@@ -164,8 +169,14 @@ struct Mixer {
 
   void AssignSoundGeneratorToMidiController(int soundgen_id);
   void RecordMidiToggle();
+  void MidiLoopToggle();
+  void MidiStop();
   void PrintMidiToggle();
   void ResetMidiRecording();
+  void SetRecordBars(int bars);
+  void PlaybackMidiLoopTick();
+  void QuantizeMidiRecording(int subdivisions = 16);
+  void EmitTimingDisplay();
 
   void CheckForDelayedEvents();
   void CheckForExternalMidiEvents();
@@ -181,10 +192,11 @@ struct Mixer {
   std::string StatusSgz(bool all);
 
   void PrintRecordingBuffer();
+  // Returns bar 0 for backwards-compat with midi_dump / MidiArray
   const MultiEventMidiPattern &RecordingBuffer() const {
-    return recording_buffer_;
+    return recording_buffer_[0];
   }
-  MultiEventMidiPattern recording_buffer_;
+  std::vector<MultiEventMidiPattern> recording_buffer_{1};  // record_bars_ bars
 
   void UpdateBpm(int bpm);
   void UpdateTimeUnit(unsigned int time_type, int val);

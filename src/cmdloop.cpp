@@ -56,6 +56,42 @@ static std::string strip_line_comment(const std::string &line) {
   return line;
 }
 static bool active{true};
+
+// Transport key handlers — only fire when the input line is empty so they
+// don't interfere with normal typing.
+static int transport_space(int count, int key) {
+  bool transport_active =
+      global_mixr->midi_loop_ || global_mixr->midi_recording;
+  if (rl_end == 0 && transport_active) {
+    eval_command_queue.push("midi_rec()");
+    return 0;
+  }
+  return rl_insert(count, key);
+}
+
+static int transport_backtick(int count, int key) {
+  (void)count;
+  (void)key;
+  bool transport_active =
+      global_mixr->midi_loop_ || global_mixr->midi_recording;
+  if (rl_end == 0 && transport_active) {
+    eval_command_queue.push("midi_stop()");
+    return 0;
+  }
+  return rl_insert(count, '`');
+}
+
+static int transport_escape(int count, int key) {
+  (void)count;
+  (void)key;
+  bool transport_active =
+      global_mixr->midi_loop_ || global_mixr->midi_recording;
+  if (transport_active) {
+    eval_command_queue.push("midi_stop()");
+    return 0;
+  }
+  return 0;  // no-op when not in transport mode
+}
 constexpr int kFileCheckInterval = 960;  // Check once per beat (PPQN)
 
 // ---------------------------------------------------------------------------
@@ -81,6 +117,9 @@ static const char *kCompletionWords[] = {
     // Pattern / music helpers
     "eval_pattern(", "print_pattern(", "notes_in_chord(", "notes_in_key(",
     "print_notes(",
+    // MIDI
+    "midi_rec()", "midi_loop()", "midi_stop()", "midi_reset()", "midi_dump()",
+    "midi_quantize(", "midi_bars(", "midi_print()",
     // Misc builtins
     "bpm(", "monitor(", "ls", "ps", "kit()", "drum_kit()", "midi_ref()",
     "lowercase(", "uppercase(", nullptr};
@@ -253,6 +292,9 @@ static std::string expand_history_path() {
 }
 
 void *loopy() {
+  // Reserve row 1 for the fixed timing header — print a blank line first so
+  // the logo and all subsequent output start on row 2+.
+  std::cout << "\n";
   std::cout << get_string_logo();
   std::string history_path = expand_history_path();
   read_history(history_path.c_str());
@@ -263,6 +305,9 @@ void *loopy() {
   rl_event_hook = event_hook;
   rl_attempted_completion_function = sb_completion;
   rl_set_keyboard_input_timeout(500);
+  rl_bind_key(' ', transport_space);
+  rl_bind_key('`', transport_backtick);
+  rl_bind_key('\033', transport_escape);
 
   while (true) {
     std::unique_ptr<char, void (*)(void *)> line(readline(prompt), free);
