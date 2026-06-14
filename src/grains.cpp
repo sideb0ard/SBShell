@@ -6,7 +6,11 @@
 
 namespace {
 void check_idx(int *index, int buffer_len) {
-  while (*index < 0.0) *index += buffer_len;
+  if (buffer_len <= 0) {
+    *index = 0;
+    return;
+  }
+  while (*index < 0) *index += buffer_len;
   while (*index >= buffer_len) *index -= buffer_len;
 }
 }  // namespace
@@ -31,6 +35,7 @@ void SoundGrainSample::Initialize(SoundGrainParams params) {
   grain_len_frames = params.dur_frames;
   envelope_shape = params.envelope_shape;
   overlap_fraction = params.overlap_fraction;
+  channel_mask = params.channel_mask;
   audiobuffer_cur_pos = params.starting_idx;
   if (reverse_mode) {
     audiobuffer_cur_pos =
@@ -101,6 +106,11 @@ StereoVal SoundGrainSample::Generate() {
     out.left *= env;
     out.right *= env;
   }
+
+  if (channel_mask == 1)
+    out.right = 0.0;
+  else if (channel_mask == 2)
+    out.left = 0.0;
 
   return out;
 }

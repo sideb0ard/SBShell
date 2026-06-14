@@ -459,6 +459,31 @@ let fx_comp = comp()
 }
 ```
 
+#### Multi-buffer shhh mode
+
+Load multiple source buffers into a looper and use the shhh algorithm to select L/R sources independently per grain based on RMS loudness — inspired by Nirror's Max for Live device.
+
+```javascript
+let lp = loop(dloops/techNOBe.wav);
+add_buf(lp, "dloops/steveMUR.wav");   // add a second source buffer
+set lp:shhh 1;                        // enable: quietest source to both L+R
+```
+
+**shhh modes:**
+- `0` — off (default): normal stereo playback from buffer 0
+- `1` — **quietest-both**: always pick the quieter source for both channels
+- `2` — **loudest-both**: always pick the louder source for both channels
+- `3` — **quietest-L / loudest-R**: splits the stereo field by loudness
+- `4` — **loudest-L / quietest-R**: inverted split
+
+```javascript
+set lp:shhh 3;              // quiet source left, loud source right
+set lp:shhh_window_ms 80;   // RMS window for comparison in ms (0 = grain duration)
+set lp:shhh 0;              // disable, back to normal
+```
+
+You can load up to 8 source buffers. shhh picks one source per channel on each grain launch. The primary buffer (index 0) drives all loop timing and rhythmic FX regardless of shhh mode.
+
 #### Granulate FX — live granular processing
 
 Route any sound generator through the same grain engine as `loop()` using `add_fx`:

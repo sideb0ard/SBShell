@@ -4,6 +4,7 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 
 #include "envelope_generator.h"
 #include "granular_engine.h"
@@ -36,7 +37,10 @@ class GranularLooper : public SoundGenerator {
  public:
   bool started_{false};
 
-  std::unique_ptr<FileBuffer> file_buffer_;
+  // Multiple source buffers: index 0 is primary (drives loop timing/patterns).
+  // Additional buffers are used by shhh mode for cross-source selection.
+  std::vector<std::unique_ptr<FileBuffer>> file_buffers_;
+
   SoundGrainType grain_type_{SoundGrainType::Sample};
 
   GranularEngine engine_;
@@ -51,8 +55,13 @@ class GranularLooper : public SoundGenerator {
   int stop_countr_{0};
 
   bool stop_pending_{false};  // allow eg to stop
-  int degrade_by_{0};         // percent change to drop bits
-                              //
+  int degrade_by_{0};
+
+  // shhh mode: per-grain cross-source selection based on RMS loudness.
+  // 0=off, 1=quietest-both, 2=loudest-both, 3=quietest-L/loudest-R,
+  // 4=loudest-L/quietest-R
+  int shhh_mode_{0};
+  int shhh_window_frames_{0};  // 0 = use grain_duration_frames
 
  public:
   void SetPitch(double pitch_ratio);
@@ -89,6 +98,12 @@ class GranularLooper : public SoundGenerator {
   void SetPOffset(int poffset);
   void SetPlooplen(int plooplen);
   void SetPinc(int pinc);
+
+ private:
+  // shhh helpers — only used when file_buffers_.size() > 1 and shhh_mode_ > 0
+  FileBuffer* SelectShhhBuffer(bool want_loudest);
+  static double ComputeBufferRMS(const std::vector<double>* buf, int num_ch,
+                                 int start_idx, int window_frames);
 };
 
 }  // namespace SBAudio

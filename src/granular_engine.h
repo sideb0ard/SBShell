@@ -25,7 +25,8 @@ class GranularEngine {
   // Updates next_launch_sample_ and grain_spacing_frames_ internally.
   void LaunchGrain(int read_idx, std::vector<double>* audio_buffer,
                    int num_channels, double pitch_ratio, int cur_sample,
-                   bool reverse_mode = false, int degrade_by = 0);
+                   bool reverse_mode = false, int degrade_by = 0,
+                   int channel_mask = 0);
 
   // Iterate all active grains, apply envelopes, sum and return mixed output
   StereoVal SumGrains();

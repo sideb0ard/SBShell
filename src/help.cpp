@@ -284,6 +284,11 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  set x:grain_env 0        " << COOL_COLOR_ORANGE << "- Envelope: 0=Tukey (loop-safe), 1=Hann (granular cloud)\n";
   ss << ANSI_COLOR_WHITE << "  set x:grain_spray_ms 10  " << COOL_COLOR_ORANGE << "- Random position spray in ms\n";
   ss << ANSI_COLOR_WHITE << "  set x:quasi_grain_fudge 0 " << COOL_COLOR_ORANGE << "- Duration randomisation\n\n";
+  ss << COOL_COLOR_GREEN << "  Multi-buffer shhh mode:\n";
+  ss << ANSI_COLOR_WHITE << "  add_buf(x, \"file\")        " << COOL_COLOR_ORANGE << "- Add a second (or more) source buffer\n";
+  ss << ANSI_COLOR_WHITE << "  set x:shhh 1             " << COOL_COLOR_ORANGE << "- 1=quietest-both 2=loudest-both 3=quiet-L/loud-R 4=loud-L/quiet-R\n";
+  ss << ANSI_COLOR_WHITE << "  set x:shhh 0             " << COOL_COLOR_ORANGE << "- Disable shhh (normal stereo from buffer 0)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:shhh_window_ms 80  " << COOL_COLOR_ORANGE << "- RMS window for loudness comparison (0=grain_dur)\n\n";
 
   ss << COOL_COLOR_GREEN << "MIXER/ROUTING FUNCTIONS\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";

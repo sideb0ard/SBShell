@@ -27,7 +27,7 @@ void GranularEngine::LaunchGrain(int read_idx,
                                  std::vector<double>* audio_buffer,
                                  int num_channels, double pitch_ratio,
                                  int cur_sample, bool reverse_mode,
-                                 int degrade_by) {
+                                 int degrade_by, int channel_mask) {
   // Find a free slot
   SoundGrainSample* slot = nullptr;
   for (auto& g : grain_pool_) {
@@ -37,6 +37,7 @@ void GranularEngine::LaunchGrain(int read_idx,
     }
   }
   if (!slot) return;  // all slots busy — skip this launch
+  if (!audio_buffer || audio_buffer->empty()) return;
 
   int duration_frames = grain_duration_frames_;
   if (quasi_grain_fudge_ > 0)
@@ -57,6 +58,7 @@ void GranularEngine::LaunchGrain(int read_idx,
       .audio_buffer = audio_buffer,
       .envelope_shape = envelope_shape_,
       .overlap_fraction = grain_overlap_,
+      .channel_mask = channel_mask,
   };
   slot->Initialize(params);
 
@@ -66,20 +68,18 @@ void GranularEngine::LaunchGrain(int read_idx,
 
 StereoVal GranularEngine::SumGrains() {
   StereoVal val = {0.0, 0.0};
-  int active_count = 0;
+  int left_count = 0, right_count = 0;
   for (auto& g : grain_pool_) {
     if (g.active) {
       StereoVal gv = g.Generate();
       val.left += gv.left;
       val.right += gv.right;
-      active_count++;
+      if (g.channel_mask != 2) left_count++;   // stereo or left-only
+      if (g.channel_mask != 1) right_count++;  // stereo or right-only
     }
   }
-  if (active_count > 1) {
-    double norm = 1.0 / std::sqrt(static_cast<double>(active_count));
-    val.left *= norm;
-    val.right *= norm;
-  }
+  if (left_count > 1) val.left /= std::sqrt(static_cast<double>(left_count));
+  if (right_count > 1) val.right /= std::sqrt(static_cast<double>(right_count));
   return val;
 }
 
