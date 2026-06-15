@@ -93,7 +93,11 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  rand_sixteenthz(n)         " << COOL_COLOR_ORANGE << "- Array of n random unique 16th-note positions\n";
   ss << ANSI_COLOR_WHITE << "  perlin(x)                  " << COOL_COLOR_ORANGE << "- Perlin noise value (smooth random)\n";
   ss << ANSI_COLOR_WHITE << "  bjork(pulses, steps)       " << COOL_COLOR_ORANGE << "- Euclidean rhythm pattern\n";
-  ss << ANSI_COLOR_WHITE << "  gen_perc(len, density)     " << COOL_COLOR_ORANGE << "- Random percussion pattern\n\n";
+  ss << ANSI_COLOR_WHITE << "  gen_perc(len, density)     " << COOL_COLOR_ORANGE << "- Random percussion pattern\n";
+  ss << ANSI_COLOR_WHITE << "  lsys_expand(axiom, rules, gen) " << COOL_COLOR_ORANGE << "- L-system sequence (gen 3-4 typical, max 6)\n";
+  ss << ANSI_COLOR_WHITE << "    axiom=[0]  rules=[[0,2,4],[1,3,0],[2,4,1],[3,0,2],[4,1,3]]\n";
+  ss << ANSI_COLOR_WHITE << "    let seq = lsys_expand([0], rules, 3)  " << COOL_COLOR_ORANGE << "-> 27-note index array\n";
+  ss << ANSI_COLOR_WHITE << "    note_on_at(dx, notes[seq[i%len(seq)]], i*pp, dur=180) " << COOL_COLOR_ORANGE << "- use in run()\n\n";
 
   ss << COOL_COLOR_GREEN << "MUSIC THEORY FUNCTIONS\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";

@@ -3452,6 +3452,66 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                     }
                     return evaluator::NULLL;
                   })},
+
+    // lsys_expand(axiom, rules, generations)
+    // axiom: array of int (note indices into a chord/scale)
+    // rules: array of arrays — rules[i] is the expansion of symbol i
+    // generations: int (3-4 is usually enough; capped at 6 for safety)
+    // returns: flat array of ints — wrap with % len(seq) to fit any bar length
+    {"lsys_expand",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() != 3) return evaluator::NULLL;
+           auto axiom_arr = std::dynamic_pointer_cast<object::Array>(args[0]);
+           auto rules_arr = std::dynamic_pointer_cast<object::Array>(args[1]);
+           auto gen_num = std::dynamic_pointer_cast<object::Number>(args[2]);
+           if (!axiom_arr || !rules_arr || !gen_num) return evaluator::NULLL;
+
+           int generations = std::max(0, std::min((int)gen_num->value_, 6));
+
+           std::vector<std::vector<int>> rules;
+           for (const auto& r : rules_arr->elements_) {
+             auto rule = std::dynamic_pointer_cast<object::Array>(r);
+             if (!rule) return evaluator::NULLL;
+             std::vector<int> expansion;
+             for (const auto& e : rule->elements_) {
+               auto n = std::dynamic_pointer_cast<object::Number>(e);
+               if (n) expansion.push_back((int)n->value_);
+             }
+             rules.push_back(expansion);
+           }
+
+           std::vector<int> seq;
+           for (const auto& e : axiom_arr->elements_) {
+             auto n = std::dynamic_pointer_cast<object::Number>(e);
+             if (n) seq.push_back((int)n->value_);
+           }
+
+           for (int g = 0; g < generations; g++) {
+             std::vector<int> next;
+             next.reserve(seq.size() * 3);
+             for (int sym : seq) {
+               if (sym >= 0 && sym < (int)rules.size()) {
+                 for (int s : rules[sym]) next.push_back(s);
+               } else {
+                 next.push_back(sym);
+               }
+             }
+             seq = std::move(next);
+             if (seq.size() > 4096) {
+               seq.resize(4096);
+               break;
+             }
+           }
+
+           auto result = std::make_shared<object::Array>(
+               std::vector<std::shared_ptr<object::Object>>());
+           result->elements_.reserve(seq.size());
+           for (int s : seq)
+             result->elements_.push_back(std::make_shared<object::Number>(s));
+           return result;
+         })},
 };
 
 // Aliases

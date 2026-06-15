@@ -1,0 +1,28 @@
+
+let dbblah_comp = comp()
+{
+  setup()
+  {
+    let beat = [1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+    let snbeat = [0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (beat[i] == 1) {
+        note_on_at(sbdrum, 0, i * pp);
+      }
+      if (i % 2 == 0) {
+        note_on_at(sbdrum, 3, i * pp);
+      }
+      if (count % 2 == 1) {
+        note_on_at(sbdrum, 4, 13 * pp);
+        note_on_at(fmp, 1, 15 * pp, dur = 0);
+      }
+      # if (beat[i] == 1) {
+        #   note_on_at(sbdrum, 1, i * pp);
+        # }
+    }
+
+  }
+}

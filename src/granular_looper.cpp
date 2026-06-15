@@ -723,11 +723,13 @@ std::string GranularLooper::Info() {
     return ss.str();
   }
 
-  // ── line 1: type  mixer  shhh ────────────────────────────────────────────
+  // ── line 1: type  mixer  mode  shhh ─────────────────────────────────────
   const char* shhh_labels[] = {"off", "quietest", "loudest"};
+  auto& primary = file_buffers_[primary_buf_idx_];
   ss << "\n"
      << INSTRUMENT_COLOR << "Looper" << ANSI_COLOR_RESET << "  vol:" << volume
-     << " pan:" << pan << "  shhh:" << shhh_labels[shhh_mode_];
+     << " pan:" << pan << "  mode:" << kLoopModeNames[primary->loop_mode_]
+     << "  shhh:" << shhh_labels[shhh_mode_];
   if (shhh_window_frames_ > 0)
     ss << " shhh_win:" << std::fixed << std::setprecision(1)
        << (shhh_window_frames_ / 44.1) << "ms" << std::defaultfloat;
@@ -746,9 +748,9 @@ std::string GranularLooper::Info() {
      << (engine_.granular_spray_frames() / 44.1) << std::defaultfloat << "\n";
 
   // ── envelope ─────────────────────────────────────────────────────────────
-  ss << "attack:" << eg_.m_attack_time_msec
-     << "  decay:" << eg_.m_decay_time_msec
-     << "  release:" << eg_.m_release_time_msec << "\n";
+  ss << "attack:" << (int)eg_.m_attack_time_msec
+     << "  decay:" << (int)eg_.m_decay_time_msec
+     << "  release:" << (int)eg_.m_release_time_msec << "\n";
 
   // ── buffers ───────────────────────────────────────────────────────────────
   bool multi = file_buffers_.size() > 1;
@@ -768,11 +770,10 @@ std::string GranularLooper::Info() {
     if (in_left) ss << "  [xf:L]";
     if (in_right) ss << "  [xf:R]";
     ss << "\n"
-       << "  pitch:" << fb->pitch_ratio_.load() << "  speed:" << fb->incr_speed_
-       << "  gain:" << fb->gain_ << "  distortion:" << fb->distortion_
-       << "  mode:" << kLoopModeNames[fb->loop_mode_]
-       << "  len:" << fb->loop_len_ << "  poffset:" << fb->poffset_
-       << "  plooplen:" << fb->plooplen_ << "  pinc:" << fb->pinc_ << "\n";
+       << "  pitch:" << fb->pitch_ratio_.load() << " speed:" << fb->incr_speed_
+       << " gain:" << fb->gain_ << " distort:" << fb->distortion_
+       << " len:" << fb->loop_len_ << " poffset:" << fb->poffset_
+       << " plooplen:" << (int)fb->plooplen_ << " pinc:" << fb->pinc_ << "\n";
   }
 
   // xfader block — only shown when active

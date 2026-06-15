@@ -1625,9 +1625,73 @@ max(a, b);          // Maximum
 // Euclidean rhythms
 bjork(5, 16);       // 5 hits over 16 steps
 
-// See all functions
-funcz();
+// L-system sequence expansion
+lsys_expand(axiom, rules, generations);
 ```
+
+### L-system Arpeggiator
+
+`lsys_expand(axiom, rules, generations)` generates a melodic sequence using a Lindenmayer system — a rewriting system that recursively expands symbols according to production rules. Each generation multiplies the length by the rule width, producing self-similar sequences that feel varied without being random.
+
+- **axiom** — starting array of symbol integers (note indices into a chord or scale array)
+- **rules** — array of arrays; `rules[i]` is the expansion for symbol `i`
+- **generations** — how many times to apply the rules (3–4 is typical; capped at 6)
+- **returns** — flat array of ints; use `% len(seq)` to fit any bar length
+
+```javascript
+// Build a Cmaj9 chord — 5 notes gives the richest L-system variety
+let notes = notes_in_chord(48, 36, 5);  // [C3, E3, G3, B3, D4]
+// indices:                                  0    1    2    3    4
+
+// Rules: each index expands to a 3-note subsequence
+let rules = [
+  [0, 2, 4],   // root  → root, 5th, 9th
+  [1, 3, 0],   // 3rd   → 3rd, 7th, root
+  [2, 4, 1],   // 5th   → 5th, 9th, 3rd
+  [3, 0, 2],   // 7th   → 7th, root, 5th
+  [4, 1, 3],   // 9th   → 9th, 3rd, 7th
+];
+
+// Gen 3 → 27 notes; gen 4 → 81 notes
+let seq = lsys_expand([0], rules, 3);
+
+let arp = comp() {
+  setup() {
+    let rate = pp;   // 16th notes — try pp*2 for 8ths
+  }
+  run() {
+    for (let i = 0; i < 16; i++) {
+      note_on_at(dx, notes[seq[i % len(seq)]], i * rate, dur=180);
+    }
+  }
+}
+p1 # arp;
+```
+
+**Variations:**
+
+```javascript
+// Start from two notes — expands more rapidly
+let seq = lsys_expand([0, 4], rules, 3);
+
+// Change chord each bar — same structure, new pitches
+run() {
+  let notes = notes_in_chord(48 + (count % 4) * 5, 36, 5);
+  for (let i = 0; i < 16; i++) {
+    note_on_at(dx, notes[seq[i % len(seq)]], i * pp, dur=160);
+  }
+}
+
+// 8th-note arp over 2 bars
+for (let i = 0; i < 16; i++) {
+  note_on_at(dx, notes[seq[i % len(seq)]], i * pp * 2, dur=350);
+}
+```
+
+**Tips:**
+- More chord tones = richer rules. 9th chords (mod=5) give 5 symbols; triads give 3.
+- Rules with wider expansions (4 notes each) grow faster — gen 3 gives 64 notes.
+- `seq` is just an array — reuse it for velocity or parameter automation, not just pitch.
 
 ### Debugging
 
