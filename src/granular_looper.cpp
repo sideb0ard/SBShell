@@ -728,14 +728,14 @@ std::string GranularLooper::Info() {
     ss << "\n";
   }
 
-  if (shhh_mode_ > 0) {
+  {
     const char* modes[] = {"off", "quietest-both", "loudest-both",
                            "quietest-L/loudest-R", "loudest-L/quietest-R"};
     ss << COOL_COLOR_PINK2 << " shhh:" << modes[shhh_mode_];
     if (shhh_window_frames_ > 0)
-      ss << " window:" << (shhh_window_frames_ / 44.1) << "ms";
+      ss << " shhh_win:" << (shhh_window_frames_ / 44.1) << "ms";
     else
-      ss << " window:grain_dur";
+      ss << " shhh_win:grain_dur";
     ss << "\n";
   }
 
@@ -1027,7 +1027,8 @@ void GranularLooper::SetParam(std::string name, double val) {
     SetGrainEnvShape(val);
   } else if (name == "shhh") {
     shhh_mode_ = std::max(0, std::min(4, (int)val));
-  } else if (name == "shhh_window_ms") {
+  } else if (name == "shhh_window_ms" || name == "window" ||
+             name == "shhh_win") {
     shhh_window_frames_ = (int)(val * SAMPLE_RATE / 1000.0);
   }
 }

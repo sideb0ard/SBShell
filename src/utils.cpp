@@ -76,11 +76,40 @@ void bjork(std::vector<std::vector<int>> &seqs,
 // }
 }  // namespace
 
+namespace {
+// Returns the full path to a sample file, checking wavs/ then default_wavs/.
+// Returns empty string if not found in either.
+static std::string ResolveSampleFile(const std::string &filename) {
+  auto base = fs::current_path().string();
+  for (auto dir : {"/wavs/", "/default_wavs/"}) {
+    fs::path p = base + dir + filename;
+    if (fs::exists(p)) return p.string();
+  }
+  return {};
+}
+
+// Collects all entries from wavs/subdir and default_wavs/subdir, merged.
+// Returns paths relative to the sample dir (e.g. "bd/kick.aif").
+static std::vector<std::string> MergeSampleDir(const std::string &subdir) {
+  auto base = fs::current_path().string();
+  std::vector<std::string> results;
+  for (auto dir : {"/wavs/", "/default_wavs/"}) {
+    fs::path dpath = base + dir + subdir;
+    if (!fs::exists(dpath)) continue;
+    for (const auto &entry : fs::directory_iterator(dpath)) {
+      auto rel = (subdir.empty() ? "" : subdir + "/") +
+                 entry.path().filename().string();
+      results.push_back(rel);
+    }
+  }
+  return results;
+}
+}  // namespace
+
 namespace utils {
 
 bool FileExists(std::string filename) {
-  fs::path file_path = fs::current_path().string() + "/wavs/" + filename;
-  return fs::exists(file_path);
+  return !ResolveSampleFile(filename).empty();
 }
 
 float LinTerp(float x1, float x2, float y1, float y2, float x) {
@@ -104,7 +133,9 @@ AudioBufferDetails ImportFileContents(std::vector<double> &buffer,
 
   AudioBufferDetails deetz = {filename, 0, 0, 0};
 
-  std::string full_filename = fs::current_path().string() + "/wavs/" + filename;
+  std::string full_filename = ResolveSampleFile(filename);
+  if (full_filename.empty())
+    full_filename = fs::current_path().string() + "/wavs/" + filename;
 
   sf_info.format = 0;
 
@@ -135,35 +166,20 @@ AudioBufferDetails ImportFileContents(std::vector<double> &buffer,
 }
 
 std::string GetRandomSampleNameFromDir(std::string sample_dir) {
+  auto entries = MergeSampleDir(sample_dir);
   std::vector<std::string> file_names;
-  std::string dir_prefix = "wavs/";
-  for (const auto &entry : fs::directory_iterator(dir_prefix + sample_dir)) {
-    auto fpath = entry.path();
-    if (fpath.compare(".DS_Store") != 0) file_names.push_back(fpath);
+  for (auto &e : entries) {
+    if (e.find(".DS_Store") == std::string::npos) file_names.push_back(e);
   }
-
-  return file_names[rand() % file_names.size()].substr(dir_prefix.length());
+  if (file_names.empty()) return {};
+  return file_names[rand() % file_names.size()];
 }
 
 std::string list_sample_dir(std::string indir) {
-  std::stringstream ss;
-  std::vector<std::string> listing{};
-  std::string dirpath = ".";
-  dirpath.append(SAMPLE_DIR);
-  dirpath += indir;
-  try {
-    for (const auto &p : std::filesystem::directory_iterator(dirpath)) {
-      auto pathname = p.path().string();
-      pathname.erase(0, 7);
-      listing.push_back(pathname);
-    }
-  } catch (std::filesystem::filesystem_error e) {
-    std::cerr << "nope.\n";
-  }
-
+  auto listing = MergeSampleDir(indir);
   std::sort(listing.begin(), listing.end());
-  for (auto l : listing) ss << l << "\n";
-
+  std::stringstream ss;
+  for (auto &l : listing) ss << l << "\n";
   return ss.str();
 }
 
@@ -333,7 +349,7 @@ int conv_bitz(int num) {
 }
 
 bool IsValidFile(std::string filename) {
-  return fs::exists(fs::current_path().string() + "/wavs/" + filename);
+  return !ResolveSampleFile(filename).empty();
 }
 
 // from

@@ -2580,24 +2580,23 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                  std::dynamic_pointer_cast<object::String>(args[0]);
              if (str_obj) {
                auto dirname = str_obj->value_;
-               auto fulldirname = "wavs/" + dirname;
-               for (auto& p : fs::directory_iterator(fulldirname)) {
-                 auto pathname = p.path().string();
-                 pathname.erase(0, 5);
+               for (auto& prefix : {"wavs/", "default_wavs/"}) {
+                 std::string fulldirname = std::string(prefix) + dirname;
+                 if (!fs::exists(fulldirname)) continue;
+                 for (auto& p : fs::directory_iterator(fulldirname)) {
+                   auto base_filename = p.path().filename().string();
+                   if (ShouldIgnore(base_filename)) continue;
 
-                 std::string base_filename =
-                     pathname.substr(pathname.find_last_of("/\\") + 1);
+                   std::string pathname = dirname + "/" + base_filename;
+                   std::string::size_type const dot(
+                       base_filename.find_last_of('.'));
+                   std::string file_without_extension =
+                       base_filename.substr(0, dot);
 
-                 if (ShouldIgnore(base_filename)) continue;
-
-                 std::string::size_type const dot(
-                     base_filename.find_last_of('.'));
-                 std::string file_without_extension =
-                     base_filename.substr(0, dot);
-
-                 std::string cmd = "let " + file_without_extension +
-                                   " = sample(" + pathname + ")";
-                 eval_command_queue.push(cmd);
+                   std::string cmd = "let " + file_without_extension +
+                                     " = sample(" + pathname + ")";
+                   eval_command_queue.push(cmd);
+                 }
                }
              }
            }
