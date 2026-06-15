@@ -6,20 +6,30 @@
 #include <sstream>
 
 namespace {
-bool starts_with_comment(std::string line) {
-  std::size_t first_char_pos = line.find_first_not_of(" \t");
 
-  if (first_char_pos != std::string::npos && line[first_char_pos] == '#') {
-    return true;
-  }
-
-  return false;
+// Returns true for lines like "p10 # comp_name;" where '#' is process syntax.
+bool is_process_statement(const std::string& line) {
+  size_t i = line.find_first_not_of(" \t");
+  if (i == std::string::npos || line[i] != 'p') return false;
+  i++;
+  if (i >= line.size() || !isdigit(line[i])) return false;
+  while (i < line.size() && isdigit(line[i])) i++;
+  return i < line.size() && isspace(line[i]);
 }
 
-std::string strip_inline_comment(std::string line) {
+bool starts_with_comment(const std::string& line) {
+  std::size_t first_char_pos = line.find_first_not_of(" \t");
+  return first_char_pos != std::string::npos && line[first_char_pos] == '#';
+}
+
+// Strip inline comment from a single line (does not handle leading # comments).
+// '//' is always a comment marker.
+// '#' is a comment marker unless the line is a process statement (p10 # name).
+std::string strip_inline_comment(const std::string& line) {
+  if (is_process_statement(line)) return line;
+
   bool in_string = false;
   char string_char = '\0';
-  size_t last_semicolon = std::string::npos;
 
   for (size_t i = 0; i < line.length(); i++) {
     char c = line[i];
@@ -33,22 +43,10 @@ std::string strip_inline_comment(std::string line) {
       string_char = '\0';
     }
 
-    if (!in_string && c == ';') {
-      last_semicolon = i;
-    }
-
-    // '//' is always a comment
-    if (!in_string && c == '/' && i + 1 < line.length() && line[i + 1] == '/') {
+    if (!in_string && c == '/' && i + 1 < line.length() && line[i + 1] == '/')
       return line.substr(0, i);
-    }
 
-    // '#' is only a comment if it comes after a semicolon
-    // (otherwise it's pattern syntax like "p31 # kick_comp")
-    if (!in_string && c == '#') {
-      if (last_semicolon != std::string::npos && i > last_semicolon) {
-        return line.substr(0, i);
-      }
-    }
+    if (!in_string && c == '#') return line.substr(0, i);
   }
 
   return line;
@@ -63,9 +61,7 @@ std::string ReadFileContents(std::string filepath) {
     std::string line;
     while (getline(ifs, line)) {
       if (!starts_with_comment(line)) {
-        // Strip inline comments (# at end of line)
-        std::string cleaned_line = strip_inline_comment(line);
-        buffer << cleaned_line;
+        buffer << strip_inline_comment(line);
       }
     }
 

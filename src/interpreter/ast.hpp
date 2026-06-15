@@ -536,6 +536,9 @@ class HelpStatement : public Statement {
   std::string String() const override {
     return "help";
   }
+
+ public:
+  std::string topic_;  // empty = overview; e.g. "looper", "functions"
 };
 
 class StrategyStatement : public Statement {

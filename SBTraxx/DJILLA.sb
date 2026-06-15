@@ -3,7 +3,7 @@ let dbblah_comp = comp()
 {
   setup()
   {
-    let beat = [1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+    let beat = [1, 0, 0, 0,  0, 0, 1, 0,  1, 0, 0, 1,  0, 1, 0, 0];
     let snbeat = [0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0];
   }
   run()
@@ -24,5 +24,48 @@ let dbblah_comp = comp()
         # }
     }
 
+  }
+}
+
+# D#
+let key = 39;
+# 9th
+let chord_mod = 5;
+# minor
+let key_mod = 1;
+
+let lblah_comp = comp()
+{
+  setup()
+  {
+    let notes = notes_in_chord(39, key, chord_mod, key_mod);
+# Rules: each index expands to a 3-note subsequence
+# 0=root  1=3rd  2=5th  3=7th  4=9th
+    let rules = [
+      [0, 2, 4],
+      [1, 3, 0],
+      [2, 4, 1],
+      [3, 0, 2],
+      [4, 1, 3]
+    ];
+# Gen 3 gives 27 notes — enough to fill multiple bars before repeating
+      let seq = lsys_expand([0], rules, 3);
+
+      let chord_prog = [39, 39, 39, 39, 44, 41, 41];
+      let chx = 0;
+      let durz = [90, 90, 110, 130, 150, 180, 200];
+      let drx = 0;
+  }
+  run()
+  {
+    #print(seq);
+    if (count % 4 == 3) {
+      notes = notes_in_chord(chord_prog[chx], key, chord_mod, key_mod);
+      chx = incr(chx, 0, len(chord_prog));
+    }
+    for (let i = 0; i < 16; i++) {
+      note_on_at(dx, notes[seq[i % len(seq)]], i * pp, dur=durz[drx]);
+    }
+    drx = incr(drx, 0, len(durz));
   }
 }

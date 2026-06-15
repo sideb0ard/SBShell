@@ -164,6 +164,11 @@ std::shared_ptr<ast::LsStatement> Parser::ParseLsStatement() {
 
 std::shared_ptr<ast::HelpStatement> Parser::ParseHelpStatement() {
   auto stmt = std::make_shared<ast::HelpStatement>(cur_token_);
+  // Optional topic: help looper / help functions / help "drums" etc.
+  if (PeekTokenIs(token::SLANG_IDENT) || PeekTokenIs(token::SLANG_STRING)) {
+    NextToken();
+    stmt->topic_ = cur_token_.literal_;
+  }
   if (PeekTokenIs(token::SLANG_SEMICOLON)) NextToken();
   return stmt;
 }
@@ -1285,6 +1290,7 @@ std::vector<std::shared_ptr<ast::Expression>> Parser::ParseExpressionList(
 
   while (PeekTokenIs(token::SLANG_COMMA)) {
     NextToken();
+    if (PeekTokenIs(end)) break;  // trailing comma
     NextToken();
     listy.push_back(ParseExpression(Precedence::LOWEST));
   }

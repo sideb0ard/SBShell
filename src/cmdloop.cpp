@@ -39,7 +39,22 @@ extern Tsqueue<ScheduledDisplayItem> display_queue;
 
 char const *prompt = READLINE_SAFE_MAGENTA "SB#> " READLINE_SAFE_RESET;
 
+static bool is_process_statement(const std::string &line) {
+  size_t i = line.find_first_not_of(" \t");
+  if (i == std::string::npos || line[i] != 'p') return false;
+  i++;
+  if (i >= line.size() || !isdigit(line[i])) return false;
+  while (i < line.size() && isdigit(line[i])) i++;
+  return i < line.size() && isspace(line[i]);
+}
+
 static std::string strip_line_comment(const std::string &line) {
+  // Whole-line '#' comment (possibly with leading whitespace)
+  size_t first = line.find_first_not_of(" \t");
+  if (first != std::string::npos && line[first] == '#') return "";
+
+  if (is_process_statement(line)) return line;
+
   bool in_string = false;
   char string_char = '\0';
   for (size_t i = 0; i < line.length(); i++) {
@@ -52,6 +67,8 @@ static std::string strip_line_comment(const std::string &line) {
       in_string = false;
     } else if (!in_string && c == '/' && i + 1 < line.length() &&
                line[i + 1] == '/') {
+      return line.substr(0, i);
+    } else if (!in_string && c == '#') {
       return line.substr(0, i);
     }
   }

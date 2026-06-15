@@ -1141,9 +1141,22 @@ void Mixer::EmitTimingDisplay() {
   ss << "\033[s"                         // save cursor position only
      << "\033[" << status_row << ";1H";  // move to fixed bottom row
 
-  // Left: colon-fill up to the BPM field (dim green)
-  ss << COOL_COLOR_GREEN;
-  for (int i = 0; i < left_fill; i++) ss << ':';
+  // Left: info prefix then colon-fill to the BPM field
+  // vol:X.XX  midi  ws  — all ASCII so size() == visible cols
+  char vol_buf[12];
+  snprintf(vol_buf, sizeof(vol_buf), "%.2f", static_cast<double>(volume));
+  std::string info = std::string("vol:") + vol_buf;
+  info += have_midi_controller ? "  midi" : "      ";
+  info += websocket_enabled_ ? "  ws" : "    ";
+  info += "  ";  // separator before colons
+  int info_vis = static_cast<int>(info.size());
+  int colon_fill = left_fill - info_vis;
+  if (colon_fill < 0) {
+    colon_fill = 0;
+  }
+
+  ss << COOL_COLOR_ORANGE << info << COOL_COLOR_GREEN;
+  for (int i = 0; i < colon_fill; i++) ss << ':';
   ss << ANSI_COLOR_RESET;
 
   // BPM (blue)
