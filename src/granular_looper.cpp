@@ -9,6 +9,7 @@
 #include <utils.h>
 
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 
@@ -353,9 +354,9 @@ double GranularLooper::ComputeBufferRMS(const std::vector<double>* buf,
 }
 
 FileBuffer* GranularLooper::SelectShhhBuffer(bool want_loudest) {
-  FileBuffer* best = file_buffers_[0].get();
+  FileBuffer* best = file_buffers_[primary_buf_idx_].get();
   double best_rms = want_loudest ? -1.0 : std::numeric_limits<double>::max();
-  int read_idx = file_buffers_[0]->audio_buffer_read_idx_.load();
+  int read_idx = file_buffers_[primary_buf_idx_]->audio_buffer_read_idx_.load();
   int window = shhh_window_frames_ > 0 ? shhh_window_frames_
                                        : engine_.grain_duration_frames();
   for (auto& fb : file_buffers_) {
@@ -374,7 +375,7 @@ FileBuffer* GranularLooper::SelectShhhBuffer(bool want_loudest) {
 
 void GranularLooper::Reset() {
   if (file_buffers_.empty()) return;
-  file_buffers_[0]->audio_buffer_read_idx_ = 0;
+  file_buffers_[primary_buf_idx_]->audio_buffer_read_idx_ = 0;
   engine_.Reset();
   reverse_mode_ = false;
   SetGrainDensity(15);
@@ -420,7 +421,7 @@ void GranularLooper::EventNotify(broadcast_event event,
                                  mixer_timing_info tinfo) {
   (void)event;
   if (file_buffers_.empty()) return;
-  auto& primary = file_buffers_[0];
+  auto& primary = file_buffers_[primary_buf_idx_];
 
   if (!started_ && tinfo.is_start_of_loop) {
     LaunchGrain(tinfo);
@@ -579,36 +580,57 @@ int midi_diff = 0;
 
 void GranularLooper::LaunchGrain(mixer_timing_info tinfo) {
   if (file_buffers_.empty()) return;
-  auto& primary = file_buffers_[0];
+  auto& primary = file_buffers_[primary_buf_idx_];
   int read_idx = primary->audio_buffer_read_idx_;
   double pitch = primary->pitch_ratio_.load() *
                  primary->pitch_pattern_[primary->cur_sixteenth_];
 
   if (shhh_mode_ > 0 && file_buffers_.size() > 1) {
-    // Independent L/R buffer selection based on RMS loudness.
-    // Modes: 1=quietest-both, 2=loudest-both,
-    //        3=quietest-L/loudest-R, 4=loudest-L/quietest-R
-    bool l_wants_loud = (shhh_mode_ == 2 || shhh_mode_ == 4);
-    bool r_wants_loud = (shhh_mode_ == 2 || shhh_mode_ == 3);
-    FileBuffer* l_buf = SelectShhhBuffer(l_wants_loud);
-    FileBuffer* r_buf = SelectShhhBuffer(r_wants_loud);
-    engine_.LaunchGrain(read_idx, l_buf->GetAudioBuffer(), l_buf->num_channels_,
-                        pitch, tinfo.cur_sample, reverse_mode_, degrade_by_, 1);
-    engine_.LaunchGrain(read_idx, r_buf->GetAudioBuffer(), r_buf->num_channels_,
-                        pitch, tinfo.cur_sample, reverse_mode_, degrade_by_, 2);
+    // shhh: pick one buffer by RMS loudness, use its own pitch and gain
+    bool want_loudest = (shhh_mode_ == 2);
+    FileBuffer* buf = SelectShhhBuffer(want_loudest);
+    double buf_pitch = buf->pitch_ratio_.load() *
+                       primary->pitch_pattern_[primary->cur_sixteenth_];
+    engine_.LaunchGrain(read_idx, buf->GetAudioBuffer(), buf->num_channels_,
+                        buf_pitch, tinfo.cur_sample, reverse_mode_, degrade_by_,
+                        buf->gain_, buf->distortion_);
+  } else if (!xf_left_.empty() || !xf_right_.empty()) {
+    // xfader: launch from every assigned buffer with its xfader gain
+    double t = (xfader_pos_ + 1.0) * 0.5;  // 0=full left, 1=full right
+    auto launch_group = [&](const std::vector<int>& group, double xf_gain) {
+      for (int idx : group) {
+        if (idx < 0 || idx >= (int)file_buffers_.size()) continue;
+        auto& fb = file_buffers_[idx];
+        double buf_pitch = fb->pitch_ratio_.load() *
+                           primary->pitch_pattern_[primary->cur_sixteenth_];
+        engine_.LaunchGrain(read_idx, fb->GetAudioBuffer(), fb->num_channels_,
+                            buf_pitch, tinfo.cur_sample, reverse_mode_,
+                            degrade_by_, fb->gain_ * xf_gain, fb->distortion_);
+      }
+    };
+    launch_group(xf_left_, std::cos(t * M_PI * 0.5));
+    launch_group(xf_right_, std::sin(t * M_PI * 0.5));
   } else {
     engine_.LaunchGrain(read_idx, primary->GetAudioBuffer(),
                         primary->num_channels_, pitch, tinfo.cur_sample,
-                        reverse_mode_, degrade_by_);
+                        reverse_mode_, degrade_by_, primary->gain_,
+                        primary->distortion_);
   }
 }
 
 StereoVal GranularLooper::GenNext(mixer_timing_info tinfo) {
   if (!started_ || !active) return {0., 0.};
   if (file_buffers_.empty()) return {0., 0.};
-  auto& primary = file_buffers_[0];
+  auto& primary = file_buffers_[primary_buf_idx_];
 
   if (stop_pending_ && eg_.m_state == OFFF) active = false;
+
+  // Smooth xfader position ramp
+  if (xfader_pos_ != xfader_target_) {
+    double diff = xfader_target_ - xfader_pos_;
+    double step = std::min(std::abs(diff), xfader_ramp_rate_);
+    xfader_pos_ += (diff > 0.0 ? step : -step);
+  }
 
   if (engine_.ShouldLaunch(tinfo.cur_sample)) {
     LaunchGrain(tinfo);
@@ -667,7 +689,7 @@ StereoVal GranularLooper::GenNext(mixer_timing_info tinfo) {
 
 std::string GranularLooper::Status() {
   if (file_buffers_.empty()) return "GranularLooper (no buffer)";
-  auto& primary = file_buffers_[0];
+  auto& primary = file_buffers_[primary_buf_idx_];
   std::stringstream ss;
   if (!active || volume == 0)
     ss << ANSI_COLOR_RESET;
@@ -683,8 +705,7 @@ std::string GranularLooper::Status() {
      << " len:" << primary->loop_len_;
   if (file_buffers_.size() > 1) ss << " bufs:" << file_buffers_.size();
   if (shhh_mode_ > 0) {
-    const char* modes[] = {"off", "quiet-both", "loud-both", "quiet-L/loud-R",
-                           "loud-L/quiet-R"};
+    const char* modes[] = {"off", "quietest", "loudest"};
     ss << " shhh:" << modes[shhh_mode_];
   }
   ss << ANSI_COLOR_RESET;
@@ -692,52 +713,85 @@ std::string GranularLooper::Status() {
 }
 
 std::string GranularLooper::Info() {
-  const char* INSTRUMENT_COLOR = ANSI_COLOR_RESET;
-  if (active) INSTRUMENT_COLOR = ANSI_COLOR_RED;
+  const char* INSTRUMENT_COLOR = active ? ANSI_COLOR_RED : ANSI_COLOR_RESET;
 
   std::stringstream ss;
 
   if (file_buffers_.empty()) {
-    ss << INSTRUMENT_COLOR << "\nSBPlayer (no buffer loaded)\n"
+    ss << INSTRUMENT_COLOR << "\nLooper (no buffer loaded)\n"
        << ANSI_COLOR_RESET;
     return ss.str();
   }
-  auto& primary = file_buffers_[0];
 
-  ss << INSTRUMENT_COLOR << "\nSBPlayer // vol:" << volume << " pan:" << pan
-     << " pitch:" << primary->pitch_ratio_
-     << "\ngrain_dur_ms:" << engine_.grain_duration_frames()
-     << " grains_per_sec:" << engine_.grains_per_sec()
-     << " grain_overlap:" << engine_.grain_overlap()
-     << " grain_env:" << engine_.envelope_shape()
-     << " quasi_grain_fudge:" << engine_.quasi_grain_fudge()
-     << " grain_spray_ms:" << engine_.granular_spray_frames() / 44.1
-     << "\nattack:" << eg_.m_attack_time_msec
-     << " decay:" << eg_.m_decay_time_msec
-     << " release:" << eg_.m_release_time_msec << "\n";
+  // ── line 1: type  mixer  shhh ────────────────────────────────────────────
+  const char* shhh_labels[] = {"off", "quietest", "loudest"};
+  ss << "\n"
+     << INSTRUMENT_COLOR << "Looper" << ANSI_COLOR_RESET << "  vol:" << volume
+     << " pan:" << pan << "  shhh:" << shhh_labels[shhh_mode_];
+  if (shhh_window_frames_ > 0)
+    ss << " shhh_win:" << std::fixed << std::setprecision(1)
+       << (shhh_window_frames_ / 44.1) << "ms" << std::defaultfloat;
+  else
+    ss << " shhh_win:grain_dur";
+  ss << "\n";
 
+  // ── granular engine ──────────────────────────────────────────────────────
+  ss << "grain_dur_ms:" << std::fixed << std::setprecision(1)
+     << (engine_.grain_duration_frames() / 44.1) << std::defaultfloat
+     << "  grains_per_sec:" << engine_.grains_per_sec()
+     << "  grain_overlap:" << engine_.grain_overlap()
+     << "  grain_env:" << engine_.envelope_shape() << "\n"
+     << "quasi_grain_fudge:" << engine_.quasi_grain_fudge()
+     << "  grain_spray_ms:" << std::fixed << std::setprecision(1)
+     << (engine_.granular_spray_frames() / 44.1) << std::defaultfloat << "\n";
+
+  // ── envelope ─────────────────────────────────────────────────────────────
+  ss << "attack:" << eg_.m_attack_time_msec
+     << "  decay:" << eg_.m_decay_time_msec
+     << "  release:" << eg_.m_release_time_msec << "\n";
+
+  // ── buffers ───────────────────────────────────────────────────────────────
+  bool multi = file_buffers_.size() > 1;
   for (int i = 0; i < (int)file_buffers_.size(); i++) {
-    ss << ANSI_COLOR_WHITE << " buf[" << i << "] "
-       << file_buffers_[i]->filename_;
-    if (i == 0) {
-      ss << "  speed:" << primary->incr_speed_
-         << " mode:" << kLoopModeNames[primary->loop_mode_]
-         << " poffset:" << primary->poffset_
-         << " plooplen:" << primary->plooplen_ << " pinc:" << primary->pinc_;
-    }
-    ss << "\n";
+    auto& fb = file_buffers_[i];
+    std::string fname = fb->filename_;
+    size_t sep = fname.rfind('/');
+    if (sep != std::string::npos) fname = fname.substr(sep + 1);
+
+    ss << ANSI_COLOR_WHITE << "buf[" << i << "]  " << fname;
+    if (multi && i == primary_buf_idx_) ss << "  [primary]";
+    // show which xfader side this buffer is on
+    bool in_left =
+        std::find(xf_left_.begin(), xf_left_.end(), i) != xf_left_.end();
+    bool in_right =
+        std::find(xf_right_.begin(), xf_right_.end(), i) != xf_right_.end();
+    if (in_left) ss << "  [xf:L]";
+    if (in_right) ss << "  [xf:R]";
+    ss << "\n"
+       << "  pitch:" << fb->pitch_ratio_.load() << "  speed:" << fb->incr_speed_
+       << "  gain:" << fb->gain_ << "  distortion:" << fb->distortion_
+       << "  mode:" << kLoopModeNames[fb->loop_mode_]
+       << "  len:" << fb->loop_len_ << "  poffset:" << fb->poffset_
+       << "  plooplen:" << fb->plooplen_ << "  pinc:" << fb->pinc_ << "\n";
   }
 
-  {
-    const char* modes[] = {"off", "quietest-both", "loudest-both",
-                           "quietest-L/loudest-R", "loudest-L/quietest-R"};
-    ss << COOL_COLOR_PINK2 << " shhh:" << modes[shhh_mode_];
-    if (shhh_window_frames_ > 0)
-      ss << " shhh_win:" << (shhh_window_frames_ / 44.1) << "ms";
-    else
-      ss << " shhh_win:grain_dur";
-    ss << "\n";
+  // xfader block — only shown when active
+  if (!xf_left_.empty() || !xf_right_.empty()) {
+    constexpr int kBarWidth = 15;
+    int pos = (int)((xfader_pos_ + 1.0) * 0.5 * kBarWidth);
+    pos = std::max(0, std::min(kBarWidth, pos));
+    ss << COOL_COLOR_PINK2 << "xfader: [L";
+    for (int idx : xf_left_) ss << idx;
+    ss << "] <";
+    for (int k = 0; k < pos; k++) ss << "-";
+    ss << "I";
+    for (int k = pos; k < kBarWidth; k++) ss << "-";
+    ss << "> [R";
+    for (int idx : xf_right_) ss << idx;
+    ss << "]  xfpos:" << xfader_pos_ << "  xfspeed:" << xfader_ramp_rate_
+       << "\n";
   }
+  ss << ANSI_COLOR_RESET;
 
   return ss.str();
 }
@@ -776,11 +830,13 @@ void GranularLooper::SetQuasiGrainFudge(int fudgefactor) {
 }
 
 void GranularLooper::SetPitch(double pitch_ratio) {
-  if (!file_buffers_.empty()) file_buffers_[0]->SetPitch(pitch_ratio);
+  if (!file_buffers_.empty())
+    file_buffers_[primary_buf_idx_]->SetPitch(pitch_ratio);
 }
 
 void GranularLooper::SetIncrSpeed(double speed) {
-  if (!file_buffers_.empty()) file_buffers_[0]->incr_speed_ = speed;
+  if (!file_buffers_.empty())
+    file_buffers_[primary_buf_idx_]->incr_speed_ = speed;
 }
 
 void GranularLooper::SetReverseMode(bool b) {
@@ -789,7 +845,7 @@ void GranularLooper::SetReverseMode(bool b) {
 
 void GranularLooper::SetLoopMode(unsigned int m) {
   if (file_buffers_.empty()) return;
-  auto& buffer = file_buffers_[0];
+  auto& buffer = file_buffers_[primary_buf_idx_];
   switch (m) {
     case (0):
       buffer->loop_mode_ = LoopMode::loop_mode;
@@ -815,7 +871,7 @@ void GranularLooper::SetLoopMode(unsigned int m) {
 
 void GranularLooper::SetScramblePending() {
   if (file_buffers_.empty()) return;
-  auto& buffer = file_buffers_[0];
+  auto& buffer = file_buffers_[primary_buf_idx_];
   buffer->scramble_pending_ = true;
   ScramblePattern(buffer->scrambled_pattern_);
 }
@@ -828,8 +884,8 @@ void GranularLooper::SetStopPending(int loops) {
 
 void GranularLooper::SetStutterPending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->stutter_pending_ = true;
-    StutterPattern(file_buffers_[0]->scrambled_pattern_);
+    file_buffers_[primary_buf_idx_]->stutter_pending_ = true;
+    StutterPattern(file_buffers_[primary_buf_idx_]->scrambled_pattern_);
   }
 }
 
@@ -839,63 +895,63 @@ void GranularLooper::SetReversePending() {
 
 void GranularLooper::SetSpeedulatePending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->speedulate_pending_ = true;
-    SpeedulatePattern(file_buffers_[0]->scrambled_pattern_);
+    file_buffers_[primary_buf_idx_]->speedulate_pending_ = true;
+    SpeedulatePattern(file_buffers_[primary_buf_idx_]->scrambled_pattern_);
   }
 }
 
 void GranularLooper::SetGatePending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->gate_pending_ = true;
-    GatePattern(file_buffers_[0]->gate_pattern_);
+    file_buffers_[primary_buf_idx_]->gate_pending_ = true;
+    GatePattern(file_buffers_[primary_buf_idx_]->gate_pattern_);
   }
 }
 
 void GranularLooper::SetSlowdownPending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->slowdown_pending_ = true;
-    SlowdownPattern(file_buffers_[0]->scrambled_pattern_);
+    file_buffers_[primary_buf_idx_]->slowdown_pending_ = true;
+    SlowdownPattern(file_buffers_[primary_buf_idx_]->scrambled_pattern_);
   }
 }
 
 void GranularLooper::SetRepeatPending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->repeat_pending_ = true;
-    RepeatPattern(file_buffers_[0]->scrambled_pattern_);
+    file_buffers_[primary_buf_idx_]->repeat_pending_ = true;
+    RepeatPattern(file_buffers_[primary_buf_idx_]->scrambled_pattern_);
   }
 }
 
 void GranularLooper::SetStrobePending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->strobe_pending_ = true;
-    StrobePattern(file_buffers_[0]->scrambled_pattern_);
+    file_buffers_[primary_buf_idx_]->strobe_pending_ = true;
+    StrobePattern(file_buffers_[primary_buf_idx_]->scrambled_pattern_);
   }
 }
 
 void GranularLooper::SetPitchRampPending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->pitch_ramp_pending_ = true;
-    PitchRampPattern(file_buffers_[0]->pitch_pattern_);
+    file_buffers_[primary_buf_idx_]->pitch_ramp_pending_ = true;
+    PitchRampPattern(file_buffers_[primary_buf_idx_]->pitch_pattern_);
   }
 }
 
 void GranularLooper::SetOctaveJumpPending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->octave_jump_pending_ = true;
-    OctaveJumpPattern(file_buffers_[0]->pitch_pattern_);
+    file_buffers_[primary_buf_idx_]->octave_jump_pending_ = true;
+    OctaveJumpPattern(file_buffers_[primary_buf_idx_]->pitch_pattern_);
   }
 }
 
 void GranularLooper::SetPitchStaircasePending() {
   if (!file_buffers_.empty()) {
-    file_buffers_[0]->pitch_staircase_pending_ = true;
-    PitchStaircasePattern(file_buffers_[0]->pitch_pattern_);
+    file_buffers_[primary_buf_idx_]->pitch_staircase_pending_ = true;
+    PitchStaircasePattern(file_buffers_[primary_buf_idx_]->pitch_pattern_);
   }
 }
 
 void GranularLooper::SetLoopLen(double bars) {
   if (bars != 0 && !file_buffers_.empty()) {
-    file_buffers_[0]->SetLoopLen(bars);
+    file_buffers_[primary_buf_idx_]->SetLoopLen(bars);
   }
 }
 
@@ -905,7 +961,7 @@ void GranularLooper::SetDegradeBy(int degradation) {
 
 void GranularLooper::NoteOn(midi_event ev) {
   if (file_buffers_.empty()) return;
-  auto& primary = file_buffers_[0];
+  auto& primary = file_buffers_[primary_buf_idx_];
   started_ = true;
   int sixteenth_pos = ev.data1 % 16;
   primary->cur_midi_idx_ = sixteenth_pos * PPSIXTEENTH;
@@ -935,24 +991,24 @@ void GranularLooper::NoteOff(midi_event ev) {
 
 void GranularLooper::SetPidx(int val) {
   if (!file_buffers_.empty())
-    file_buffers_[0]->poffset_ =
-        abs(val - file_buffers_[0]->cur_sixteenth_) % 16;
+    file_buffers_[primary_buf_idx_]->poffset_ =
+        abs(val - file_buffers_[primary_buf_idx_]->cur_sixteenth_) % 16;
 }
 
 void GranularLooper::SetPOffset(int p) {
   if (!file_buffers_.empty() && p >= 0 && p <= 15) {
-    file_buffers_[0]->poffset_ = p;
+    file_buffers_[primary_buf_idx_]->poffset_ = p;
   }
 }
 
 void GranularLooper::SetPlooplen(int plooplen) {
   if (!file_buffers_.empty() && plooplen > 0 && plooplen <= 16) {
-    file_buffers_[0]->plooplen_ = plooplen;
+    file_buffers_[primary_buf_idx_]->plooplen_ = plooplen;
   }
 }
 
 void GranularLooper::SetPinc(int pinc) {
-  if (!file_buffers_.empty()) file_buffers_[0]->pinc_ = pinc;
+  if (!file_buffers_.empty()) file_buffers_[primary_buf_idx_]->pinc_ = pinc;
 }
 
 void GranularLooper::SetParam(std::string name, double val) {
@@ -968,8 +1024,9 @@ void GranularLooper::SetParam(std::string name, double val) {
     SetLoopMode(val);
   } else if (name == "idx") {
     if (!file_buffers_.empty() && val <= 100) {
-      double pos = val / 100. * file_buffers_[0]->GetAudioBuffer()->size();
-      file_buffers_[0]->SetAudioBufferReadIdx(pos);
+      double pos = val / 100. *
+                   file_buffers_[primary_buf_idx_]->GetAudioBuffer()->size();
+      file_buffers_[primary_buf_idx_]->SetAudioBufferReadIdx(pos);
     }
   } else if (name == "len") {
     SetLoopLen(val);
@@ -1026,10 +1083,28 @@ void GranularLooper::SetParam(std::string name, double val) {
   } else if (name == "grain_env") {
     SetGrainEnvShape(val);
   } else if (name == "shhh") {
-    shhh_mode_ = std::max(0, std::min(4, (int)val));
+    shhh_mode_ = std::max(0, std::min(2, (int)val));
   } else if (name == "shhh_window_ms" || name == "window" ||
              name == "shhh_win") {
     shhh_window_frames_ = (int)(val * SAMPLE_RATE / 1000.0);
+  } else if (name == "primary") {
+    int idx = (int)val;
+    if (idx >= 0 && idx < (int)file_buffers_.size()) primary_buf_idx_ = idx;
+  } else if (name == "xfl") {
+    int idx = (int)val;
+    if (idx >= 0 && idx < (int)file_buffers_.size()) xf_left_.push_back(idx);
+  } else if (name == "xfr") {
+    int idx = (int)val;
+    if (idx >= 0 && idx < (int)file_buffers_.size()) xf_right_.push_back(idx);
+  } else if (name == "xfpos") {
+    xfader_target_ = std::max(-1.0, std::min(1.0, val));
+  } else if (name == "xfspeed") {
+    xfader_ramp_rate_ = std::max(0.0001, val);
+  } else if (name == "xfclear") {
+    xf_left_.clear();
+    xf_right_.clear();
+    xfader_pos_ = 0.0;
+    xfader_target_ = 0.0;
   }
 }
 

@@ -22,7 +22,8 @@ struct SoundGrainParams {
   std::vector<double> *audio_buffer{nullptr};
   int envelope_shape{0};         // 0=Tukey (flat-top), 1=Hann
   double overlap_fraction{0.2};  // fraction of grain used for attack/release
-  int channel_mask{0};           // 0=stereo, 1=left only, 2=right only
+  double gain{1.0};
+  double distortion{0.0};  // 0=off; drives a soft-clip pre-envelope
 };
 
 struct SoundGrain {
@@ -60,7 +61,8 @@ struct SoundGrainSample : public SoundGrain {
 
   int envelope_shape{0};
   double overlap_fraction{0.2};
-  int channel_mask{0};  // 0=stereo, 1=left only, 2=right only
+  double gain{1.0};
+  double distortion{0.0};
 };
 
 }  // namespace SBAudio

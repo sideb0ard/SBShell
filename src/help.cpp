@@ -284,11 +284,26 @@ std::string build_help() {
   ss << ANSI_COLOR_WHITE << "  set x:grain_env 0        " << COOL_COLOR_ORANGE << "- Envelope: 0=Tukey (loop-safe), 1=Hann (granular cloud)\n";
   ss << ANSI_COLOR_WHITE << "  set x:grain_spray_ms 10  " << COOL_COLOR_ORANGE << "- Random position spray in ms\n";
   ss << ANSI_COLOR_WHITE << "  set x:quasi_grain_fudge 0 " << COOL_COLOR_ORANGE << "- Duration randomisation\n\n";
-  ss << COOL_COLOR_GREEN << "  Multi-buffer shhh mode:\n";
-  ss << ANSI_COLOR_WHITE << "  add_buf(x, \"file\")        " << COOL_COLOR_ORANGE << "- Add a second (or more) source buffer\n";
-  ss << ANSI_COLOR_WHITE << "  set x:shhh 1             " << COOL_COLOR_ORANGE << "- 1=quietest-both 2=loudest-both 3=quiet-L/loud-R 4=loud-L/quiet-R\n";
-  ss << ANSI_COLOR_WHITE << "  set x:shhh 0             " << COOL_COLOR_ORANGE << "- Disable shhh (normal stereo from buffer 0)\n";
-  ss << ANSI_COLOR_WHITE << "  set x:shhh_window_ms 80  " << COOL_COLOR_ORANGE << "- RMS window for loudness comparison (0=grain_dur)\n\n";
+  ss << COOL_COLOR_GREEN << "  Multi-buffer:\n";
+  ss << ANSI_COLOR_WHITE << "  add_buf(x, \"file\")           " << COOL_COLOR_ORANGE << "- Add source buffer (buf[0] is primary)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:primary 1             " << COOL_COLOR_ORANGE << "- Swap buf[1] to primary (drives timing/FX)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:buf[N]:pitch 1.5      " << COOL_COLOR_ORANGE << "- Per-buffer pitch ratio\n";
+  ss << ANSI_COLOR_WHITE << "  set x:buf[N]:speed 0.5      " << COOL_COLOR_ORANGE << "- Per-buffer playback speed multiplier\n";
+  ss << ANSI_COLOR_WHITE << "  set x:buf[N]:gain 0.8       " << COOL_COLOR_ORANGE << "- Per-buffer amplitude (0.0+)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:buf[N]:distortion 0.5 " << COOL_COLOR_ORANGE << "- Per-buffer soft-clip distortion (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:buf[N]:len 2          " << COOL_COLOR_ORANGE << "- Per-buffer loop length in bars\n";
+  ss << ANSI_COLOR_WHITE << "  set x:buf[N]:poffset 4      " << COOL_COLOR_ORANGE << "- Per-buffer pattern offset (0-15)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:buf[N]:plooplen 8     " << COOL_COLOR_ORANGE << "- Per-buffer pattern loop length (1-16)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:buf[N]:pinc 2         " << COOL_COLOR_ORANGE << "- Per-buffer pattern step increment\n\n";
+  ss << COOL_COLOR_GREEN << "  shhh mode (per-grain loudness-based source selection):\n";
+  ss << ANSI_COLOR_WHITE << "  set x:shhh 1             " << COOL_COLOR_ORANGE << "- 1=quietest 2=loudest 0=off\n";
+  ss << ANSI_COLOR_WHITE << "  set x:shhh_window_ms 80  " << COOL_COLOR_ORANGE << "- RMS window in ms (0=grain_dur)\n\n";
+  ss << COOL_COLOR_GREEN << "  Buffer xfader (constant-power, independent of shhh):\n";
+  ss << ANSI_COLOR_WHITE << "  set x:xfl 0              " << COOL_COLOR_ORANGE << "- Assign buf index to xfader Left side\n";
+  ss << ANSI_COLOR_WHITE << "  set x:xfr 1              " << COOL_COLOR_ORANGE << "- Assign buf index to xfader Right side\n";
+  ss << ANSI_COLOR_WHITE << "  set x:xfpos -1           " << COOL_COLOR_ORANGE << "- Crossfader position (-1=L, 0=centre, 1=R)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:xfspeed 0.002      " << COOL_COLOR_ORANGE << "- Ramp rate (position units per sample)\n";
+  ss << ANSI_COLOR_WHITE << "  set x:xfclear 1          " << COOL_COLOR_ORANGE << "- Clear xfader assignments, reset to centre\n\n";
 
   ss << COOL_COLOR_GREEN << "MIXER/ROUTING FUNCTIONS\n"
             << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";

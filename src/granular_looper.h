@@ -57,11 +57,21 @@ class GranularLooper : public SoundGenerator {
   bool stop_pending_{false};  // allow eg to stop
   int degrade_by_{0};
 
+  // Index of the primary buffer (drives loop timing/FX). Default 0.
+  int primary_buf_idx_{0};
+
   // shhh mode: per-grain cross-source selection based on RMS loudness.
-  // 0=off, 1=quietest-both, 2=loudest-both, 3=quietest-L/loudest-R,
-  // 4=loudest-L/quietest-R
+  // 0=off, 1=quietest, 2=loudest
   int shhh_mode_{0};
   int shhh_window_frames_{0};  // 0 = use grain_duration_frames
+
+  // Buffer xfader — independent from shhh; assigns buffers to L/R sides.
+  // xfader_pos_: -1=full left, 0=centre, 1=full right (constant-power law)
+  double xfader_pos_{0.0};
+  double xfader_target_{0.0};
+  double xfader_ramp_rate_{0.002};  // position units per sample
+  std::vector<int> xf_left_;
+  std::vector<int> xf_right_;
 
  public:
   void SetPitch(double pitch_ratio);

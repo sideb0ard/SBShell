@@ -105,6 +105,8 @@ class FileBuffer {
   int pinc_{1};
 
   std::atomic<double> pitch_ratio_{1};  // Atomic - playback rate multiplier
+  double gain_{1.0};
+  double distortion_{0.0};
 
  private:
   std::vector<double> audio_buffer_{};

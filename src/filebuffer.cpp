@@ -1,5 +1,6 @@
 #include "filebuffer.h"
 
+#include <algorithm>
 #include <iostream>
 
 #include "utils.h"
@@ -32,6 +33,12 @@ void FileBuffer::SetParam(std::string param, double value) {
     SetPlooplen(value);
   else if (param == "pinc")
     SetPinc(value);
+  else if (param == "speed")
+    incr_speed_ = value;
+  else if (param == "gain")
+    gain_ = std::max(0.0, value);
+  else if (param == "distortion")
+    distortion_ = std::max(0.0, std::min(1.0, value));
 }
 
 void FileBuffer::SetPidx(int val) {

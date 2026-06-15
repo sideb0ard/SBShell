@@ -459,30 +459,79 @@ let fx_comp = comp()
 }
 ```
 
-#### Multi-buffer shhh mode
+#### Multi-buffer
 
-Load multiple source buffers into a looper and use the shhh algorithm to select L/R sources independently per grain based on RMS loudness — inspired by Nirror's Max for Live device.
+Load multiple audio files into a single looper. Each becomes a `buf[N]` with its own per-buffer settings. One buffer is designated the **primary** — it drives loop timing, rhythmic FX, and pitch patterns. By default this is `buf[0]`, but you can change it at any time.
 
 ```javascript
-let lp = loop(dloops/techNOBe.wav);
-add_buf(lp, "dloops/steveMUR.wav");   // add a second source buffer
-set lp:shhh 1;                        // enable: quietest source to both L+R
+let lp = loop(dloops/techNOBe.wav);   // buf[0] — primary by default
+add_buf(lp, "dloops/steveMUR.wav");   // buf[1]
+add_buf(lp, "dloops/jazzloop.wav");   // buf[2]
+```
+
+Use `primary N` to designate a different buffer as primary:
+
+```javascript
+set lp:primary 1;   // buf[1] is now the primary
+set lp:primary 0;   // back to buf[0]
+```
+
+**Per-buffer parameters** — use `buf[N]:param` syntax to target a specific buffer:
+
+```javascript
+set lp:buf[1]:pitch 1.5;      // pitch ratio for buf[1]
+set lp:buf[1]:speed 0.5;      // playback speed multiplier
+set lp:buf[1]:gain 0.8;       // amplitude (0.0+, default 1.0)
+set lp:buf[1]:distortion 0.3; // soft-clip distortion (0.0-1.0)
+set lp:buf[1]:len 2;          // loop length in bars
+set lp:buf[1]:poffset 4;      // pattern offset (0-15 sixteenths)
+set lp:buf[1]:plooplen 8;     // pattern loop length (1-16 sixteenths)
+set lp:buf[1]:pinc 2;         // pattern step increment
+```
+
+Note: granular engine params (`grains_per_sec`, `grain_dur_ms`, `grain_overlap`, etc.) are **global** — they apply to all buffers in the looper.
+
+#### shhh mode
+
+On each grain launch, shhh compares the RMS loudness of all loaded buffers over a short window and picks one source based on the mode. Inspired by Nnirror's https://nnirror.gumroad.com/l/shhh - which i found about through Nathan Ho's SuperCollider port!
+
+```javascript
+set lp:shhh 1;                  // 1=quietest source, 2=loudest source, 0=off
+set lp:shhh_window_ms 80;       // RMS window in ms (0 = use grain duration)
+set lp:shhh 0;                  // disable, back to normal
 ```
 
 **shhh modes:**
-- `0` — off (default): normal stereo playback from buffer 0
-- `1` — **quietest-both**: always pick the quieter source for both channels
-- `2` — **loudest-both**: always pick the louder source for both channels
-- `3` — **quietest-L / loudest-R**: splits the stereo field by loudness
-- `4` — **loudest-L / quietest-R**: inverted split
+- `0` — off (default): normal playback from primary buffer
+- `1` — **quietest**: always pick the quieter source
+- `2` — **loudest**: always pick the louder source
+
+shhh and the buffer xfader are mutually exclusive — shhh takes priority when enabled.
+
+#### Buffer xfader
+
+Assign buffers to the left and right sides of an internal crossfader. The xfader uses a constant-power (cos/sin) law for smooth transitions. Operates independently from shhh mode.
 
 ```javascript
-set lp:shhh 3;              // quiet source left, loud source right
-set lp:shhh_window_ms 80;   // RMS window for comparison in ms (0 = grain duration)
-set lp:shhh 0;              // disable, back to normal
+set lp:xfl 0;         // assign buf[0] to the Left side
+set lp:xfr 1;         // assign buf[1] to the Right side
+set lp:xfpos -1;      // full left (buf[0] only)
+set lp:xfpos 0;       // centre (equal mix)
+set lp:xfpos 1;       // full right (buf[1] only)
+set lp:xfspeed 0.002; // ramp rate in position units per sample (default 0.002)
+set lp:xfclear 1;     // clear all assignments, reset position to centre
 ```
 
-You can load up to 8 source buffers. shhh picks one source per channel on each grain launch. The primary buffer (index 0) drives all loop timing and rhythmic FX regardless of shhh mode.
+Multiple buffers can be assigned to each side — all get the same crossfade gain:
+
+```javascript
+set lp:xfl 0;   // buf[0] on left
+set lp:xfl 2;   // buf[2] also on left
+set lp:xfr 1;   // buf[1] on right
+
+// Automate a slow crossfade over a bar
+sched(0, -1, 1, pp*16, "set lp:xfpos %");
+```
 
 #### Granulate FX — live granular processing
 
