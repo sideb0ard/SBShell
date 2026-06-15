@@ -352,7 +352,13 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
 
       auto action = std::make_unique<AudioActionItem>(AudioAction::UPDATE);
       action->mixer_soundgen_idx = soundgen->soundgen_id_;
-      action->fx_id = set_stmt->fx_num_;
+      if (set_stmt->buf_idx_expr_) {
+        auto idx_obj = Eval(set_stmt->buf_idx_expr_, env);
+        auto idx_num = std::dynamic_pointer_cast<object::Number>(idx_obj);
+        action->fx_id = idx_num ? static_cast<int>(idx_num->value_) : -1;
+      } else {
+        action->fx_id = set_stmt->fx_num_;
+      }
       action->param_name = set_stmt->param_;
       action->delayed_by = delayed_by;
       action->param_val = val;

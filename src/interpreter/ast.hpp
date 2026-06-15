@@ -516,6 +516,8 @@ class SetStatement : public Statement {
   // std::string value_;
 
   int fx_num_ = -1;
+  std::shared_ptr<Expression> buf_idx_expr_{
+      nullptr};  // set when buf[expr]:param
 
   bool is_xfader_component_{false};
   int mixer_fx_num_ = -1;

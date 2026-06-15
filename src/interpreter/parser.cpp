@@ -292,17 +292,14 @@ std::shared_ptr<ast::Statement> Parser::ParseSetStatement() {
   } else if (cur_token_.literal_ == "buf" &&
              PeekTokenIs(token::SLANG_LBRACKET)) {
     NextToken();  // cur = [
-    if (!ExpectPeek(token::SLANG_NUMBER)) {
-      std::cerr << "Expected buffer index after buf[\n";
-      return nullptr;
-    }
-    stmt->fx_num_ = std::stoi(cur_token_.literal_);
+    NextToken();  // cur = first token of index expression
+    stmt->buf_idx_expr_ = ParseExpression(Precedence::LOWEST);
     if (!ExpectPeek(token::SLANG_RBRACKET)) {
-      std::cerr << "Expected ] after buffer index\n";
+      std::cerr << "Expected ] after buf index\n";
       return nullptr;
     }
     if (!ExpectPeek(token::SLANG_COLON)) {
-      std::cerr << "Expected : after buf[N]\n";
+      std::cerr << "Expected : after buf[...]\n";
       return nullptr;
     }
     NextToken();  // cur = param name

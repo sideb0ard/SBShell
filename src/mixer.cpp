@@ -1105,10 +1105,11 @@ void Mixer::EmitTimingDisplay() {
 
   // ── Measure visible widths (terminal columns, not UTF-8 bytes) ──────────
   // Total line width is fixed at 80 cols:
-  //   left colon-fill  |  timing (right-aligned)  |  "  ::" = 4 cols
-  // left_fill = 80 - 4 - timing_visible
+  //   "[ " (2) | info+colons | timing | " ]" (2) = 80
+  // kRightWidth covers " ]" = 2, plus the "  " before the step display = 4
   constexpr int kLineWidth = 80;
-  constexpr int kRightWidth = 4;  // "  ::"
+  constexpr int kBracketWidth = 4;  // "[ " left + " ]" right
+  constexpr int kRightWidth = 2;    // " ]"
 
   char bpm_buf[16];
   snprintf(bpm_buf, sizeof(bpm_buf), "%.1f",
@@ -1130,7 +1131,7 @@ void Mixer::EmitTimingDisplay() {
   if (midi_recording) timing_vis += 5;  // " ⏺REC"  → 1+1+3 = 5 cols
   if (midi_loop_) timing_vis += 6;      // " ▶LOOP" → 1+1+4 = 6 cols
 
-  int left_fill = kLineWidth - kRightWidth - timing_vis;
+  int left_fill = kLineWidth - kBracketWidth - kRightWidth - timing_vis;
   if (left_fill < 1) left_fill = 1;
 
   // term_rows_ is set once at startup by cmdloop; we just read it here.
@@ -1141,21 +1142,22 @@ void Mixer::EmitTimingDisplay() {
   ss << "\033[s"                         // save cursor position only
      << "\033[" << status_row << ";1H";  // move to fixed bottom row
 
+  ss << COOL_COLOR_GREEN << "[ " << ANSI_COLOR_RESET;
+
   // Left: info prefix then colon-fill to the BPM field
-  // vol:X.XX  midi  ws  — all ASCII so size() == visible cols
+  // "vol:X.XX midi:off ws:off  " = 26 visible cols (all ASCII)
   char vol_buf[12];
   snprintf(vol_buf, sizeof(vol_buf), "%.2f", static_cast<double>(volume));
-  std::string info = std::string("vol:") + vol_buf;
-  info += have_midi_controller ? "  midi" : "      ";
-  info += websocket_enabled_ ? "  ws" : "    ";
-  info += "  ";  // separator before colons
-  int info_vis = static_cast<int>(info.size());
-  int colon_fill = left_fill - info_vis;
-  if (colon_fill < 0) {
-    colon_fill = 0;
-  }
+  constexpr int kInfoVis = 26;
+  int colon_fill = left_fill - kInfoVis;
+  if (colon_fill < 0) colon_fill = 0;
 
-  ss << COOL_COLOR_ORANGE << info << COOL_COLOR_GREEN;
+  ss << COOL_COLOR_ORANGE << "vol:" << ANSI_COLOR_WHITE << vol_buf
+     << COOL_COLOR_ORANGE
+     << " midi:" << (have_midi_controller ? COOL_COLOR_GREEN : ANSI_COLOR_WHITE)
+     << (have_midi_controller ? "on " : "off") << COOL_COLOR_ORANGE
+     << " ws:" << (websocket_enabled_ ? COOL_COLOR_GREEN : ANSI_COLOR_WHITE)
+     << (websocket_enabled_ ? "on " : "off") << " " << COOL_COLOR_GREEN;
   for (int i = 0; i < colon_fill; i++) ss << ':';
   ss << ANSI_COLOR_RESET;
 
@@ -1181,8 +1183,8 @@ void Mixer::EmitTimingDisplay() {
   if (midi_recording) ss << ANSI_COLOR_RED << " ⏺REC" << ANSI_COLOR_RESET;
   if (midi_loop_) ss << COOL_COLOR_GREEN << " ▶LOOP" << ANSI_COLOR_RESET;
 
-  // Right: "  ::" then clear to EOL and restore cursor (position only)
-  ss << "  " << COOL_COLOR_GREEN << "::" << ANSI_COLOR_RESET << "\033[K\033[u";
+  // Right: " ]" then clear to EOL and restore cursor (position only)
+  ss << " " << COOL_COLOR_GREEN << "]" << ANSI_COLOR_RESET << "\033[K\033[u";
 
   repl_queue.push(ss.str());
 }

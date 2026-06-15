@@ -37,7 +37,7 @@ void FileBuffer::SetParam(std::string param, double value) {
     incr_speed_ = value;
   else if (param == "gain")
     gain_ = std::max(0.0, value);
-  else if (param == "distortion")
+  else if (param == "distortion" || param == "distort")
     distortion_ = std::max(0.0, std::min(1.0, value));
 }
 

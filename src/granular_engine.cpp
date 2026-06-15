@@ -70,20 +70,17 @@ void GranularEngine::LaunchGrain(int read_idx,
 
 StereoVal GranularEngine::SumGrains() {
   StereoVal val = {0.0, 0.0};
-  int active_count = 0;
   for (auto& g : grain_pool_) {
     if (g.active) {
       StereoVal gv = g.Generate();
       val.left += gv.left;
       val.right += gv.right;
-      active_count++;
     }
   }
-  if (active_count > 1) {
-    double norm = 1.0 / std::sqrt(static_cast<double>(active_count));
-    val.left *= norm;
-    val.right *= norm;
-  }
+  // No per-call normalization: the Tukey window is designed so that
+  // overlapping grains (attack of new + release of old) always sum to 1.0,
+  // giving perfect reconstruction without any gain correction.
+  // 1/sqrt(N) normalization is only correct for uncorrelated sources (noise).
   return val;
 }
 
