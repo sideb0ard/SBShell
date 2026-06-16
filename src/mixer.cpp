@@ -487,7 +487,7 @@ void Mixer::MidiTick() {
   CheckForAudioActionQueueMessages();
   CheckForExternalMidiEvents();
 
-  if (midi_loop_ && !midi_recording) {
+  if (midi_loop_) {
     PlaybackMidiLoopTick();
   }
 
@@ -977,7 +977,8 @@ void Mixer::RecordMidiToggle() {
     pending_note_ons_.clear();
     repl_queue.push("MIDI REC off\n");
   } else {
-    repl_queue.push("MIDI REC on\n");
+    midi_loop_ = true;  // loop plays back previous takes while recording
+    repl_queue.push("MIDI REC on  [ SPACE: toggle rec  ` / ESC: stop ]\n");
   }
   midi_recording = !midi_recording;
 }
@@ -986,7 +987,8 @@ void Mixer::MidiLoopToggle() {
   midi_loop_ = !midi_loop_;
   if (!midi_loop_ && IsValidSoundgenNum(midi_target))
     sound_generators_[midi_target]->AllNotesOff();
-  repl_queue.push(midi_loop_ ? "MIDI LOOP on\n" : "MIDI LOOP off\n");
+  repl_queue.push(midi_loop_ ? "MIDI LOOP on  [ ` / ESC: stop ]\n"
+                             : "MIDI LOOP off\n");
 }
 
 void Mixer::MidiStop() {
@@ -1128,8 +1130,11 @@ void Mixer::EmitTimingDisplay() {
                    + (int)pos_str.size()     // "2.3" or "2/4 3.2"
                    + 3 + 16 + 1;             // "  [" + 16 steps + "]"
   // ⏺ (U+23FA) and ▶ (U+25B6) are each 3 UTF-8 bytes but 1 terminal col
-  if (midi_recording) timing_vis += 5;  // " ⏺REC"  → 1+1+3 = 5 cols
-  if (midi_loop_) timing_vis += 6;      // " ▶LOOP" → 1+1+4 = 6 cols
+  // Flash dot: on for first half-beat, off for second half-beat
+  bool rec_dot_on = midi_recording && (step % 8 < 4);
+  if (midi_recording)
+    timing_vis += 5;  // " ⏺REC"  → 1+1+3 = 5 cols (always reserve)
+  if (midi_loop_) timing_vis += 6;  // " ▶LOOP" → 1+1+4 = 6 cols
 
   int left_fill = kLineWidth - kBracketWidth - kRightWidth - timing_vis;
   if (left_fill < 1) left_fill = 1;
@@ -1180,7 +1185,12 @@ void Mixer::EmitTimingDisplay() {
   ss << ANSI_COLOR_RESET << "]";
 
   // Transport status
-  if (midi_recording) ss << ANSI_COLOR_RED << " ⏺REC" << ANSI_COLOR_RESET;
+  if (midi_recording) {
+    if (rec_dot_on)
+      ss << ANSI_COLOR_RED << " ⏺REC" << ANSI_COLOR_RESET;
+    else
+      ss << "     ";  // 5 spaces — holds layout width when dot is off
+  }
   if (midi_loop_) ss << COOL_COLOR_GREEN << " ▶LOOP" << ANSI_COLOR_RESET;
 
   // Right: " ]" then clear to EOL and restore cursor (position only)

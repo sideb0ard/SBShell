@@ -354,38 +354,36 @@ std::string ForLoop::Inspect() {
 }
 
 MidiArray::MidiArray(MultiEventMidiPattern events) : events_{events} {
-  std::vector<midi_event> notes_off;
-
   for (int i = 0; i < PPBAR; i++) {
-    if (events_[i].size() > 0) {
-      for (auto &e : events_[i]) {
-        switch (e.event_type) {
-          case (MIDI_ON):
-            notes_on_.push_back(e);
-            break;
-          case (MIDI_OFF):
-            notes_off.push_back(e);
-            break;
-          case (MIDI_CONTROL):
-            control_messages_.push_back(e);
-            break;
-        }
+    for (auto &e : events_[i]) {
+      e.playback_tick = i;  // i is the tick within the bar
+      if (e.event_type == MIDI_ON)
+        notes_on_.push_back(e);
+      else if (e.event_type == MIDI_CONTROL)
+        control_messages_.push_back(e);
+      // MIDI_OFF not stored in recording_buffer_; dur already set on MIDI_ON
+    }
+  }
+  std::sort(notes_on_.begin(), notes_on_.end());
+  std::sort(control_messages_.begin(), control_messages_.end());
+}
+
+MidiArray::MidiArray(const std::vector<MultiEventMidiPattern> &bars) {
+  num_bars_ = static_cast<int>(bars.size());
+  for (int bar = 0; bar < num_bars_; ++bar) {
+    const auto &pat = bars[bar];
+    for (int i = 0; i < PPBAR; i++) {
+      for (auto e : pat[i]) {
+        e.playback_tick = bar * PPBAR + i;
+        if (e.event_type == MIDI_ON)
+          notes_on_.push_back(e);
+        else if (e.event_type == MIDI_CONTROL)
+          control_messages_.push_back(e);
       }
     }
   }
-
   std::sort(notes_on_.begin(), notes_on_.end());
-  std::sort(notes_off.begin(), notes_off.end());
   std::sort(control_messages_.begin(), control_messages_.end());
-
-  // TODO - should combine the control and note_ons
-  size_t smallest = std::min(notes_off.size(), notes_on_.size());
-  for (size_t i = 0; i < smallest; ++i) {
-    notes_on_[i].dur = notes_off[i].original_tick - notes_on_[i].original_tick;
-    notes_on_[i].playback_tick = notes_on_[i].original_tick % PPBAR;
-  }
-
-  for (auto &e : control_messages_) e.playback_tick = e.original_tick % PPBAR;
 }
 
 ObjectType MidiArray::Type() {

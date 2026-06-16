@@ -36,8 +36,17 @@ extern Tsqueue<ScheduledDisplayItem> display_queue;
 
 #define READLINE_SAFE_MAGENTA "\001\x1b[35m\002"
 #define READLINE_SAFE_RESET "\001\x1b[0m\002"
+#define READLINE_SAFE_RED "\001\x1b[31m\002"
+#define READLINE_SAFE_GREEN "\001\x1b[32m\002"
 
-char const *prompt = READLINE_SAFE_MAGENTA "SB#> " READLINE_SAFE_RESET;
+static const char kPromptNormal[] =
+    READLINE_SAFE_MAGENTA "SB#> " READLINE_SAFE_RESET;
+static const char kPromptRec[] =
+    READLINE_SAFE_RED "⏺ REC> " READLINE_SAFE_RESET;
+static const char kPromptLoop[] =
+    READLINE_SAFE_GREEN "▶ SB#> " READLINE_SAFE_RESET;
+
+char const *prompt = kPromptNormal;
 
 static bool is_process_statement(const std::string &line) {
   size_t i = line.find_first_not_of(" \t");
@@ -213,6 +222,26 @@ int event_hook() {
   static std::vector<ScheduledDisplayItem> pending_items;
   static std::unordered_map<std::string, std::deque<double>> plot_bufs;
 
+  // Update prompt when recording/loop state changes
+  {
+    static bool prev_recording = false;
+    static bool prev_loop = false;
+    bool cur_rec = global_mixr->midi_recording;
+    bool cur_loop = global_mixr->midi_loop_;
+    if (cur_rec != prev_recording || cur_loop != prev_loop) {
+      if (cur_rec)
+        prompt = kPromptRec;
+      else if (cur_loop)
+        prompt = kPromptLoop;
+      else
+        prompt = kPromptNormal;
+      rl_set_prompt(prompt);
+      rl_forced_update_display();
+      prev_recording = cur_rec;
+      prev_loop = cur_loop;
+    }
+  }
+
   // Drain display_queue into pending list
   while (auto item = display_queue.try_pop()) {
     if (item) pending_items.push_back(std::move(*item));
@@ -383,13 +412,13 @@ void *loopy() {
     }
   }
 
-  // Reset scroll region before exiting so the terminal is clean
-  printf("\033[r\033[?25h");
+  // Reset scroll region, clear screen, home cursor so bash prompt appears clean
+  printf("\033[r\033[2J\033[H\033[?25h");
   fflush(stdout);
 
   printf(COOL_COLOR_PINK
-         "\nBeat it, ya val jerk!\n" ANSI_COLOR_RESET);  // Thrashin'
-                                                         // reference
+         "Beat it, ya val jerk!\n" ANSI_COLOR_RESET);  // Thrashin'
+                                                       // reference
   // Only append the new entries from this session — don't rewrite the whole
   // file, which would clobber history written by other sessions.
   int new_entries = history_length - history_base_len;

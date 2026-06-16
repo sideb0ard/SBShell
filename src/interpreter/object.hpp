@@ -314,6 +314,7 @@ class MidiArray : public Object {
  public:
   MidiArray();
   MidiArray(MultiEventMidiPattern events);
+  MidiArray(const std::vector<MultiEventMidiPattern> &bars);
   MidiArray(std::vector<midi_event> notes_on) : notes_on_{notes_on} {};
   ~MidiArray() = default;
   ObjectType Type() override;
@@ -322,6 +323,7 @@ class MidiArray : public Object {
   MultiEventMidiPattern events_;
   std::vector<midi_event> notes_on_;
   std::vector<midi_event> control_messages_;
+  int num_bars_{1};
 };
 
 class Pattern : public Object {

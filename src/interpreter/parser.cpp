@@ -164,8 +164,9 @@ std::shared_ptr<ast::LsStatement> Parser::ParseLsStatement() {
 
 std::shared_ptr<ast::HelpStatement> Parser::ParseHelpStatement() {
   auto stmt = std::make_shared<ast::HelpStatement>(cur_token_);
-  // Optional topic: help looper / help functions / help "drums" etc.
-  if (PeekTokenIs(token::SLANG_IDENT) || PeekTokenIs(token::SLANG_STRING)) {
+  // Accept any word token as a topic (drumsynth/wavsynth/etc. are keywords, not
+  // IDENT)
+  if (!PeekTokenIs(token::SLANG_SEMICOLON) && !PeekTokenIs(token::SLANG_EOFF)) {
     NextToken();
     stmt->topic_ = cur_token_.literal_;
   }

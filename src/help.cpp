@@ -114,10 +114,12 @@ static std::string help_generators() {
   ss << ANSI_COLOR_WHITE << "  load_preset(gen, name) " << COOL_COLOR_ORANGE << "- Load preset\n";
   ss << ANSI_COLOR_WHITE << "  save_preset(gen, name) " << COOL_COLOR_ORANGE << "- Save preset\n\n";
   ss << COOL_COLOR_GREEN << "  For detailed params:\n";
-  ss << ANSI_COLOR_WHITE << "  help instruments  " << COOL_COLOR_ORANGE << "- fmsynth, subsynth\n";
+  ss << ANSI_COLOR_WHITE << "  help instruments  " << COOL_COLOR_ORANGE << "- all instruments overview\n";
+  ss << ANSI_COLOR_WHITE << "  help fmsynth      " << COOL_COLOR_ORANGE << "- 4-op FM synth params\n";
+  ss << ANSI_COLOR_WHITE << "  help subsynth     " << COOL_COLOR_ORANGE << "- subtractive synth params\n";
   ss << ANSI_COLOR_WHITE << "  help drumsynth    " << COOL_COLOR_ORANGE << "- drum voices in depth\n";
-  ss << ANSI_COLOR_WHITE << "  help looper       " << COOL_COLOR_ORANGE << "- granular looper\n";
   ss << ANSI_COLOR_WHITE << "  help wavsynth     " << COOL_COLOR_ORANGE << "- wavetable/sample synth\n";
+  ss << ANSI_COLOR_WHITE << "  help looper       " << COOL_COLOR_ORANGE << "- granular looper\n";
   ss << ANSI_COLOR_WHITE << "  help fx           " << COOL_COLOR_ORANGE << "- all effects\n\n";
   ss << ANSI_COLOR_RESET;
   return ss.str();
@@ -299,13 +301,7 @@ static std::string help_mixer() {
 
   ss << COOL_COLOR_GREEN << "MIDI\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
-  ss << ANSI_COLOR_WHITE << "  midi_init()           " << COOL_COLOR_ORANGE << "- Initialize MIDI system\n";
-  ss << ANSI_COLOR_WHITE << "  midi_assign(gen)      " << COOL_COLOR_ORANGE << "- Assign generator to MIDI controller\n";
-  ss << ANSI_COLOR_WHITE << "  midi_map(id, param)   " << COOL_COLOR_ORANGE << "- Map MIDI CC to parameter\n";
-  ss << ANSI_COLOR_WHITE << "  midi_rec()            " << COOL_COLOR_ORANGE << "- Toggle MIDI recording\n";
-  ss << ANSI_COLOR_WHITE << "  midi_dump()           " << COOL_COLOR_ORANGE << "- Dump recording to MidiArray\n";
-  ss << ANSI_COLOR_WHITE << "  midi2array(midi)      " << COOL_COLOR_ORANGE << "- Convert MidiArray to 16-step note array\n";
-  ss << ANSI_COLOR_WHITE << "  midi_fix(midi)        " << COOL_COLOR_ORANGE << "- Quantize MidiArray to 8th-note grid\n\n";
+  ss << ANSI_COLOR_WHITE << "  See: help midi        " << COOL_COLOR_ORANGE << "- Full MIDI reference (init, record, CC map, conversion)\n\n";
 
   ss << COOL_COLOR_GREEN << "FILTERS / EQ\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
@@ -346,7 +342,7 @@ static std::string help_phasor() {
   return ss.str();
 }
 
-static std::string help_instruments() {
+static std::string help_fmsynth() {
   std::stringstream ss;
   ss << COOL_COLOR_GREEN << "\nFM SYNTH — 4-OPERATOR FM\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
@@ -374,8 +370,13 @@ static std::string help_instruments() {
   ss << ANSI_COLOR_WHITE << "  set dx:l1_rate 2.0            " << COOL_COLOR_ORANGE << "- Rate (Hz)\n";
   ss << ANSI_COLOR_WHITE << "  set dx:l1_int 0.5             " << COOL_COLOR_ORANGE << "- Depth (0.0-1.0)\n";
   ss << ANSI_COLOR_WHITE << "  set dx:l1_dest1 1             " << COOL_COLOR_ORANGE << "- Route to op1 (1=on); dest2-4 for other ops\n\n";
+  ss << ANSI_COLOR_RESET;
+  return ss.str();
+}
 
-  ss << COOL_COLOR_GREEN << "SUBSYNTH — SUBTRACTIVE SYNTH\n"
+static std::string help_subsynth() {
+  std::stringstream ss;
+  ss << COOL_COLOR_GREEN << "\nSUBSYNTH — SUBTRACTIVE SYNTH\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  let sb = subsynth()           " << COOL_COLOR_ORANGE << "- Create subtractive synth\n";
   ss << COOL_COLOR_GREEN << "  Oscillators (N = 1-4):\n";
@@ -418,7 +419,20 @@ static std::string help_instruments() {
   ss << ANSI_COLOR_WHITE << "  set sb:l1_amp_en 1            " << COOL_COLOR_ORANGE << "- Route LFO1 to amp (tremolo)\n";
   ss << ANSI_COLOR_WHITE << "  set sb:l1_pan_en 1            " << COOL_COLOR_ORANGE << "- Route LFO1 to pan (auto-pan)\n";
   ss << ANSI_COLOR_WHITE << "  set sb:l1_filter_int 0.5      " << COOL_COLOR_ORANGE << "- LFO1 → filter intensity (l2_* for LFO2)\n\n";
+  ss << ANSI_COLOR_RESET;
+  return ss.str();
+}
 
+static std::string help_instruments() {
+  std::stringstream ss;
+  ss << COOL_COLOR_GREEN << "\nINSTRUMENTS OVERVIEW\n"
+     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << ANSI_COLOR_WHITE << "  drumsynth()   " << COOL_COLOR_ORANGE << "- Drum machine (9 voices: bd sd cp hh oh fm1-3 lz)  →  help drumsynth\n";
+  ss << ANSI_COLOR_WHITE << "  fmsynth()     " << COOL_COLOR_ORANGE << "- 4-operator FM synth                                →  help fmsynth\n";
+  ss << ANSI_COLOR_WHITE << "  subsynth()    " << COOL_COLOR_ORANGE << "- Subtractive synth (4 osc, 2 EG, 2 LFO, filter)   →  help subsynth\n";
+  ss << ANSI_COLOR_WHITE << "  wavsynth()    " << COOL_COLOR_ORANGE << "- Wavetable / sample synth (8-voice poly)            →  help wavsynth\n";
+  ss << ANSI_COLOR_WHITE << "  loop(file)    " << COOL_COLOR_ORANGE << "- Granular looper                                    →  help looper\n";
+  ss << ANSI_COLOR_WHITE << "  sample(path)  " << COOL_COLOR_ORANGE << "- One-shot sample player\n\n";
   ss << ANSI_COLOR_RESET;
   return ss.str();
 }
@@ -517,6 +531,62 @@ static std::string help_fx() {
   return ss.str();
 }
 
+// ─── midi ─────────────────────────────────────────────────────────────────────
+
+static std::string help_midi() {
+  std::stringstream ss;
+  ss << COOL_COLOR_GREEN << "\nMIDI\n"
+     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+
+  ss << COOL_COLOR_GREEN << "SETUP\n";
+  ss << ANSI_COLOR_WHITE << "  midi_init()           " << COOL_COLOR_ORANGE << "- Open MIDI device (call once at startup)\n";
+  ss << ANSI_COLOR_WHITE << "  midi_assign(gen)      " << COOL_COLOR_ORANGE << "- Route incoming MIDI note-on/off to generator\n";
+  ss << ANSI_COLOR_WHITE << "  midi_print()          " << COOL_COLOR_ORANGE << "- Toggle printing of all incoming MIDI events\n\n";
+
+  ss << COOL_COLOR_GREEN << "CC MAPPING\n";
+  ss << ANSI_COLOR_WHITE << "  midi_map(cc, param)   " << COOL_COLOR_ORANGE << "- Bind MIDI CC number to a parameter name\n";
+  ss << ANSI_COLOR_WHITE << "    e.g. midi_map(74, \"cutoff\")  " << COOL_COLOR_ORANGE << "- CC74 controls cutoff\n";
+  ss << ANSI_COLOR_WHITE << "  midi_map()            " << COOL_COLOR_ORANGE << "- (no args) dump current CC→param mappings\n\n";
+
+  ss << COOL_COLOR_GREEN << "RECORDING\n";
+  ss << ANSI_COLOR_WHITE << "  midi_bars(n)          " << COOL_COLOR_ORANGE << "- Set recording length in bars (default 1)\n";
+  ss << ANSI_COLOR_WHITE << "  midi_rec()            " << COOL_COLOR_ORANGE << "- Toggle MIDI recording on/off\n";
+  ss << ANSI_COLOR_WHITE << "  midi_stop()           " << COOL_COLOR_ORANGE << "- Stop MIDI playback\n";
+  ss << ANSI_COLOR_WHITE << "  midi_loop()           " << COOL_COLOR_ORANGE << "- Toggle looped playback of recording\n";
+  ss << ANSI_COLOR_WHITE << "  midi_reset()          " << COOL_COLOR_ORANGE << "- Clear the recording buffer\n\n";
+
+  ss << COOL_COLOR_GREEN << "QUANTIZE\n";
+  ss << ANSI_COLOR_WHITE << "  midi_quantize(n)      " << COOL_COLOR_ORANGE << "- Snap recording to n subdivisions/bar (default 16)\n";
+  ss << ANSI_COLOR_WHITE << "  midi_fix(midi)        " << COOL_COLOR_ORANGE << "- Hard-snap MidiArray events to 8th-note grid\n\n";
+
+  ss << COOL_COLOR_GREEN << "DATA / EXPORT\n";
+  ss << ANSI_COLOR_WHITE << "  midi_dump()           " << COOL_COLOR_ORANGE << "- Return recording buffer as MidiArray\n";
+  ss << ANSI_COLOR_WHITE << "  midi2array(midi)      " << COOL_COLOR_ORANGE << "- Convert MidiArray to 16-step note number array\n";
+  ss << ANSI_COLOR_WHITE << "  midi_at(midi, bar)    " << COOL_COLOR_ORANGE << "- Get MIDI note number at bar index (0-based)\n\n";
+
+  ss << COOL_COLOR_GREEN << "CONVERSION UTILS\n";
+  ss << ANSI_COLOR_WHITE << "  midi2note(num)        " << COOL_COLOR_ORANGE << "- MIDI number → note name string (e.g. 60 → \"C4\")\n";
+  ss << ANSI_COLOR_WHITE << "  midi2freq(num)        " << COOL_COLOR_ORANGE << "- MIDI number → frequency in Hz\n";
+  ss << ANSI_COLOR_WHITE << "  freq2midi(freq)       " << COOL_COLOR_ORANGE << "- Frequency → nearest MIDI number\n";
+  ss << ANSI_COLOR_WHITE << "  midi_ref()            " << COOL_COLOR_ORANGE << "- Print full note-name to MIDI number table\n\n";
+
+  ss << COOL_COLOR_GREEN << "TYPICAL WORKFLOW\n";
+  ss << COOL_COLOR_ORANGE
+     << "  midi_init()                 // connect device\n"
+     << "  let dx = fmsynth()\n"
+     << "  midi_assign(dx)             // play dx from keyboard\n"
+     << "  midi_bars(2)                // record 2 bars\n"
+     << "  midi_rec()                  // start recording\n"
+     << "  midi_rec()                  // stop\n"
+     << "  midi_quantize(16)           // snap to 16th notes\n"
+     << "  midi_loop()                 // loop it\n"
+     << "  let m = midi_dump()         // grab as MidiArray\n"
+     << "  let notes = midi2array(m)   // 16-step array\n\n";
+
+  ss << ANSI_COLOR_RESET;
+  return ss.str();
+}
+
 // ─── overview ────────────────────────────────────────────────────────────────
 
 static std::string help_overview() {
@@ -526,12 +596,15 @@ static std::string help_overview() {
   ss << COOL_COLOR_GREEN << "Topics:\n";
   ss << ANSI_COLOR_WHITE << "  help functions    " << COOL_COLOR_ORANGE << "- arrays, math, random/generative, music theory, built-ins\n";
   ss << ANSI_COLOR_WHITE << "  help generators   " << COOL_COLOR_ORANGE << "- overview of all sound generators\n";
-  ss << ANSI_COLOR_WHITE << "  help instruments  " << COOL_COLOR_ORANGE << "- fmsynth + subsynth params in full\n";
+  ss << ANSI_COLOR_WHITE << "  help instruments  " << COOL_COLOR_ORANGE << "- all instruments overview\n";
+  ss << ANSI_COLOR_WHITE << "  help fmsynth      " << COOL_COLOR_ORANGE << "- 4-op FM synth params in full\n";
+  ss << ANSI_COLOR_WHITE << "  help subsynth     " << COOL_COLOR_ORANGE << "- subtractive synth params in full\n";
   ss << ANSI_COLOR_WHITE << "  help drumsynth    " << COOL_COLOR_ORANGE << "- drumsynth: kick, snare, hi-hat, clap advanced params\n";
-  ss << ANSI_COLOR_WHITE << "  help looper       " << COOL_COLOR_ORANGE << "- granular looper: grains, FX, multi-buffer, shhh, xfader\n";
   ss << ANSI_COLOR_WHITE << "  help wavsynth     " << COOL_COLOR_ORANGE << "- wavetable/sample synth params\n";
+  ss << ANSI_COLOR_WHITE << "  help looper       " << COOL_COLOR_ORANGE << "- granular looper: grains, FX, multi-buffer, shhh, xfader\n";
   ss << ANSI_COLOR_WHITE << "  help fx           " << COOL_COLOR_ORANGE << "- all effects: distort lofi reverb diffuser delay moddelay transverb compressor sculptor gran djeq\n";
-  ss << ANSI_COLOR_WHITE << "  help mixer        " << COOL_COLOR_ORANGE << "- routing, xfader, scheduling, MIDI\n";
+  ss << ANSI_COLOR_WHITE << "  help midi         " << COOL_COLOR_ORANGE << "- MIDI: init, assign, record, quantize, CC map, conversion\n";
+  ss << ANSI_COLOR_WHITE << "  help mixer        " << COOL_COLOR_ORANGE << "- routing, xfader, scheduling\n";
   ss << ANSI_COLOR_WHITE << "  help phasor       " << COOL_COLOR_ORANGE << "- phasor signals, factory functions, visualization\n\n";
 
   ss << COOL_COLOR_GREEN << "Quick Start:\n";
@@ -567,11 +640,11 @@ std::string build_help(const std::string& topic) {
   if (topic == "generators"
    || topic == "gen")             return help_generators();
   if (topic == "instruments"
-   || topic == "synths"
-   || topic == "fmsynth"
-   || topic == "fm"
-   || topic == "subsynth"
-   || topic == "sub")             return help_instruments();
+   || topic == "synths")          return help_instruments();
+  if (topic == "fmsynth"
+   || topic == "fm")              return help_fmsynth();
+  if (topic == "subsynth"
+   || topic == "sub")             return help_subsynth();
   if (topic == "looper"
    || topic == "loop"
    || topic == "granular")        return help_looper();
@@ -585,6 +658,7 @@ std::string build_help(const std::string& topic) {
    || topic == "distort"
    || topic == "reverb"
    || topic == "delay")           return help_fx();
+  if (topic == "midi")             return help_midi();
   if (topic == "mixer"
    || topic == "mix"
    || topic == "routing")         return help_mixer();

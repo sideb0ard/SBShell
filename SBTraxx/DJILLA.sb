@@ -106,3 +106,21 @@ let ixxxblah_comp = comp()
     dix = incr(dix, 0, len(dinx));
   }
 }
+
+let dxrcblah_comp = comp()
+{
+  setup()
+  {
+    let pat = [0, 0, 0, 0,  0, 0, 52, 0,  52, 0, 52, 0,  0, 65, 0, 47];
+  }
+  run()
+  {
+
+    for (let i = 0; i < 16; i++) {
+      if (pat[i] > 0) {
+        note_on_at(dx, pat[i], i * pp, dur = 200);
+      }
+    }
+
+  }
+}

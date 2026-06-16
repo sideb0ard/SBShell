@@ -155,7 +155,7 @@ struct Mixer {
   bool midi_recording = {false};
   bool midi_loop_{false};
   bool midi_print = {false};
-  int record_bars_{1};
+  int record_bars_{2};
   int term_rows_{0};  // cached terminal height for status bar placement
   std::unordered_map<int, int>
       pending_note_ons_;  // note -> abs pos in multi-bar buffer
@@ -196,6 +196,9 @@ struct Mixer {
   // Returns bar 0 for backwards-compat with midi_dump / MidiArray
   const MultiEventMidiPattern &RecordingBuffer() const {
     return recording_buffer_[0];
+  }
+  const std::vector<MultiEventMidiPattern> &RecordingBufferAll() const {
+    return recording_buffer_;
   }
   std::vector<MultiEventMidiPattern> recording_buffer_{1};  // record_bars_ bars
 

@@ -3247,47 +3247,63 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
          [](const std::vector<std::shared_ptr<object::Object>>& args)
              -> std::shared_ptr<object::Object> {
            (void)args;
-           auto return_pattern = std::make_shared<object::MidiArray>(
-               global_mixr->RecordingBuffer());
-           return return_pattern;
+           return std::make_shared<object::MidiArray>(
+               global_mixr->RecordingBufferAll());
          })},
     {"midi2array",
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)
              -> std::shared_ptr<object::Object> {
-           int args_size = args.size();
-           if (args_size == 1) {
+           if (args.size() == 1) {
              auto midi_array =
                  std::dynamic_pointer_cast<object::MidiArray>(args[0]);
              if (midi_array) {
-               auto return_array = std::make_shared<object::Array>(
+               constexpr int kSteps = 16;
+               constexpr int kStepTicks = PPBAR / kSteps;  // 240
+               int num_bars = midi_array->num_bars_;
+
+               auto notes_outer = std::make_shared<object::Array>(
+                   std::vector<std::shared_ptr<object::Object>>());
+               auto durs_outer = std::make_shared<object::Array>(
                    std::vector<std::shared_ptr<object::Object>>());
 
-               for (int i = 0; i < 16; i++) {
-                 int lower_midi_index = 240 * i;
-                 int higher_midi_index = lower_midi_index + 240;  //
-
-                 bool found = false;
-                 for (auto& e : midi_array->notes_on_) {
-                   if (e.playback_tick > lower_midi_index &&
-                       e.playback_tick < higher_midi_index) {
-                     return_array->elements_.push_back(
-                         std::make_shared<object::Number>(e.data1));
-                     found = true;
-                     break;
+               for (int bar = 0; bar < num_bars; ++bar) {
+                 auto notes_arr = std::make_shared<object::Array>(
+                     std::vector<std::shared_ptr<object::Object>>());
+                 auto durs_arr = std::make_shared<object::Array>(
+                     std::vector<std::shared_ptr<object::Object>>());
+                 for (int step = 0; step < kSteps; ++step) {
+                   int lo = bar * PPBAR + step * kStepTicks;
+                   int hi = lo + kStepTicks;
+                   bool found = false;
+                   for (auto& e : midi_array->notes_on_) {
+                     if (e.playback_tick >= lo && e.playback_tick < hi) {
+                       notes_arr->elements_.push_back(
+                           std::make_shared<object::Number>(e.data1));
+                       durs_arr->elements_.push_back(
+                           std::make_shared<object::Number>(e.dur));
+                       found = true;
+                       break;
+                     }
+                   }
+                   if (!found) {
+                     notes_arr->elements_.push_back(
+                         std::make_shared<object::Number>(0));
+                     durs_arr->elements_.push_back(
+                         std::make_shared<object::Number>(0));
                    }
                  }
-
-                 if (!found) {
-                   return_array->elements_.push_back(
-                       std::make_shared<object::Number>(0));
-                 }
+                 notes_outer->elements_.push_back(notes_arr);
+                 durs_outer->elements_.push_back(durs_arr);
                }
 
-               return return_array;
+               auto result = std::make_shared<object::Array>(
+                   std::vector<std::shared_ptr<object::Object>>());
+               result->elements_.push_back(notes_outer);
+               result->elements_.push_back(durs_outer);
+               return result;
              }
            }
-
            return evaluator::NULLL;
          })},
     {"websock", std::make_shared<object::BuiltIn>(
@@ -3320,7 +3336,7 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                int higher_midi_index = lower_midi_index + 240;
 
                for (auto& e : midi_array->notes_on_) {
-                 if (e.playback_tick > lower_midi_index &&
+                 if (e.playback_tick >= lower_midi_index &&
                      e.playback_tick < higher_midi_index) {
                    return std::make_shared<object::Number>(e.data1);
                  }
