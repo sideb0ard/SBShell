@@ -17,6 +17,7 @@
 #include <utils.h>
 
 #include <algorithm>
+#include <atomic>
 #include <deque>
 #include <filereader.hpp>
 #include <filesystem>
@@ -47,6 +48,11 @@ static const char kPromptLoop[] =
     READLINE_SAFE_GREEN "▶ SB#> " READLINE_SAFE_RESET;
 
 char const *prompt = kPromptNormal;
+
+static std::atomic<bool> terminal_resized{false};
+static void handle_sigwinch(int) {
+  terminal_resized.store(true, std::memory_order_relaxed);
+}
 
 static bool is_process_statement(const std::string &line) {
   size_t i = line.find_first_not_of(" \t");
@@ -242,6 +248,18 @@ int event_hook() {
     }
   }
 
+  // Handle terminal resize (SIGWINCH)
+  if (terminal_resized.exchange(false)) {
+    struct winsize ws = {};
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 1) {
+      int rows = static_cast<int>(ws.ws_row);
+      global_mixr->term_rows_ = rows;
+      printf("\033[s\033[1;%dr\033[u", rows - 1);
+      fflush(stdout);
+    }
+    rl_resize_terminal();
+  }
+
   // Drain display_queue into pending list
   while (auto item = display_queue.try_pop()) {
     if (item) pending_items.push_back(std::move(*item));
@@ -348,7 +366,7 @@ void *loopy() {
   // the scroll region (DECSTBM may reset the cursor to row 1 on some
   // terminals), then restore the cursor so readline starts right below the
   // logo rather than jumping to the bottom of the screen.
-  // term_rows_ is written here once; EmitTimingDisplay just reads it.
+  // term_rows_ is updated here and on every SIGWINCH via event_hook.
   {
     struct winsize ws = {};
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 1) {
@@ -358,6 +376,7 @@ void *loopy() {
       fflush(stdout);
     }
   }
+  signal(SIGWINCH, handle_sigwinch);
 
   std::string history_path = expand_history_path();
   read_history(history_path.c_str());
