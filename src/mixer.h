@@ -158,6 +158,8 @@ struct Mixer {
   bool midi_print = {false};
   int record_bars_{2};
   int term_rows_{0};  // cached terminal height for status bar placement
+  std::atomic<float> dsp_load_{
+      0.0f};  // audio callback load 0..100%, EMA smoothed
   double global_reverb_send_{0.0};
   double global_delay_send_{0.0};
   double global_distort_send_{0.0};

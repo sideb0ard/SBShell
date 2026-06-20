@@ -145,9 +145,23 @@ void AudioEngine::audioCallback(const std::chrono::microseconds hostTime,
   mLink.commitAudioSessionState(sessionState);
 
   if (mIsPlaying) {
+    const auto t0 = std::chrono::steady_clock::now();
     auto new_bpm = mMixer.GenNext(buffer, numSamples, sessionState,
                                   engineData.quantum, hostTime);
+    const double elapsed_us = std::chrono::duration<double, std::micro>(
+                                  std::chrono::steady_clock::now() - t0)
+                                  .count();
+    const double budget_us =
+        static_cast<double>(numSamples) / mSampleRate * 1e6;
+    const float instant_pct =
+        static_cast<float>(elapsed_us / budget_us * 100.0);
+    // Exponential moving average: ~10-callback time constant
+    const float prev = mMixer.dsp_load_.load(std::memory_order_relaxed);
+    mMixer.dsp_load_.store(prev * 0.9f + instant_pct * 0.1f,
+                           std::memory_order_relaxed);
     if (new_bpm > 0) setTempo(new_bpm);
+  } else {
+    mMixer.dsp_load_.store(0.0f, std::memory_order_relaxed);
   }
 }
 

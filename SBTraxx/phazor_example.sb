@@ -189,7 +189,7 @@ let kblah_comp = comp()
       }
     }
     if (count % 8 == 7) {
-      solo(sbdrum, at= 8*pp, dur = 3840 / 4);
+      #solo(sbdrum, at= 8*pp, dur = 3840 / 4);
       note_on_at(sbdrum, 0, 13 * pp, vel = 80);
     }
   }

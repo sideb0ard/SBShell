@@ -1221,19 +1221,26 @@ void Mixer::EmitTimingDisplay() {
   ss << COOL_COLOR_GREEN << "[ " << ANSI_COLOR_RESET;
 
   // Left: info prefix then colon-fill to the BPM field
-  // "vol:X.XX midi:off ws:off  " = 26 visible cols (all ASCII)
+  // "vol:X.XX midi:off ws:off cpu:XX%  " = 34 visible cols (all ASCII)
   char vol_buf[12];
   snprintf(vol_buf, sizeof(vol_buf), "%.2f", static_cast<double>(volume));
-  constexpr int kInfoVis = 26;
+  float cpu = dsp_load_.load(std::memory_order_relaxed);
+  char cpu_buf[8];
+  snprintf(cpu_buf, sizeof(cpu_buf), "%2.0f%%", static_cast<double>(cpu));
+  constexpr int kInfoVis = 34;
   int colon_fill = left_fill - kInfoVis;
   if (colon_fill < 0) colon_fill = 0;
 
+  const char *cpu_color = cpu > 75.0f   ? ANSI_COLOR_RED
+                          : cpu > 50.0f ? COOL_COLOR_YELLOW
+                                        : ANSI_COLOR_WHITE;
   ss << COOL_COLOR_ORANGE << "vol:" << ANSI_COLOR_WHITE << vol_buf
      << COOL_COLOR_ORANGE
      << " midi:" << (have_midi_controller ? COOL_COLOR_GREEN : ANSI_COLOR_WHITE)
      << (have_midi_controller ? "on " : "off") << COOL_COLOR_ORANGE
      << " ws:" << (websocket_enabled_ ? COOL_COLOR_GREEN : ANSI_COLOR_WHITE)
-     << (websocket_enabled_ ? "on " : "off") << " " << COOL_COLOR_GREEN;
+     << (websocket_enabled_ ? "on " : "off") << COOL_COLOR_ORANGE
+     << " cpu:" << cpu_color << cpu_buf << " " << COOL_COLOR_GREEN;
   for (int i = 0; i < colon_fill; i++) ss << ':';
   ss << ANSI_COLOR_RESET;
 
