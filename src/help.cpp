@@ -37,6 +37,7 @@ static std::string help_functions() {
   ss << ANSI_COLOR_WHITE << "  floor(num)                           " << COOL_COLOR_ORANGE << "- Largest integer <= num\n";
   ss << ANSI_COLOR_WHITE << "  abs(num)                             " << COOL_COLOR_ORANGE << "- Absolute value\n";
   ss << ANSI_COLOR_WHITE << "  log(num)                             " << COOL_COLOR_ORANGE << "- log2\n";
+  ss << ANSI_COLOR_WHITE << "  pow(base, exp)                       " << COOL_COLOR_ORANGE << "- base raised to exp\n";
   ss << ANSI_COLOR_WHITE << "  sin(num), cos(num)                   " << COOL_COLOR_ORANGE << "- Trig (radians)\n";
   ss << ANSI_COLOR_WHITE << "  max(a, b), min(a, b)                 " << COOL_COLOR_ORANGE << "- Larger/smaller value\n";
   ss << ANSI_COLOR_WHITE << "  incr(num, min, max)                  " << COOL_COLOR_ORANGE << "- Increment with wrap\n";

@@ -144,17 +144,53 @@ let snrrrllblah_comp = comp()
   run()
   {
 
-    for (let i = 0; i < 16; i++) {
-      if (fb[i] == 1) {
-        note_on_at(sbdrum, 1, i * pp);
+    if (count % 4 == 0) {
+      for (let i = 0; i < 16; i++) {
+        if (fb[i] == 1) {
+          note_on_at(sbdrum, 1, i * pp);
+        }
       }
     }
 
-    for (let i = 1; i < 4; i++) {
-      let ppbase = 3840 * i;
-      for (let j = 0; j < 16; j++) {
-        note_on_at(sbdrum, 1, ppbase + j * pp);
+    # for (let i = 1; i < 4; i++) {
+      #   let ppbase = 3840 * i;
+      #   for (let j = 0; j < 16; j++) {
+        #     note_on_at(sbdrum, 1, ppbase + j * pp);
+        #   }
+      # }
+
+    if (count % 4 == 1) {
+      let total = 3840 * 3;
+      let step = 240;
+      let i = 0;
+      for  (;;) {
+        let progress = i / total;
+        let v = 0.2 * pow(0.8 / 0.2, progress);
+        note_on_at(sbdrum, 1, i, vel = v * 127, dur = 30);
+        i = i + step;
+        if ( i >= total) {
+          break;
+        }
       }
+    }
+  }
+}
+
+let kblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (i % 4 == 0) {
+        note_on_at(sbdrum, 0, i * pp);
+      }
+    }
+    if (count % 8 == 7) {
+      solo(sbdrum, at= 8*pp, dur = 3840 / 4);
+      note_on_at(sbdrum, 0, 13 * pp, vel = 80);
     }
   }
 }

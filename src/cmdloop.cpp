@@ -130,16 +130,30 @@ static int transport_escape(int count, int key) {
 // Cursor parks at max_plot_row+1 after Ctrl-L; scroll region starts there too.
 static int max_plot_row = 0;
 
+// Re-apply the screen-size cap before every rl_forced_update_display so
+// readline never places the cursor on the status-bar row.
+static void cap_and_redisplay() {
+  int rows = (global_mixr->term_rows_ > 1) ? global_mixr->term_rows_ : 24;
+  int cols = 80;
+  rl_get_screen_size(nullptr, &cols);
+  rl_set_screen_size(rows - 1, cols);
+  rl_forced_update_display();
+}
+
 static int handle_ctrl_l(int count, int key) {
   (void)count;
   (void)key;
-  // Reset scroll region to full screen so terminal scrollback is restored.
-  // If draw_plots are still active they re-establish their rows on next render.
   max_plot_row = 0;
-  printf("\033[r\033[2J\033[1;1H");
+  int rows = (global_mixr->term_rows_ > 1) ? global_mixr->term_rows_ : 24;
+  int cols = 80;
+  rl_get_screen_size(nullptr, &cols);
+  // Clear screen and restore a scroll region that keeps the status bar (last
+  // row) pinned. Using 1..rows-1 means content scrolls out of row 1 into
+  // the terminal's scrollback buffer while row `rows` stays fixed.
+  printf("\033[2J\033[1;%dr\033[1;1H", rows - 1);
   fflush(stdout);
   rl_on_new_line();
-  rl_forced_update_display();
+  cap_and_redisplay();
   return 0;
 }
 
@@ -287,7 +301,7 @@ int event_hook() {
       else
         prompt = kPromptNormal;
       rl_set_prompt(prompt);
-      rl_forced_update_display();
+      cap_and_redisplay();
       prev_recording = cur_rec;
       prev_loop = cur_loop;
     }
@@ -393,7 +407,7 @@ int event_hook() {
           // Restarting via rl_done=1 wipes the kill ring, breaking Ctrl-U/Y/L.
           printf("\r\033[K%s\n", msg.c_str());
           rl_on_new_line();  // tell readline cursor is on a fresh line
-          rl_forced_update_display();  // redraw prompt + current edit buffer
+          cap_and_redisplay();
         }
       }
     }

@@ -614,6 +614,20 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                   }
                   return evaluator::NULLL;
                 })},
+    {"pow", std::make_shared<object::BuiltIn>(
+                [](const std::vector<std::shared_ptr<object::Object>>& args)
+                    -> std::shared_ptr<object::Object> {
+                  if (args.size() != 2)
+                    return evaluator::NewError(
+                        "pow needs two args - base and exponent!");
+                  auto base =
+                      std::dynamic_pointer_cast<object::Number>(args[0]);
+                  auto exp = std::dynamic_pointer_cast<object::Number>(args[1]);
+                  if (base && exp)
+                    return std::make_shared<object::Number>(
+                        std::pow(base->value_, exp->value_));
+                  return evaluator::NULLL;
+                })},
     {"take_n",
      std::make_shared<object::BuiltIn>(
          [](std::vector<std::shared_ptr<object::Object>> input)
