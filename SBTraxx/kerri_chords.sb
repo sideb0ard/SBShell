@@ -1,0 +1,64 @@
+# ── Kerri Chandler chord voicings ─────────────────────────────────────
+# Core technique: third inversion minor 7 stabs
+# All voicing fns return 4-note arrays of MIDI note numbers.
+#
+# MIDI note ref: C4=60  C#=61  D=62  D#=63  E=64  F=65  F#=66
+#                G=67   G#=68  A=69  A#=70  B=71  C5=72
+
+# Third inversion minor 7: [7th, root, m3, 5th]
+# Formula: [root-2, root, root+3, root+7]
+# Voice leading: m7 in bass, close voicing above
+# e.g. D#min7 inv3: C#(61) D#(63) F#(66) A#(70)
+let kerri_min7 = fn(root)
+{
+  return [root-2, root, root+3, root+7];
+}
+
+# Minor 7(11): drop the 5th, add the 11th (=P4 above root)
+# Formula: [root-2, root, root+3, root+5]
+# Adds color — sounds more suspended and open
+# e.g. D#min7(11): C#(61) D#(63) F#(66) G#(68)
+let kerri_min7_11 = fn(root)
+{
+  return [root-2, root, root+3, root+5];
+}
+
+# Open minor (2nd inversion) — the "B min13" style in the article
+# Actually G# minor in 2nd inversion, with doubled root at top
+# Formula from D# bass: [root, root+5, root+8, root+12]
+# e.g. kerri_min_open(63) → D#(63) G#(68) B(71) D#(75)
+# pair with kerri_min7(68) for the G#min7 side of the progression
+let kerri_min_open = fn(bass_note)
+{
+  return [bass_note, bass_note+5, bass_note+8, bass_note+12];
+}
+
+# ── Common two-chord pairs (third inversion minor 7 voicings)
+# Use note_on_at(ep, pair[0], ...) and note_on_at(ep, pair[1], ...)
+#   Dsharp > Gsharp (up a P4)   classic KC
+let kc_dsh_gsh = [kerri_min7(63), kerri_min7(68)];
+#   Gsharp > Dsharp (down a P4)
+let kc_gsh_dsh = [kerri_min7(68), kerri_min7(63)];
+#   Dsharp(11) > Bminor open
+let kc_dsh_ext = [kerri_min7_11(63), kerri_min_open(63)];
+
+# print("kerri_chords loaded.");
+# print("voicing fns: kerri_min7(root)  kerri_min7_11(root)  kerri_min_open(bass)");
+# print("stab helper: note_on_at(sg, chord, tick, vel, dur)");
+# print("comps: kerri_dsharp_prog  kerri_dsharp_ext");
+# print("pairs: kc_dsh_gsh  kc_gsh_dsh  kc_dsh_ext");
+
+let kerriblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    if (count % 8 < 4) {
+      kerri_dsharp_prog();
+    } else {
+      kerri_dsharp_ext();
+    }
+  }
+}

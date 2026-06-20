@@ -10,5 +10,7 @@ struct ScheduledDisplayItem {
   int width{40};
   std::string label{};
   int row{-1};
+  int bar_pos{
+      -1};  // raw at_tick value; enables column-positioned waveform mode
   DisplayType type{DisplayType::BAR};
 };

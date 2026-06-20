@@ -46,7 +46,7 @@ static std::string help_functions() {
 
   ss << COOL_COLOR_GREEN << "RANDOM / GENERATIVE\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
-  ss << ANSI_COLOR_WHITE << "  rand(n)                        " << COOL_COLOR_ORANGE << "- Random 0 to n-1  (rand(arr) picks random element)\n";
+  ss << ANSI_COLOR_WHITE << "  rand(n)                        " << COOL_COLOR_ORANGE << "- Random 0..n-1; rand(arr) picks random element\n";
   ss << ANSI_COLOR_WHITE << "  rand_array(size, min, max)     " << COOL_COLOR_ORANGE << "- Array of random numbers\n";
   ss << ANSI_COLOR_WHITE << "  rand_sixteenthz(n)             " << COOL_COLOR_ORANGE << "- n random unique 16th-note positions\n";
   ss << ANSI_COLOR_WHITE << "  perlin(x)                      " << COOL_COLOR_ORANGE << "- Perlin noise (smooth random)\n";
@@ -61,7 +61,7 @@ static std::string help_functions() {
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  midi_ref()                            " << COOL_COLOR_ORANGE << "- Note names to MIDI numbers\n";
   ss << ANSI_COLOR_WHITE << "  notes_in_key(root, scale)             " << COOL_COLOR_ORANGE << "- MIDI notes in key/scale\n";
-  ss << ANSI_COLOR_WHITE << "  notes_in_chord(root, key, mod, scale) " << COOL_COLOR_ORANGE << "- Key-aware chord (quality from scale degree)\n";
+  ss << ANSI_COLOR_WHITE << "  notes_in_chord(root, key, mod, scale) " << COOL_COLOR_ORANGE << "- Key-aware chord (quality from scale)\n";
   ss << ANSI_COLOR_WHITE << "    mod:   0=triad 1=seventh 2=seventh_inv 3=root_inv 4=power 5=ninth\n";
   ss << ANSI_COLOR_WHITE << "    scale: 0=major 1=nat_minor 2=harm_minor 3=mel_minor 4=phrygian\n";
   ss << ANSI_COLOR_WHITE << "  chord_notes(root, type, mod)          " << COOL_COLOR_ORANGE << "- Key-independent chord\n";
@@ -114,8 +114,7 @@ static std::string help_generators() {
   ss << ANSI_COLOR_WHITE << "  load_preset(gen, name) " << COOL_COLOR_ORANGE << "- Load preset\n";
   ss << ANSI_COLOR_WHITE << "  save_preset(gen, name) " << COOL_COLOR_ORANGE << "- Save preset\n\n";
   ss << COOL_COLOR_GREEN << "  For detailed params:\n";
-  ss << ANSI_COLOR_WHITE << "  help instruments  " << COOL_COLOR_ORANGE << "- all instruments overview\n";
-  ss << ANSI_COLOR_WHITE << "  help fmsynth      " << COOL_COLOR_ORANGE << "- 4-op FM synth params\n";
+  ss << ANSI_COLOR_WHITE << "  help fmsynth      " << COOL_COLOR_ORANGE << "- 4-op FM synth params in full\n";
   ss << ANSI_COLOR_WHITE << "  help subsynth     " << COOL_COLOR_ORANGE << "- subtractive synth params\n";
   ss << ANSI_COLOR_WHITE << "  help drumsynth    " << COOL_COLOR_ORANGE << "- drum voices in depth\n";
   ss << ANSI_COLOR_WHITE << "  help wavsynth     " << COOL_COLOR_ORANGE << "- wavetable/sample synth\n";
@@ -274,7 +273,10 @@ static std::string help_mixer() {
   std::stringstream ss;
   ss << COOL_COLOR_GREEN << "\nMIXER / ROUTING\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
-  ss << ANSI_COLOR_WHITE << "  send(effect, gen)      " << COOL_COLOR_ORANGE << "- Send generator to effect\n";
+  ss << ANSI_COLOR_WHITE << "  send(effect, gen)         " << COOL_COLOR_ORANGE << "- Send generator to effect (default level 0.4)\n";
+  ss << ANSI_COLOR_WHITE << "  send(effect, gen, level)  " << COOL_COLOR_ORANGE << "- Send with explicit intensity (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  set_send(gen, fx, level)  " << COOL_COLOR_ORANGE << "- Update send intensity (fx: \"delay\"/\"reverb\"/\"distort\")\n";
+  ss << COOL_COLOR_ORANGE << "    // ps shows each generator's active sends (e.g. sends: dly:0.40)\n";
   ss << ANSI_COLOR_WHITE << "  add_fx(gen, fx_name)   " << COOL_COLOR_ORANGE << "- Add effect to generator\n";
   ss << ANSI_COLOR_WHITE << "  mvol(volume)           " << COOL_COLOR_ORANGE << "- Master volume (0.0-1.0)\n";
   ss << ANSI_COLOR_WHITE << "  monitor(filepath)      " << COOL_COLOR_ORANGE << "- Monitor file for live coding\n\n";
@@ -303,6 +305,21 @@ static std::string help_mixer() {
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  See: help midi        " << COOL_COLOR_ORANGE << "- Full MIDI reference (init, record, CC map, conversion)\n\n";
 
+  ss << COOL_COLOR_GREEN << "GLOBAL SENDS\n"
+     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << ANSI_COLOR_WHITE << "  global_reverb(amt)      " << COOL_COLOR_ORANGE << "- Route full dry mix into global reverb (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  global_delay(amt)       " << COOL_COLOR_ORANGE << "- Route full dry mix into global delay (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  global_distort(amt)     " << COOL_COLOR_ORANGE << "- Route full dry mix into global distortion (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  global_reverb_fb(amt)   " << COOL_COLOR_ORANGE << "- Feed reverb output back into reverb (0.0-0.98)\n";
+  ss << ANSI_COLOR_WHITE << "  global_delay_fb(amt)    " << COOL_COLOR_ORANGE << "- Feed delay output back into delay (0.0-0.98)\n";
+  ss << ANSI_COLOR_WHITE << "  global_distort_fb(amt)  " << COOL_COLOR_ORANGE << "- Feed distort output back into distort (0.0-0.98)\n";
+  ss << COOL_COLOR_ORANGE << "  // Additive — per-generator sends still apply\n";
+  ss << COOL_COLOR_ORANGE << "  // ps shows global sends and per-FX routing in the header\n";
+  ss << COOL_COLOR_ORANGE << "  // Example: slowly suck everything into a reverb swoosh:\n";
+  ss << COOL_COLOR_ORANGE << "  sched(0, 0.0, 1.0, pp*32, \"global_reverb %\") // fade in\n";
+  ss << COOL_COLOR_ORANGE << "  global_reverb_fb(0.6)                        // bloom\n";
+  ss << COOL_COLOR_ORANGE << "  sched(pp*32, 1.0, 0.0, pp*32, \"global_reverb %\") // fade out\n\n";
+
   ss << COOL_COLOR_GREEN << "FILTERS / EQ\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  add_fx(inst, \"djeq\")       " << COOL_COLOR_ORANGE << "- DJ-style 2-band EQ\n";
@@ -317,26 +334,108 @@ static std::string help_phasor() {
   std::stringstream ss;
   ss << COOL_COLOR_GREEN << "\nPHASOR — CYCLIC RAMP SIGNAL\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
-  ss << ANSI_COLOR_WHITE << "  let p = phasor(steps)    " << COOL_COLOR_ORANGE << "- Create phasor 0.0→1.0 over 'steps' MIDI ticks\n";
-  ss << ANSI_COLOR_WHITE << "  signal_from(p)           " << COOL_COLOR_ORANGE << "- Read current phase (0.0-1.0)\n";
-  ss << ANSI_COLOR_WHITE << "  change_steps(p, steps)   " << COOL_COLOR_ORANGE << "- Retune cycle length live\n";
-  ss << ANSI_COLOR_WHITE << "  reset(p)                 " << COOL_COLOR_ORANGE << "- Reset phase to 0\n\n";
-  ss << COOL_COLOR_GREEN << "  Factory functions (see phazor.sb):\n";
-  ss << ANSI_COLOR_WHITE << "  ramp_div_factory()       " << COOL_COLOR_ORANGE << "- fn(sig, ratio): sub-ramp at fractional speed\n";
-  ss << ANSI_COLOR_WHITE << "  ramp2slope_factory()     " << COOL_COLOR_ORANGE << "- fn(sig): instantaneous slope\n";
-  ss << ANSI_COLOR_WHITE << "  ramp2trigger_factory()   " << COOL_COLOR_ORANGE << "- fn(sig): true once per cycle (on wrap)\n\n";
+  ss << ANSI_COLOR_WHITE << "  let p = phasor(steps)    " << COOL_COLOR_ORANGE << "- Create ramp: 0.0→1.0 over 'steps' MIDI ticks\n";
+  ss << ANSI_COLOR_WHITE << "  signal_from(p)           " << COOL_COLOR_ORANGE << "- Advance and read current phase (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  change_steps(p, steps)   " << COOL_COLOR_ORANGE << "- Retune cycle length live (phase preserved)\n";
+  ss << ANSI_COLOR_WHITE << "  reset(p)                 " << COOL_COLOR_ORANGE << "- Snap phase back to 0\n";
+  ss << ANSI_COLOR_WHITE << "  steps: 3840=1bar  1920=halfbar  960=beat  7680=2bars\n\n";
+
+  ss << COOL_COLOR_GREEN << "FACTORY FUNCTIONS  (in startup.sb — always available)\n"
+     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+
+  ss << COOL_COLOR_GREEN << "  ramp2slope_factory()  — instantaneous slope / derivative\n";
+  ss << ANSI_COLOR_WHITE
+     << "  Returns fn(sig): per-tick rate-of-change of the ramp.\n"
+     << "  Closure keeps history_val so it can diff consecutive samples.\n"
+     << "  Handles the 1→0 wrap correctly (returns small +ve, not a spike).\n"
+     << "  Mostly ~1/steps per tick; used internally by ramp_div_factory.\n\n";
+  ss << COOL_COLOR_ORANGE
+     << "    let slope = ramp2slope_factory();\n"
+     << "    let ds = slope(sig);   // ~0.00026/tick for steps=3840\n\n";
+
+  ss << COOL_COLOR_GREEN << "  ramp_div_factory()  — fractional-speed sub-ramp\n";
+  ss << ANSI_COLOR_WHITE
+     << "  Returns fn(sig, ratio): runs a new 0→1 ramp at 'ratio' of\n"
+     << "  the master ramp speed. Internally: slope = ramp2slope(sig),\n"
+     << "  accum += slope/ratio, wraps at 1. Each factory() call is\n"
+     << "  independent — closures hold their own accum.\n"
+     << "  Phase carries across bars (accum lives in setup()).\n\n"
+     << "  ratio = 1/N  → N complete cycles per bar, triggers evenly spaced\n"
+     << "  ratio = P/Q  → Q/P cycles/bar; phase drifts, pattern repeats\n"
+     << "                 after lcm(P,Q) bars (irrational euclidean feel)\n\n";
+  ss << COOL_COLOR_ORANGE
+     << "    let div = ramp_div_factory();\n"
+     << "    let s = div(ramp, 1/3);   // 3 even triggers per bar\n"
+     << "    let s = div(ramp, 3/8);   // ~2.67/bar, drifts across 3 bars\n\n";
+
+  ss << COOL_COLOR_GREEN << "  ramp2trigger_factory()  — wrap-around trigger\n";
+  ss << ANSI_COLOR_WHITE
+     << "  Returns fn(sig): true exactly once per cycle, when the ramp\n"
+     << "  wraps 1→0 (detected as abs(delta) > 0.5). Closure holds\n"
+     << "  history_val. Combine with ramp_div to trigger notes at any\n"
+     << "  rhythmic subdivision.\n\n";
+  ss << COOL_COLOR_ORANGE
+     << "    let trig = ramp2trigger_factory();\n"
+     << "    if (trig(sub)) { note_on_at(sg, 60, i); }\n\n";
+
+  ss << COOL_COLOR_GREEN << "FULL EXAMPLE — phazor_draw\n"
+     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << COOL_COLOR_ORANGE
+     << "  let phazor_draw = comp()\n"
+     << "  {\n"
+     << "    setup()\n"
+     << "    {\n"
+     << "      let fullramp = phasor(3840);        // master 1-bar ramp\n"
+     << "      let ramp_div1 = ramp_div_factory(); // each holds own accum\n"
+     << "      let ramp_div2 = ramp_div_factory();\n"
+     << "      let ramp_div3 = ramp_div_factory();\n"
+     << "      let ramp2tri1 = ramp2trigger_factory();\n"
+     << "      let ramp2tri2 = ramp2trigger_factory();\n"
+     << "      let ramp2tri3 = ramp2trigger_factory();\n"
+     << "      let plot_width = 80;\n"
+     << "      let stride = 3840 / plot_width;     // 48 ticks per column\n"
+     << "    }\n"
+     << "    run()\n"
+     << "    {\n"
+     << "      for (let i = 0; i < 3840; i++) {\n"
+     << "        let rampval  = signal_from(fullramp);\n"
+     << "        let out_sig1 = ramp_div1(rampval, 3/8);     // ~2.67/bar\n"
+     << "        let out_sig2 = ramp_div2(rampval, 3/15);    // 5/bar\n"
+     << "        let mod_ratio = max(out_sig2, 0.001);        // avoid /0\n"
+     << "        let out_sig3 = ramp_div3(out_sig1, mod_ratio); // FM!\n"
+     << "        if (i % stride == 0) {\n"
+     << "          draw_plot(rampval,  plot_width, \"r  \", at=i, row=1);\n"
+     << "          draw_plot(out_sig1, plot_width, \"s1 \", at=i, row=2);\n"
+     << "          draw_plot(out_sig2, plot_width, \"s2 \", at=i, row=3);\n"
+     << "          draw_plot(out_sig3, plot_width, \"s3 \", at=i, row=4);\n"
+     << "        }\n"
+     << "        if (ramp2tri1(out_sig1)) { print(\"s1 NOTEON:\", i); }\n"
+     << "        if (ramp2tri2(out_sig2)) { print(\"s2 NOTEON:\", i); }\n"
+     << "        if (ramp2tri3(out_sig3)) { print(\"s3 NOTEON:\", i); }\n"
+     << "      }\n"
+     << "    }\n"
+     << "  }\n\n";
+  ss << COOL_COLOR_GREEN << "  out_sig3 — modulated divisor (FM ramp)\n";
+  ss << ANSI_COLOR_WHITE
+     << "  ramp_div3 takes out_sig1 as its *input* and out_sig2 as its\n"
+     << "  *ratio*. out_sig2 is itself a 0→1 ramp cycling 5x/bar, so the\n"
+     << "  ratio passed to ramp_div3 sweeps from ~0 to ~1 continuously.\n\n"
+     << "  Effect: when out_sig2 is near 0 (ratio tiny), accum advances\n"
+     << "  very fast — out_sig3 races through many cycles. When out_sig2\n"
+     << "  is near 1 (ratio ~1), out_sig3 tracks out_sig1 1:1. The result\n"
+     << "  is a ramp that accelerates and decelerates 5 times per bar,\n"
+     << "  producing a burst of closely-spaced triggers at the start of\n"
+     << "  each out_sig2 cycle that spread out as out_sig2 rises.\n"
+     << "  This is the ramp equivalent of FM synthesis — using one signal\n"
+     << "  to modulate the frequency of another.\n\n";
 
   ss << COOL_COLOR_GREEN << "VISUALIZATION\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  draw_bar(val, width, label, at=, row=)  " << COOL_COLOR_ORANGE << "- Bar graph (val: 0.0-1.0)\n";
-  ss << ANSI_COLOR_WHITE << "  draw_plot(val, width, label, at=, row=) " << COOL_COLOR_ORANGE << "- Rolling sparkline\n";
-  ss << ANSI_COLOR_WHITE << "    at=<ticks>  " << COOL_COLOR_ORANGE << "- Schedule at a future tick\n";
-  ss << ANSI_COLOR_WHITE << "    row=<n>     " << COOL_COLOR_ORANGE << "- Pin to row n above cursor (for stacking)\n\n";
-  ss << COOL_COLOR_ORANGE
-     << "  // Three stacked signals:\n"
-     << "  draw_plot(sig1, 80, \"raw \", at=i, row=1);\n"
-     << "  draw_plot(sig2, 80, \"div2\", at=i, row=2);\n"
-     << "  draw_plot(sig3, 80, \"div4\", at=i, row=3);\n\n";
+  ss << ANSI_COLOR_WHITE << "  draw_plot(val, width, label, at=, row=) " << COOL_COLOR_ORANGE << "- Waveform sparkline (pin with row=)\n";
+  ss << ANSI_COLOR_WHITE << "    at=<ticks>  " << COOL_COLOR_ORANGE << "- Exact tick column — use at=i inside for loop\n";
+  ss << ANSI_COLOR_WHITE << "    row=<n>     " << COOL_COLOR_ORANGE << "- Fixed terminal row; Ctrl-L parks cursor below all rows\n";
+  ss << ANSI_COLOR_WHITE << "    width=80    " << COOL_COLOR_ORANGE << "- Match terminal width (3840/80=48 ticks per column)\n\n";
 
   ss << ANSI_COLOR_RESET;
   return ss.str();
@@ -419,20 +518,6 @@ static std::string help_subsynth() {
   ss << ANSI_COLOR_WHITE << "  set sb:l1_amp_en 1            " << COOL_COLOR_ORANGE << "- Route LFO1 to amp (tremolo)\n";
   ss << ANSI_COLOR_WHITE << "  set sb:l1_pan_en 1            " << COOL_COLOR_ORANGE << "- Route LFO1 to pan (auto-pan)\n";
   ss << ANSI_COLOR_WHITE << "  set sb:l1_filter_int 0.5      " << COOL_COLOR_ORANGE << "- LFO1 → filter intensity (l2_* for LFO2)\n\n";
-  ss << ANSI_COLOR_RESET;
-  return ss.str();
-}
-
-static std::string help_instruments() {
-  std::stringstream ss;
-  ss << COOL_COLOR_GREEN << "\nINSTRUMENTS OVERVIEW\n"
-     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
-  ss << ANSI_COLOR_WHITE << "  drumsynth()   " << COOL_COLOR_ORANGE << "- Drum machine (9 voices: bd sd cp hh oh fm1-3 lz)  →  help drumsynth\n";
-  ss << ANSI_COLOR_WHITE << "  fmsynth()     " << COOL_COLOR_ORANGE << "- 4-operator FM synth                                →  help fmsynth\n";
-  ss << ANSI_COLOR_WHITE << "  subsynth()    " << COOL_COLOR_ORANGE << "- Subtractive synth (4 osc, 2 EG, 2 LFO, filter)   →  help subsynth\n";
-  ss << ANSI_COLOR_WHITE << "  wavsynth()    " << COOL_COLOR_ORANGE << "- Wavetable / sample synth (8-voice poly)            →  help wavsynth\n";
-  ss << ANSI_COLOR_WHITE << "  loop(file)    " << COOL_COLOR_ORANGE << "- Granular looper                                    →  help looper\n";
-  ss << ANSI_COLOR_WHITE << "  sample(path)  " << COOL_COLOR_ORANGE << "- One-shot sample player\n\n";
   ss << ANSI_COLOR_RESET;
   return ss.str();
 }
@@ -549,19 +634,25 @@ static std::string help_midi() {
   ss << ANSI_COLOR_WHITE << "  midi_map()            " << COOL_COLOR_ORANGE << "- (no args) dump current CC→param mappings\n\n";
 
   ss << COOL_COLOR_GREEN << "RECORDING\n";
-  ss << ANSI_COLOR_WHITE << "  midi_bars(n)          " << COOL_COLOR_ORANGE << "- Set recording length in bars (default 1)\n";
-  ss << ANSI_COLOR_WHITE << "  midi_rec()            " << COOL_COLOR_ORANGE << "- Toggle MIDI recording on/off\n";
+  ss << ANSI_COLOR_WHITE << "  midi_bars(n)          " << COOL_COLOR_ORANGE << "- Set recording length in bars (default 2)\n";
+  ss << ANSI_COLOR_WHITE << "  midi_rec()            " << COOL_COLOR_ORANGE << "- Toggle recording; also auto-enables loop\n";
   ss << ANSI_COLOR_WHITE << "  midi_stop()           " << COOL_COLOR_ORANGE << "- Stop MIDI playback\n";
   ss << ANSI_COLOR_WHITE << "  midi_loop()           " << COOL_COLOR_ORANGE << "- Toggle looped playback of recording\n";
-  ss << ANSI_COLOR_WHITE << "  midi_reset()          " << COOL_COLOR_ORANGE << "- Clear the recording buffer\n\n";
+  ss << ANSI_COLOR_WHITE << "  midi_reset()          " << COOL_COLOR_ORANGE << "- Clear the recording buffer\n";
+  ss << COOL_COLOR_GREEN << "  Keyboard shortcuts (in REC mode):\n";
+  ss << ANSI_COLOR_WHITE << "  SPACE                 " << COOL_COLOR_ORANGE << "- Toggle recording on/off (⏺ REC> when active)\n";
+  ss << ANSI_COLOR_WHITE << "  ` or ESC              " << COOL_COLOR_ORANGE << "- Exit record/loop mode, return to normal prompt\n\n";
 
   ss << COOL_COLOR_GREEN << "QUANTIZE\n";
   ss << ANSI_COLOR_WHITE << "  midi_quantize(n)      " << COOL_COLOR_ORANGE << "- Snap recording to n subdivisions/bar (default 16)\n";
   ss << ANSI_COLOR_WHITE << "  midi_fix(midi)        " << COOL_COLOR_ORANGE << "- Hard-snap MidiArray events to 8th-note grid\n\n";
 
   ss << COOL_COLOR_GREEN << "DATA / EXPORT\n";
-  ss << ANSI_COLOR_WHITE << "  midi_dump()           " << COOL_COLOR_ORANGE << "- Return recording buffer as MidiArray\n";
-  ss << ANSI_COLOR_WHITE << "  midi2array(midi)      " << COOL_COLOR_ORANGE << "- Convert MidiArray to 16-step note number array\n";
+  ss << ANSI_COLOR_WHITE << "  midi_dump()           " << COOL_COLOR_ORANGE << "- Return full recording buffer (all bars) as MidiArray\n";
+  ss << ANSI_COLOR_WHITE << "  midi2array(midi)      " << COOL_COLOR_ORANGE << "- Convert to [notes_arrs, durs_arrs], one array per bar\n";
+  ss << COOL_COLOR_ORANGE << "    // returns [[notes_bar0, notes_bar1, ...], [durs_bar0, durs_bar1, ...]]\n";
+  ss << COOL_COLOR_ORANGE << "    // notes_barN = 16-element array of MIDI note numbers (0=rest)\n";
+  ss << COOL_COLOR_ORANGE << "    // durs_barN  = 16-element array of durations in MIDI ticks\n";
   ss << ANSI_COLOR_WHITE << "  midi_at(midi, bar)    " << COOL_COLOR_ORANGE << "- Get MIDI note number at bar index (0-based)\n\n";
 
   ss << COOL_COLOR_GREEN << "CONVERSION UTILS\n";
@@ -572,16 +663,17 @@ static std::string help_midi() {
 
   ss << COOL_COLOR_GREEN << "TYPICAL WORKFLOW\n";
   ss << COOL_COLOR_ORANGE
-     << "  midi_init()                 // connect device\n"
+     << "  midi_init()                      // connect device\n"
      << "  let dx = fmsynth()\n"
-     << "  midi_assign(dx)             // play dx from keyboard\n"
-     << "  midi_bars(2)                // record 2 bars\n"
-     << "  midi_rec()                  // start recording\n"
-     << "  midi_rec()                  // stop\n"
-     << "  midi_quantize(16)           // snap to 16th notes\n"
-     << "  midi_loop()                 // loop it\n"
-     << "  let m = midi_dump()         // grab as MidiArray\n"
-     << "  let notes = midi2array(m)   // 16-step array\n\n";
+     << "  midi_assign(dx)                  // play dx from keyboard\n"
+     << "  midi_bars(2)                     // record 2 bars (default)\n"
+     << "  midi_rec()                       // start recording (loop auto-enables)\n"
+     << "  // play something...             // SPACE toggles rec, ` / ESC to exit\n"
+     << "  midi_quantize(16)                // snap to 16th notes\n"
+     << "  let m = midi_dump()              // grab all bars as MidiArray\n"
+     << "  let arr = midi2array(m)          // [notes_arrays, durs_arrays]\n"
+     << "  let bar0_notes = arr[0][0]       // 16-step notes for bar 0\n"
+     << "  let bar0_durs  = arr[1][0]       // 16-step durations for bar 0\n\n";
 
   ss << ANSI_COLOR_RESET;
   return ss.str();
@@ -595,16 +687,16 @@ static std::string help_overview() {
 
   ss << COOL_COLOR_GREEN << "Topics:\n";
   ss << ANSI_COLOR_WHITE << "  help functions    " << COOL_COLOR_ORANGE << "- arrays, math, random/generative, music theory, built-ins\n";
-  ss << ANSI_COLOR_WHITE << "  help generators   " << COOL_COLOR_ORANGE << "- overview of all sound generators\n";
-  ss << ANSI_COLOR_WHITE << "  help instruments  " << COOL_COLOR_ORANGE << "- all instruments overview\n";
+  ss << ANSI_COLOR_WHITE << "  help generators   " << COOL_COLOR_ORANGE << "- all sound generators + links to detailed help\n";
   ss << ANSI_COLOR_WHITE << "  help fmsynth      " << COOL_COLOR_ORANGE << "- 4-op FM synth params in full\n";
   ss << ANSI_COLOR_WHITE << "  help subsynth     " << COOL_COLOR_ORANGE << "- subtractive synth params in full\n";
   ss << ANSI_COLOR_WHITE << "  help drumsynth    " << COOL_COLOR_ORANGE << "- drumsynth: kick, snare, hi-hat, clap advanced params\n";
   ss << ANSI_COLOR_WHITE << "  help wavsynth     " << COOL_COLOR_ORANGE << "- wavetable/sample synth params\n";
   ss << ANSI_COLOR_WHITE << "  help looper       " << COOL_COLOR_ORANGE << "- granular looper: grains, FX, multi-buffer, shhh, xfader\n";
-  ss << ANSI_COLOR_WHITE << "  help fx           " << COOL_COLOR_ORANGE << "- all effects: distort lofi reverb diffuser delay moddelay transverb compressor sculptor gran djeq\n";
+  ss << ANSI_COLOR_WHITE << "  help fx           " << COOL_COLOR_ORANGE << "- distort lofi reverb diffuser delay moddelay\n";
+  ss << ANSI_COLOR_WHITE << "                      " << COOL_COLOR_ORANGE << "  transverb compressor sculptor gran djeq\n";
   ss << ANSI_COLOR_WHITE << "  help midi         " << COOL_COLOR_ORANGE << "- MIDI: init, assign, record, quantize, CC map, conversion\n";
-  ss << ANSI_COLOR_WHITE << "  help mixer        " << COOL_COLOR_ORANGE << "- routing, xfader, scheduling\n";
+  ss << ANSI_COLOR_WHITE << "  help mixer        " << COOL_COLOR_ORANGE << "- routing, xfader, scheduling, global sends\n";
   ss << ANSI_COLOR_WHITE << "  help phasor       " << COOL_COLOR_ORANGE << "- phasor signals, factory functions, visualization\n\n";
 
   ss << COOL_COLOR_GREEN << "Quick Start:\n";
@@ -639,8 +731,7 @@ std::string build_help(const std::string& topic) {
    || topic == "builtins")        return help_functions();
   if (topic == "generators"
    || topic == "gen")             return help_generators();
-  if (topic == "instruments"
-   || topic == "synths")          return help_instruments();
+  if (topic == "synths")          return help_generators();
   if (topic == "fmsynth"
    || topic == "fm")              return help_fmsynth();
   if (topic == "subsynth"

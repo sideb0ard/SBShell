@@ -181,39 +181,77 @@ Mixer::Mixer() {
 }
 
 std::string Mixer::StatusMixr() {
-  //  clang-format off
   std::stringstream ss;
 
-  ss << COOL_COLOR_GREEN << ":::::::::::: vol:" << ANSI_COLOR_WHITE << volume
-     << COOL_COLOR_GREEN << " bpm:" << ANSI_COLOR_WHITE << bpm
-     << COOL_COLOR_GREEN << " looplen:" << ANSI_COLOR_WHITE << 3840
-     << COOL_COLOR_GREEN << " midi_device:" << ANSI_COLOR_WHITE
-     << (have_midi_controller ? "true" : "false") << COOL_COLOR_GREEN
-     << " websock:" << ANSI_COLOR_WHITE
-     << (websocket_enabled_ ? "true" : "false") << COOL_COLOR_GREEN
-     << " :::::::::::::::::\n";
+  // Center plain-text content within a 80-char line padded with ':'
+  auto center80 = [&ss](const std::string &content) {
+    constexpr int W = 80;
+    int pad =
+        W - static_cast<int>(content.size()) - 2;  // 2 for surrounding spaces
+    if (pad < 4) pad = 4;                          // minimum 2 colons each side
+    int left = pad / 2;
+    int right = pad - left;
+    ss << COOL_COLOR_GREEN << std::string(left, ':') << ' ' << COOL_COLOR_ORANGE
+       << content << COOL_COLOR_GREEN << ' ' << std::string(right, ':') << '\n';
+  };
+
+  // Global sends (only shown when any value is non-zero)
+  if (global_reverb_send_ > 0.0 || global_delay_send_ > 0.0 ||
+      global_distort_send_ > 0.0 || global_reverb_feedback_ > 0.0 ||
+      global_delay_feedback_ > 0.0 || global_distort_feedback_ > 0.0) {
+    char gbuf[128];
+    std::snprintf(
+        gbuf, sizeof(gbuf),
+        "global  rev:%.2f rvfb:%.2f  dly:%.2f dlfb:%.2f  dst:%.2f dtfb:%.2f",
+        global_reverb_send_, global_reverb_feedback_, global_delay_send_,
+        global_delay_feedback_, global_distort_send_, global_distort_feedback_);
+    center80(gbuf);
+  }
+
+  // Build "sends: name:lvl ..." string for generators routing to mixer FX idx
+  auto route_str = [&](int fx_idx) -> std::string {
+    if (!global_env) return "";
+    auto by_id = global_env->GetSoundGeneratorsById();
+    if (by_id.empty()) return "";
+    std::string out;
+    if (sound_generators_mutex_.try_lock_shared()) {
+      int count = sound_generators_idx_.load();
+      for (auto &[id, name] : by_id) {
+        if (id >= 0 && id < count && sound_generators_[id]) {
+          double send = sound_generators_[id]->mixer_fx_send_intensity_[fx_idx];
+          if (send > 0.01) {
+            char buf[32];
+            std::snprintf(buf, sizeof(buf), "%.1f", send);
+            if (!out.empty()) out += ' ';
+            out += name + ':' + buf;
+          }
+        }
+      }
+      sound_generators_mutex_.unlock_shared();
+    }
+    return out.empty() ? "" : "sends: " + out;
+  };
 
   if (fx_[0]) {
-    ss << COOL_COLOR_GREEN << ":::::::::::: " << COOL_COLOR_ORANGE
-       << "delay: " << fx_[0]->Status() << std::endl;
+    center80(fx_[0]->Status());
+    auto r = route_str(0);
+    if (!r.empty()) center80(r);
   }
   if (fx_[1]) {
-    ss << COOL_COLOR_GREEN << ":::::::::::: " << COOL_COLOR_ORANGE
-       << "reverb: " << fx_[1]->Status() << std::endl;
+    center80(fx_[1]->Status());
+    auto r = route_str(1);
+    if (!r.empty()) center80(r);
   }
   if (fx_[2]) {
-    ss << COOL_COLOR_GREEN << ":::::::::::: " << COOL_COLOR_ORANGE
-       << "distort: " << fx_[2]->Status() << std::endl;
+    center80(fx_[2]->Status());
+    auto r = route_str(2);
+    if (!r.empty()) center80(r);
   }
-
   if (global_env) {
-    ss << COOL_COLOR_GREEN << ":::::::::::: " << COOL_COLOR_ORANGE
-       << "xfader: " << xfader_.Status(global_env->GetSoundGeneratorsById())
-       << std::endl;
+    center80("xfader " + xfader_.Status(global_env->GetSoundGeneratorsById()));
   }
-  ss << ANSI_COLOR_WHITE;
-  // clang-format on
 
+  ss << ANSI_COLOR_WHITE;
   return ss.str();
 }
 
@@ -296,6 +334,26 @@ std::string Mixer::StatusEnv() {
           first_line = false;
         }
       }
+
+      // Show mixer FX send intensities if any are non-zero
+      {
+        static const char *kFxNames[] = {"dly", "rev", "dst"};
+        std::string sends;
+        for (int i = 0; i < kMixerNumSendFx; i++) {
+          double lvl = cached.mixer_sends[i];
+          if (lvl > 0.0) {
+            char buf[32];
+            std::snprintf(buf, sizeof(buf), "%s:%.2f", kFxNames[i], lvl);
+            if (!sends.empty()) sends += ' ';
+            sends += buf;
+          }
+        }
+        if (!sends.empty()) {
+          ss << margin << COOL_COLOR_GREEN << "sends: " << ANSI_COLOR_WHITE
+             << sends << '\n';
+        }
+      }
+
       ss << ANSI_COLOR_RESET;
     }
   }
@@ -531,6 +589,7 @@ void Mixer::UpdateCachedStatus() {
       cached_sg_status_[i].active = sg->active;
       cached_sg_status_[i].volume = sg->GetVolume();
       cached_sg_status_[i].effects_num = sg->effects_num.load();
+      cached_sg_status_[i].mixer_sends = sg->mixer_fx_send_intensity_;
 
       // Cache FX status - try to get the effects lock
       if (sg->effects_mutex_.try_lock_shared()) {
@@ -861,6 +920,18 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
       fx_[action->mixer_fx_id]->SetParam(action->param_name, param_val);
     } else if (action->is_xfader) {
       xfader_.Set(action->param_name, param_val);
+    } else if (action->param_name == "global_reverb") {
+      global_reverb_send_ = std::clamp(param_val, 0.0, 1.0);
+    } else if (action->param_name == "global_delay") {
+      global_delay_send_ = std::clamp(param_val, 0.0, 1.0);
+    } else if (action->param_name == "global_reverb_fb") {
+      global_reverb_feedback_ = std::clamp(param_val, 0.0, 0.98);
+    } else if (action->param_name == "global_delay_fb") {
+      global_delay_feedback_ = std::clamp(param_val, 0.0, 0.98);
+    } else if (action->param_name == "global_distort") {
+      global_distort_send_ = std::clamp(param_val, 0.0, 1.0);
+    } else if (action->param_name == "global_distort_fb") {
+      global_distort_feedback_ = std::clamp(param_val, 0.0, 0.98);
     }
   } else if (action->type == AudioAction::MIXER_FX_UPDATE) {
     for (const auto &soundgen_num : action->group_of_soundgens) {

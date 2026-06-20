@@ -1,0 +1,160 @@
+
+let ramp2slope_factory = fn()
+{
+  let history_val = 0;
+  fn(newval) {
+    let oldval = history_val;
+    history_val = newval;
+    let delta = newval - oldval;
+    if (delta < -0.5) {
+      return 1 + delta;
+    }
+    if (delta > 0.5) {
+      return 1 - delta;
+    }
+    return delta;
+  }
+}
+
+let ramp_div_factory = fn()
+{
+  let normalize_ramp = ramp2slope_factory();
+  let accum = 0;
+
+  return fn(sig_val, ratio) {
+    let val = normalize_ramp(sig_val) / ratio;
+    accum = accum + val;
+    if (accum >= 1) {
+      accum = accum - 1;
+    }
+    if (accum < 0) {
+      accum = accum + 1;
+    }
+    return accum;
+  }
+}
+
+let ramp2trigger_factory = fn()
+{
+  let history_val = 0;
+  fn(newval) {
+    let oldval = history_val;
+    history_val = newval;
+    let delta = abs(newval - oldval);
+    if (delta > 0.5) {
+      return true;
+    }
+    return false;
+  }
+}
+
+let phazor_draw = comp()
+{
+  setup()
+  {
+    # one bar
+    let fullramp = phasor(3840);
+
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+
+    let plot_width = 80;
+    let stride = 3840 / plot_width;
+
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let rampval = signal_from(fullramp);
+
+      let out_sig1 = ramp_div1(rampval, 3 / 8);
+      let out_sig2 = ramp_div2(rampval, 3 / 15);
+      let mod_ratio = max(out_sig2, 0.001);
+
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+
+      if (i % stride == 0) {
+        draw_plot(rampval,  plot_width, "r ",  at = i, row = 1);
+        #draw_plot(rampval,  plot_width, "r ",  at = i);
+        draw_plot(out_sig1, plot_width, "s1 ", at = i, row = 2);
+        draw_plot(out_sig2, plot_width, "s2 ", at = i, row = 3);
+        #draw_plot(out_sig2, plot_width, "s2 ", at = i);
+        draw_plot(out_sig3, plot_width, "s3 ", at = i, row = 4);
+      }
+
+      if (ramp2tri1(out_sig1)) {
+        #print("NOTEON:", i);
+      }
+      if (ramp2tri2(out_sig2)) {
+        #print("NOTEON:", i);
+      }
+      if (ramp2tri3(out_sig3)) {
+        #print("NOTEON:", i);
+      }
+    }
+  }
+}
+
+let phazor_draw2 = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(3840);        // master 1-bar ramp
+    let ramp_div1 = ramp_div_factory(); // each holds own accum
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+    let plot_width = 80;
+    let stride = 3840 / plot_width;     // 48 ticks per column
+  }
+  run()
+  {
+    for (let i = 0; i < 3840; i++) {
+      let rampval  = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 3/8);     // ~2.67/bar
+      let out_sig2 = ramp_div2(rampval, 3/15);    // 5/bar
+      let mod_ratio = max(out_sig2, 0.001);        // avoid /0
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio); // FM!
+      if (i % stride == 0) {
+        draw_plot(rampval,  plot_width, "r  ", at=i, row=1);
+        draw_plot(out_sig1, plot_width, "s1 ", at=i, row=2);
+        draw_plot(out_sig2, plot_width, "s2 ", at=i, row=3);
+        draw_plot(out_sig3, plot_width, "s3 ", at=i, row=4);
+      }
+      if (ramp2tri1(out_sig1)) { print("s1 NOTEON:", i); }
+      if (ramp2tri2(out_sig2)) { print("s2 NOTEON:", i); }
+      if (ramp2tri3(out_sig3)) { print("s3 NOTEON:", i); }
+    }
+  }
+}
+
+let snrrrllblah_comp = comp()
+{
+  setup()
+  {
+    let fb = [1, 0, 0, 0,  1, 1, 1, 0,  1, 1, 0, 0,  0, 0, 0, 1];
+  }
+  run()
+  {
+
+    for (let i = 0; i < 16; i++) {
+      if (fb[i] == 1) {
+        note_on_at(sbdrum, 1, i * pp);
+      }
+    }
+
+    for (let i = 1; i < 4; i++) {
+      let ppbase = 3840 * i;
+      for (let j = 0; j < 16; j++) {
+        note_on_at(sbdrum, 1, ppbase + j * pp);
+      }
+    }
+  }
+}

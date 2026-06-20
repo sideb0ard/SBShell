@@ -1064,7 +1064,15 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
 
            if (at_tick >= 0) {
              ScheduledDisplayItem item;
-             item.target_tick = global_mixr->midi_tick_.load() + at_tick;
+             // run() may be called with MIDI lookahead (up to PPBAR/2 before
+             // bar start). Snap to the nearest bar boundary so items fire at
+             // the correct bar-relative time regardless of lookahead offset.
+             int cur = global_mixr->midi_tick_.load();
+             int tick_in_bar = cur % PPBAR;
+             int bar_start = (tick_in_bar <= PPBAR / 2)
+                                 ? (cur - tick_in_bar)
+                                 : (cur - tick_in_bar + PPBAR);
+             item.target_tick = bar_start + at_tick;
              item.val = val;
              item.width = width;
              item.label = label;
@@ -1132,11 +1140,17 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
 
            if (at_tick >= 0) {
              ScheduledDisplayItem item;
-             item.target_tick = global_mixr->midi_tick_.load() + at_tick;
+             int cur = global_mixr->midi_tick_.load();
+             int tick_in_bar = cur % PPBAR;
+             int bar_start = (tick_in_bar <= PPBAR / 2)
+                                 ? (cur - tick_in_bar)
+                                 : (cur - tick_in_bar + PPBAR);
+             item.target_tick = bar_start + at_tick;
              item.val = val;
              item.width = width;
              item.label = label;
              item.row = row;
+             item.bar_pos = at_tick;
              item.type = DisplayType::PLOT;
              display_queue.push(std::move(item));
              return evaluator::NULLL;
@@ -1150,14 +1164,14 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            static const char* sparks[] = {" ", "▁", "▂", "▃", "▄",
                                           "▅", "▆", "▇", "█"};
            std::stringstream ss;
-           if (row >= 0) ss << "\0337\033[" << (row + 1) << "A";
+           if (row > 0) ss << "\033[s\033[" << row << ";1H";
            if (!label.empty()) ss << label << " ";
            ss << COOL_COLOR_GREEN << "[";
            for (double v : buf)
              ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
-           ss << "]" << ANSI_COLOR_RESET;
-           if (row >= 0)
-             ss << "\0338";
+           ss << "]" << ANSI_COLOR_RESET << "\033[K";
+           if (row > 0)
+             ss << "\033[u";
            else
              ss << "\r";
            std::cout << ss.str() << std::flush;
@@ -1381,6 +1395,42 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
        audio_queue.push(std::move(action));
        return evaluator::NULLL;
      })},
+    {"set_send",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() != 3)
+             return evaluator::NewError(
+                 "set_send requires 3 args: gen, fx "
+                 "(\"delay\"/\"reverb\"/\"distort\"), level");
+           auto sg = std::dynamic_pointer_cast<object::SoundGenerator>(args[0]);
+           if (!sg) return evaluator::NULLL;
+           int fx_id = -1;
+           if (auto num = std::dynamic_pointer_cast<object::Number>(args[1]))
+             fx_id = static_cast<int>(num->value_);
+           else if (auto str =
+                        std::dynamic_pointer_cast<object::String>(args[1])) {
+             if (str->value_ == "delay" || str->value_ == "dly")
+               fx_id = 0;
+             else if (str->value_ == "reverb" || str->value_ == "rev")
+               fx_id = 1;
+             else if (str->value_ == "distort" || str->value_ == "dst")
+               fx_id = 2;
+           }
+           if (fx_id < 0 || fx_id > 2)
+             return evaluator::NewError(
+                 "set_send: fx must be delay/reverb/distort (or 0/1/2)");
+           auto lvl = std::dynamic_pointer_cast<object::Number>(args[2]);
+           if (!lvl) return evaluator::NULLL;
+           auto action =
+               std::make_unique<AudioActionItem>(AudioAction::MIXER_FX_UPDATE);
+           action->mixer_fx_id = fx_id;
+           action->delayed_by = 0;
+           action->group_of_soundgens.push_back(sg->soundgen_id_);
+           action->fx_intensity = lvl->value_;
+           audio_queue.push(std::move(action));
+           return evaluator::NULLL;
+         })},
     {"xassign",
      std::make_shared<object::BuiltIn>(
          [](std::vector<std::shared_ptr<object::Object>> input)
@@ -1730,6 +1780,114 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                    audio_queue.push(std::move(action));
                    return evaluator::NULLL;
                  })},
+    {"global_reverb",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() == 1) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[0]);
+             if (num) {
+               auto action =
+                   std::make_unique<AudioActionItem>(AudioAction::MIXER_UPDATE);
+               action->mixer_fx_id = -1;
+               action->is_xfader = false;
+               action->param_name = "global_reverb";
+               action->param_val = std::to_string(num->value_);
+               audio_queue.push(std::move(action));
+             }
+           }
+           return evaluator::NULLL;
+         })},
+    {"global_delay",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() == 1) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[0]);
+             if (num) {
+               auto action =
+                   std::make_unique<AudioActionItem>(AudioAction::MIXER_UPDATE);
+               action->mixer_fx_id = -1;
+               action->is_xfader = false;
+               action->param_name = "global_delay";
+               action->param_val = std::to_string(num->value_);
+               audio_queue.push(std::move(action));
+             }
+           }
+           return evaluator::NULLL;
+         })},
+    {"global_reverb_fb",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() == 1) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[0]);
+             if (num) {
+               auto action =
+                   std::make_unique<AudioActionItem>(AudioAction::MIXER_UPDATE);
+               action->mixer_fx_id = -1;
+               action->is_xfader = false;
+               action->param_name = "global_reverb_fb";
+               action->param_val = std::to_string(num->value_);
+               audio_queue.push(std::move(action));
+             }
+           }
+           return evaluator::NULLL;
+         })},
+    {"global_delay_fb",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() == 1) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[0]);
+             if (num) {
+               auto action =
+                   std::make_unique<AudioActionItem>(AudioAction::MIXER_UPDATE);
+               action->mixer_fx_id = -1;
+               action->is_xfader = false;
+               action->param_name = "global_delay_fb";
+               action->param_val = std::to_string(num->value_);
+               audio_queue.push(std::move(action));
+             }
+           }
+           return evaluator::NULLL;
+         })},
+    {"global_distort",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() == 1) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[0]);
+             if (num) {
+               auto action =
+                   std::make_unique<AudioActionItem>(AudioAction::MIXER_UPDATE);
+               action->mixer_fx_id = -1;
+               action->is_xfader = false;
+               action->param_name = "global_distort";
+               action->param_val = std::to_string(num->value_);
+               audio_queue.push(std::move(action));
+             }
+           }
+           return evaluator::NULLL;
+         })},
+    {"global_distort_fb",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.size() == 1) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[0]);
+             if (num) {
+               auto action =
+                   std::make_unique<AudioActionItem>(AudioAction::MIXER_UPDATE);
+               action->mixer_fx_id = -1;
+               action->is_xfader = false;
+               action->param_name = "global_distort_fb";
+               action->param_val = std::to_string(num->value_);
+               audio_queue.push(std::move(action));
+             }
+           }
+           return evaluator::NULLL;
+         })},
     {"stop",
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)

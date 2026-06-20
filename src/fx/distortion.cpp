@@ -19,10 +19,10 @@ void Distortion::Init() {
 
 std::string Distortion::Status() {
   std::stringstream ss;
-  ss << "Distortion - ";
+  ss << "distort";
 
   // Show mode name
-  ss << "mode:";
+  ss << " mode:";
   switch (mode_) {
     case DistortionMode::HARD_CLIP:
       ss << "HARD_CLIP(0)";

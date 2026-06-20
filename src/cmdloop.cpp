@@ -126,6 +126,23 @@ static int transport_escape(int count, int key) {
   }
   return 0;  // no-op when not in transport mode
 }
+// Highest row= seen across all active draw_plot/draw_bar calls.
+// Cursor parks at max_plot_row+1 after Ctrl-L; scroll region starts there too.
+static int max_plot_row = 0;
+
+static int handle_ctrl_l(int count, int key) {
+  (void)count;
+  (void)key;
+  // Reset scroll region to full screen so terminal scrollback is restored.
+  // If draw_plots are still active they re-establish their rows on next render.
+  max_plot_row = 0;
+  printf("\033[r\033[2J\033[1;1H");
+  fflush(stdout);
+  rl_on_new_line();
+  rl_forced_update_display();
+  return 0;
+}
+
 constexpr int kFileCheckInterval = 960;  // Check once per beat (PPQN)
 
 // ---------------------------------------------------------------------------
@@ -192,32 +209,60 @@ static void RenderDisplayItem(
     const char *color = val < 0.5   ? COOL_COLOR_GREEN
                         : val < 0.8 ? COOL_COLOR_YELLOW
                                     : ANSI_COLOR_RED;
-    if (item.row >= 0) ss << "\0337\033[" << (item.row + 1) << "A";
+    if (item.row > 0) ss << "\033[s\033[" << item.row << ";1H";
     if (!item.label.empty()) ss << item.label << " ";
     ss << "[" << color;
     for (int i = 0; i < item.width; i++) ss << (i < filled ? "█" : " ");
     char buf[16];
     snprintf(buf, sizeof(buf), "%.3f", val);
     ss << ANSI_COLOR_RESET << "] " << color << buf << ANSI_COLOR_RESET;
-    if (item.row >= 0)
-      ss << "\0338";
+    if (item.row > 0)
+      ss << "\033[K\033[u";
     else
       ss << "\r";
   } else {  // PLOT
     static const char *sparks[] = {" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
-    auto &buf = plot_bufs[item.label];
-    buf.push_back(item.val);
-    while ((int)buf.size() > item.width) buf.pop_front();
-    if (item.row >= 0) ss << "\0337\033[" << (item.row + 1) << "A";
-    if (!item.label.empty()) ss << item.label << " ";
-    ss << COOL_COLOR_GREEN << "[";
-    for (double v : buf)
-      ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
-    ss << "]" << ANSI_COLOR_RESET << "\033[K";
-    if (item.row >= 0)
-      ss << "\0338";
-    else
-      ss << "\r";
+    if (item.row > 0 && item.bar_pos >= 0) {
+      // Waveform mode: each sample writes to its exact column within the row.
+      // bar_pos 0..bar_len maps to cols 1..width on the fixed row.
+      // At bar_pos==0 we clear the row first so stale content doesn't linger.
+      constexpr int kBarLen = 3840;
+      int label_w =
+          (int)item.label.size();  // label is ASCII; size == visible cols
+      int col = label_w + 1 + (item.bar_pos * item.width) / kBarLen;
+      if (col < label_w + 1) col = label_w + 1;
+      double v = std::min(std::max(item.val, 0.0), 1.0);
+      if (item.row > max_plot_row) {
+        max_plot_row = item.row;
+        int rows = (global_mixr->term_rows_ > 1) ? global_mixr->term_rows_ : 24;
+        printf("\033[s\033[%d;%dr\033[u", max_plot_row + 1, rows - 1);
+        fflush(stdout);
+      }
+      if (item.bar_pos == 0) {
+        // Clear the row at bar start so old-bar content doesn't linger on
+        // the right while the new bar fills in left-to-right.
+        std::cout << "\033[s\033[" << item.row << ";1H" << ANSI_COLOR_WHITE
+                  << item.label << COOL_COLOR_GREEN << "\033[K\033[u"
+                  << std::flush;
+      }
+      ss << "\033[s\033[" << item.row << ";" << col << "H" << COOL_COLOR_GREEN
+         << sparks[(int)(v * 8)] << ANSI_COLOR_RESET << "\033[u";
+    } else {
+      // Scrolling deque mode: accumulate last N values and render as a bar.
+      auto &buf = plot_bufs[item.label];
+      buf.push_back(item.val);
+      while ((int)buf.size() > item.width) buf.pop_front();
+      if (item.row > 0) ss << "\033[s\033[" << item.row << ";1H";
+      if (!item.label.empty()) ss << item.label << " ";
+      ss << COOL_COLOR_GREEN << "[";
+      for (double v : buf)
+        ss << sparks[(int)(std::min(std::max(v, 0.0), 1.0) * 8)];
+      ss << "]" << ANSI_COLOR_RESET << "\033[K";
+      if (item.row > 0)
+        ss << "\033[u";
+      else
+        ss << "\r";
+    }
   }
   std::cout << ss.str() << std::flush;
 }
@@ -254,10 +299,14 @@ int event_hook() {
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 1) {
       int rows = static_cast<int>(ws.ws_row);
       global_mixr->term_rows_ = rows;
-      printf("\033[s\033[1;%dr\033[u", rows - 1);
+      printf("\033[s\033[%d;%dr\033[u", max_plot_row + 1, rows - 1);
       fflush(stdout);
+      rl_resize_terminal();
+      rl_set_screen_size(rows - 1,
+                         ws.ws_col);  // keep readline out of status row
+    } else {
+      rl_resize_terminal();
     }
-    rl_resize_terminal();
   }
 
   // Drain display_queue into pending list
@@ -362,18 +411,18 @@ static std::string expand_history_path() {
 void *loopy() {
   std::cout << get_string_logo();
 
-  // Reserve the bottom row as a fixed status bar.  We save the cursor, set
-  // the scroll region (DECSTBM may reset the cursor to row 1 on some
-  // terminals), then restore the cursor so readline starts right below the
-  // logo rather than jumping to the bottom of the screen.
-  // term_rows_ is updated here and on every SIGWINCH via event_hook.
+  // Reserve the top and bottom rows as fixed display areas.  Row 1 is for
+  // draw_plot/draw_bar with row=1; row N is the BPM/status bar.  Scroll
+  // region [2, rows-1] keeps both pinned outside the scrolling area.
   {
     struct winsize ws = {};
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 1) {
       int rows = static_cast<int>(ws.ws_row);
       global_mixr->term_rows_ = rows;
-      printf("\033[s\033[1;%dr\033[u", rows - 1);
+      printf("\033[s\033[%d;%dr\033[u", max_plot_row + 1, rows - 1);
       fflush(stdout);
+      rl_set_screen_size(rows - 1,
+                         ws.ws_col);  // keep readline out of status row
     }
   }
   signal(SIGWINCH, handle_sigwinch);
@@ -390,6 +439,7 @@ void *loopy() {
   rl_bind_key(' ', transport_space);
   rl_bind_key('`', transport_backtick);
   rl_bind_key('\033', transport_escape);
+  rl_bind_key('\f', handle_ctrl_l);  // Ctrl-L: clear but keep cursor off row 1
 
   while (true) {
     std::unique_ptr<char, void (*)(void *)> line(readline(prompt), free);

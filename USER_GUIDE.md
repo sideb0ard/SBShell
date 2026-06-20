@@ -1204,6 +1204,30 @@ pan bass -0.3;    // Slightly left
 pan pad 0.4;      // Right
 ```
 
+### Mixer FX Sends
+
+Route individual generators into the mixer-level delay, reverb, or distortion:
+
+```javascript
+send(dx, "delay")             // send dx to delay at default level (0.4)
+send(dx, "reverb", 0.8)       // send dx to reverb at 80%
+send(dx, "distort", 0.5)      // send dx to distortion at 50%
+
+set_send(dx, "delay", 0.6)    // update dx delay send level to 60%
+set_send(dx, "reverb", 0.0)   // remove dx from reverb send
+```
+
+`set_send` accepts `"delay"/"dly"`, `"reverb"/"rev"`, `"distort"/"dst"` or `0/1/2`.
+
+`ps` shows each generator's active sends under its entry:
+
+```
+dx = FmSynth(OCWARF2) vol:0.80 pan:0.00 algo:0
+     sends: dly:0.40 rev:0.80
+```
+
+The `ps` header also shows a `sends:` sub-line under each mixer FX listing which generators route to it and at what level.
+
 ### Process IDs and Pattern Assignment
 
 When you start computations, assign them to process IDs (p1-p99) to control them:
@@ -1264,6 +1288,99 @@ let main_comp = comp()
     bar++;
   }
 }
+```
+
+---
+
+## MIDI Controller & Recording
+
+SoundB0ard has full MIDI input support: play instruments live from a keyboard, record what you play, and convert the recording into arrays for use in patterns.
+
+### Setup
+
+```javascript
+midi_init()          // open first available MIDI device
+midi_assign(dx)      // route incoming notes to generator dx
+midi_print()         // toggle printing of all incoming MIDI events (debug)
+```
+
+### CC Mapping
+
+Bind any MIDI CC to a generator parameter:
+
+```javascript
+midi_map(74, "cutoff")   // CC74 controls filter cutoff
+midi_map()               // no args: print current mappings
+```
+
+### Recording
+
+```javascript
+midi_bars(2)     // set recording length in bars (default 2)
+midi_rec()       // start recording — loop auto-enables so you hear playback while recording
+```
+
+While in record mode the prompt changes to `⏺ REC>` and a flashing dot appears in the status bar.
+
+**Keyboard shortcuts:**
+| Key | Action |
+|-----|--------|
+| `SPACE` | Toggle recording on/off |
+| `` ` `` or `ESC` | Exit record/loop mode, return to normal prompt |
+
+```javascript
+midi_loop()      // toggle looped playback
+midi_stop()      // stop playback entirely
+midi_reset()     // clear recording buffer
+```
+
+### Quantize
+
+```javascript
+midi_quantize(16)     // snap all recorded notes to 16th-note grid
+midi_fix(m)           // hard-snap a MidiArray to 8th-note grid
+```
+
+### Extracting Data
+
+```javascript
+let m = midi_dump()        // get full recording (all bars) as MidiArray
+
+let arr = midi2array(m)    // convert to [notes_arrays, durs_arrays]
+                           // arr[0] = array of per-bar note arrays
+                           // arr[1] = array of per-bar duration arrays
+
+let bar0_notes = arr[0][0] // 16-element note array for bar 0 (0 = rest)
+let bar0_durs  = arr[1][0] // 16-element duration array for bar 0 (ticks)
+
+midi_at(m, 0)              // MIDI note number at bar 0
+```
+
+### Conversion Utilities
+
+```javascript
+midi2note(60)   // → "C4"
+midi2freq(60)   // → 261.63
+freq2midi(440)  // → 69
+midi_ref()      // print full note-name reference table
+```
+
+### Full Workflow Example
+
+```javascript
+midi_init()
+let dx = fmsynth()
+midi_assign(dx)          // play dx from keyboard
+
+midi_bars(2)             // 2-bar loop (default)
+midi_rec()               // start — SPACE toggles rec, ` / ESC to exit
+
+midi_quantize(16)        // snap to 16ths
+
+let m = midi_dump()
+let arr = midi2array(m)
+let notes = arr[0][0]    // extract bar 0 note pattern
+let durs  = arr[1][0]    // extract bar 0 duration pattern
 ```
 
 ---
@@ -1550,6 +1667,32 @@ add_fx(lead, "reverb");       // 3rd: Reverb
 
 ```
 
+### Global Sends
+
+Global sends route the entire dry mix into the mixer-level reverb and delay — on top of any per-generator sends. Use them for whole-mix effects like a big reverb wash or a feedback swell.
+
+```javascript
+global_reverb(0.5)       // send 50% of dry mix into global reverb (0.0-1.0)
+global_delay(0.3)        // send 30% of dry mix into global delay (0.0-1.0)
+global_distort(0.2)      // send 20% of dry mix into global distortion (0.0-1.0)
+global_reverb_fb(0.6)    // feed reverb output back into reverb (0.0-0.98)
+global_delay_fb(0.5)     // feed delay output back into delay (0.0-0.98)
+global_distort_fb(0.4)   // feed distort output back into distort (0.0-0.98)
+```
+
+`ps` shows all active global sends and per-FX routing in the header block.
+
+Feedback adds a blooming, self-reinforcing tail — keep it below 0.98 to avoid runaway buildup. Setting both send and feedback to 0 turns the global send off silently.
+
+**Reverb swoosh effect** — slowly pull everything into a reverb cloud and back:
+
+```javascript
+sched(0,      0.0, 1.0, pp*32, "global_reverb %")   // fade in over 2 bars
+global_reverb_fb(0.65)                               // bloom the tail
+sched(pp*32,  1.0, 0.0, pp*32, "global_reverb %")   // fade back out
+global_reverb_fb(0.0)                                // clean tail
+```
+
 ---
 
 ## 10. Control Flow & Programming
@@ -1768,60 +1911,84 @@ reset(ph);                      // snap phase back to 0.0
 
 ### Factory Functions
 
-These are user-defined closures (from `SBTraxx/phazor.sb`) that wrap common phasor transformations. Each call to the factory returns a new stateful function.
+These closures are defined in `startup.sb` so they are always available. Each factory call returns a new independent stateful function — closures capture their own private variables that persist across every `run()` call.
 
-#### `ramp_div_factory()` — Sub-Ramp / Fractional Speed
+#### `ramp2slope_factory()` — Instantaneous Slope / Derivative
 
-Returns a function `fn(sig, ratio)` that scales a 0→1 ramp to cycle at `ratio` of the input speed. Used to create sub-oscillators or slow LFOs derived from a master phasor.
-
-```
-comp sub_osc {
-  setup() {
-    let master = phasor(3840);
-    let div1 = ramp_div_factory();
-    let div2 = ramp_div_factory();
-  }
-  run() {
-    for i in range(0, pplooplen) {
-      let sig     = signal_from(master);
-      let slow    = div1(sig, 1/4);    // quarter speed — ramps over 4 bars
-      let medium  = div2(sig, 3/8);    // 3/8 speed
-      set sbs:morph slow at=i;
-      set sbs2:morph medium at=i;
-    }
+```javascript
+let ramp2slope_factory = fn() {
+  let history_val = 0;          // captured in closure — persists forever
+  fn(newval) {
+    let delta = newval - history_val;
+    history_val = newval;
+    if (delta < -0.5) { return 1 + delta; }  // handle 1→0 wrap-around
+    if (delta >  0.5) { return 1 - delta; }
+    return delta;
   }
 }
 ```
 
-#### `ramp2slope_factory()` — Derivative / Slope Detector
+Returns `fn(sig)` that computes the per-tick rate of change of the ramp. Normally returns ~`1/steps` per tick (e.g. ~0.00026 for a 3840-tick phasor). The wrap-around correction means when the ramp resets from 1.0 to 0.0, you get a small positive value instead of a large negative spike. Used internally by `ramp_div_factory`.
 
-Returns a function `fn(sig)` that computes the instantaneous rate of change of the ramp signal, with correct wrap-around handling at the 1→0 boundary. Returns a value near 0 most of the time, and spikes on rapid changes.
-
-```
+```javascript
 let slope = ramp2slope_factory();
-// inside for loop:
-let ds = slope(sig);
+let ds = slope(sig);   // ~0.00026/tick; near 0 at wrap boundary
 ```
 
-#### `ramp2trigger_factory()` — Wrap-Around / Cycle Trigger
+#### `ramp_div_factory()` — Fractional-Speed Sub-Ramp
 
-Returns a function `fn(sig)` that returns `true` exactly once per phasor cycle — at the moment the ramp wraps from ~1.0 back to 0. Use it to fire `note_on_at` or other events once per cycle.
-
-```
-comp trigger_example {
-  setup() {
-    let ph   = phasor(3840);
-    let trig = ramp2trigger_factory();
-  }
-  run() {
-    for i in range(0, pplooplen) {
-      let sig = signal_from(ph);
-      if (trig(sig)) {
-        note_on_at(sbs, 60, i);        // trigger note at cycle start
-      }
-    }
+```javascript
+let ramp_div_factory = fn() {
+  let normalize_ramp = ramp2slope_factory();  // captures its own slope fn
+  let accum = 0;                              // phase accumulator — persists
+  return fn(sig_val, ratio) {
+    let val = normalize_ramp(sig_val) / ratio;
+    accum = accum + val;
+    if (accum >= 1) { accum = accum - 1; }
+    if (accum < 0)  { accum = accum + 1; }
+    return accum;
   }
 }
+```
+
+Returns `fn(sig, ratio)` that runs a new 0→1 ramp at `ratio` of the master ramp speed. Each tick: the master's slope is divided by `ratio` and added to `accum`. When `accum` crosses 1 it wraps — that wrap is the trigger event. Because `accum` lives in `setup()` it carries phase across bar boundaries.
+
+| ratio | cycles/bar | ticks/cycle | effect |
+|-------|-----------|-------------|--------|
+| `1/3` | 3 | 1280 | 3 evenly-spaced triggers |
+| `1/5` | 5 | 768 | 5 even triggers |
+| `3/8` | 2.67 | 1440 | phase drifts — pattern cycles over 3 bars |
+| `3/15` | 5 | 768 | equivalent to `1/5` |
+
+Irrational or non-integer ratios (e.g. `3/8`) produce patterns that shift across consecutive bars before repeating. This gives euclidean-like rhythmic variation without a discrete grid.
+
+```javascript
+let div1 = ramp_div_factory();   // each call is independent
+let div2 = ramp_div_factory();
+// inside run() for loop:
+let s1 = div1(r, 1/3);          // 3 even triggers per bar
+let s2 = div2(r, 3/8);          // ~2.67/bar, evolves over 3 bars
+```
+
+#### `ramp2trigger_factory()` — Wrap-Around Trigger
+
+```javascript
+let ramp2trigger_factory = fn() {
+  let history_val = 0;
+  fn(newval) {
+    let delta = abs(newval - history_val);
+    history_val = newval;
+    if (delta > 0.5) { return true; }
+    return false;
+  }
+}
+```
+
+Returns `fn(sig)` that returns `true` exactly once per ramp cycle, at the moment the accumulator wraps from ~1.0 back to ~0.0. The threshold of 0.5 catches any jump larger than half the ramp range — which only happens on a wrap. Combine with `ramp_div` to fire notes at any rhythmic subdivision.
+
+```javascript
+let trig = ramp2trigger_factory();
+if (trig(sub)) { note_on_at(sg, 60, i, vel=80, dur=120); }
 ```
 
 ### Multiple Harmonic Phasors
@@ -1923,36 +2090,56 @@ for (let i = 0; i < 3840; i++) {
 }
 ```
 
-### Full Example — Monitoring a Signal Chain
+### Full Example — Sub-Ramps, Triggers and Visualization
+
+This is the pattern from `SBTraxx/phazor_example.sb`. A master bar-length ramp drives two dividers; a third divider is modulated by the second (FM-style ratio control). Triggers fire notes; `draw_plot` shows all four signals stacked on fixed rows.
 
 ```javascript
-let vis_comp = comp()
+let phazor_draw = comp()
 {
   setup()
   {
-    let fullramp = phasor(3840);
+    let fullramp = phasor(3840);       // master 1-bar ramp
+
     let ramp_div1 = ramp_div_factory();
     let ramp_div2 = ramp_div_factory();
-    let plot_width = 100;
-    let stride = 3840 / plot_width;
+    let ramp_div3 = ramp_div_factory();
+
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+
+    let plot_width = 80;               // match terminal width
+    let stride = 3840 / plot_width;    // 48 ticks per column
   }
   run()
   {
     for (let i = 0; i < 3840; i++) {
-      let ramp_sig  = signal_from(fullramp);
-      let out_slow  = ramp_div1(ramp_sig, 1/4);
-      let out_fast  = ramp_div2(ramp_sig, 3/8);
+      let r = signal_from(fullramp);
+
+      let s1 = ramp_div1(r, 3/8);            // ~2.67 cycles/bar; drifts
+      let s2 = ramp_div2(r, 3/15);           // 5 cycles/bar (= 1/5)
+      let mod_ratio = max(s2, 0.001);         // avoid div/0
+      let s3 = ramp_div3(s1, mod_ratio);      // s1 speed modulated by s2
+
+      if (ramp2tri1(s1)) { note_on_at(sg,  60, i, vel=80, dur=120); }
+      if (ramp2tri2(s2)) { note_on_at(sg2, 64, i, vel=60, dur=80);  }
 
       if (i % stride == 0) {
-        draw_plot(ramp_sig, plot_width, "ramp ", at = i, row = 1);
-        draw_plot(out_slow, plot_width, "slow ", at = i, row = 2);
-        draw_plot(out_fast, plot_width, "fast ", at = i, row = 3);
+        draw_plot(r,  plot_width, "r  ", at=i, row=1);
+        draw_plot(s1, plot_width, "s1 ", at=i, row=2);
+        draw_plot(s2, plot_width, "s2 ", at=i, row=3);
+        draw_plot(s3, plot_width, "s3 ", at=i, row=4);
       }
     }
   }
 }
-p5 # vis_comp;
 ```
+
+Key points:
+- Each `ramp_div_factory()` call is independent — they share the master ramp as input but hold separate accumulators.
+- `ramp2trigger_factory` fires when the divider output wraps (delta > 0.5), not on the master ramp.
+- `draw_plot` with `at=i` and `row=N` pins each signal to a fixed terminal row. `Ctrl-L` parks the cursor below all active rows automatically.
+- Width 80 with `stride = 3840/80 = 48` means one column per 48 ticks — a full bar maps cleanly to the terminal width.
 
 **Tips:**
 - Leave at least `row=` + 1 blank lines at the bottom of your terminal before the prompt so the display doesn't overlap it
@@ -2075,6 +2262,25 @@ list_presets(inst)
 // Mixing
 vol inst value
 pan inst value
+send(inst, "delay", level)    // Route generator to mixer delay (default 0.4)
+send(inst, "reverb", level)   // Route generator to mixer reverb
+send(inst, "distort", level)  // Route generator to mixer distortion
+set_send(inst, fx, level)     // Update send level after routing
+global_reverb(amt)            // Global reverb send (0.0-1.0)
+global_delay(amt)             // Global delay send (0.0-1.0)
+global_distort(amt)           // Global distortion send (0.0-1.0)
+global_reverb_fb(amt)         // Global reverb feedback (0.0-0.98)
+global_delay_fb(amt)          // Global delay feedback (0.0-0.98)
+global_distort_fb(amt)        // Global distortion feedback (0.0-0.98)
+
+// MIDI
+midi_init()            // Open MIDI device
+midi_assign(inst)      // Route MIDI notes to instrument
+midi_bars(n)           // Set recording length in bars (default 2)
+midi_rec()             // Toggle recording (auto-enables loop)
+midi_quantize(16)      // Snap recording to 16th-note grid
+midi_dump()            // Get recording as MidiArray
+midi2array(m)          // Convert to [notes_arrays, durs_arrays]
 
 // Timing
 bpm(tempo)
@@ -2114,6 +2320,10 @@ let pattern = bjork(5, 16);
 ```
 Ctrl+D    - Exit SoundB0ard
 ↑/↓       - Command history
+
+// MIDI record mode (enter with midi_rec()):
+SPACE     - Toggle recording on/off (prompt shows ⏺ REC> when active)
+` or ESC  - Exit record/loop mode, return to normal prompt
 ```
 
 ### Sample Library Organization

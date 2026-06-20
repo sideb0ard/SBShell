@@ -1,3 +1,52 @@
+let ramp2slope_factory = fn()
+{
+  let history_val = 0;
+  fn(newval) {
+    let oldval = history_val;
+    history_val = newval;
+    let delta = newval - oldval;
+    if (delta < -0.5) {
+      return 1 + delta;
+    }
+    if (delta > 0.5) {
+      return 1 - delta;
+    }
+    return delta;
+  }
+}
+
+let ramp_div_factory = fn()
+{
+  let normalize_ramp = ramp2slope_factory();
+  let accum = 0;
+
+  return fn(sig_val, ratio) {
+    let val = normalize_ramp(sig_val) / ratio;
+    accum = accum + val;
+    if (accum >= 1) {
+      accum = accum - 1;
+    }
+    if (accum < 0) {
+      accum = accum + 1;
+    }
+    return accum;
+  }
+}
+
+let ramp2trigger_factory = fn()
+{
+  let history_val = 0;
+  fn(newval) {
+    let oldval = history_val;
+    history_val = newval;
+    let delta = abs(newval - oldval);
+    if (delta > 0.5) {
+      return true;
+    }
+    return false;
+  }
+}
+
 let briff = fn(root)
 {
   #print("VALLEYNOTES:", valid_notes);
@@ -625,14 +674,14 @@ let moog_midi_assign = fn()
 
 let dx_midi_assign = fn()
 {
-  midi_map(1, "dx:algo");
-  midi_map(2, "dx:vol");
-  midi_map(3, "dx:porta");
-  midi_map(4, "dx:op4fb");
-  midi_map(5, "dx:op1out");
-  midi_map(6, "dx:op2out");
-  midi_map(7, "dx:op3out");
-  midi_map(8, "dx:op4out");
+  midi_map(1, "dx:op1out");
+  midi_map(2, "dx:op2out");
+  midi_map(3, "dx:op3out");
+  midi_map(4, "dx:op4out");
+  midi_map(5, "dx:op1fb");
+  midi_map(6, "dx:op2fb");
+  midi_map(7, "dx:op3fb");
+  midi_map(8, "dx:op4fb");
 }
 
 let dx_midi_op1 = fn()

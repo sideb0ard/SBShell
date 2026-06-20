@@ -117,6 +117,7 @@ struct Mixer {
     double volume{0};
     int effects_num{0};
     std::array<CachedFxStatus, kMaxNumSoundGenFx> fx;
+    std::array<double, kMixerNumSendFx> mixer_sends{};
   };
   std::array<CachedSgStatus, MAX_NUM_SOUND_GENERATORS> cached_sg_status_{};
   std::atomic<int> cached_sg_count_{0};
@@ -157,6 +158,15 @@ struct Mixer {
   bool midi_print = {false};
   int record_bars_{2};
   int term_rows_{0};  // cached terminal height for status bar placement
+  double global_reverb_send_{0.0};
+  double global_delay_send_{0.0};
+  double global_distort_send_{0.0};
+  double global_reverb_feedback_{0.0};
+  double global_delay_feedback_{0.0};
+  double global_distort_feedback_{0.0};
+  StereoVal last_reverb_out_{};
+  StereoVal last_delay_out_{};
+  StereoVal last_distort_out_{};
   std::unordered_map<int, int>
       pending_note_ons_;  // note -> abs pos in multi-bar buffer
   std::unordered_map<int, std::string> midi_mapped_controls_ = {};
@@ -349,9 +359,27 @@ struct Mixer {
         }
       }
 
+      // Global sends: dry mix + one-sample feedback from previous FX output
+      fx_reverb_send.left += output_left * global_reverb_send_ +
+                             last_reverb_out_.left * global_reverb_feedback_;
+      fx_reverb_send.right += output_right * global_reverb_send_ +
+                              last_reverb_out_.right * global_reverb_feedback_;
+      fx_delay_send.left += output_left * global_delay_send_ +
+                            last_delay_out_.left * global_delay_feedback_;
+      fx_delay_send.right += output_right * global_delay_send_ +
+                             last_delay_out_.right * global_delay_feedback_;
+      fx_distort_send.left += output_left * global_distort_send_ +
+                              last_distort_out_.left * global_distort_feedback_;
+      fx_distort_send.right +=
+          output_right * global_distort_send_ +
+          last_distort_out_.right * global_distort_feedback_;
+
       auto delay_val = fx_[0]->Process(fx_delay_send);
       auto reverb_val = fx_[1]->Process(fx_reverb_send);
       auto distort_val = fx_[2]->Process(fx_distort_send);
+      last_delay_out_ = delay_val;
+      last_reverb_out_ = reverb_val;
+      last_distort_out_ = distort_val;
       output_left += (delay_val.left + reverb_val.left + distort_val.left);
       output_right += (delay_val.right + reverb_val.right + distort_val.right);
 

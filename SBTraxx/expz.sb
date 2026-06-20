@@ -1,0 +1,89 @@
+
+let patzblah_comp = comp()
+{
+  setup()
+  {
+    let patz = [
+      [0, 0, 45, 0,  0, 0, 0, 41,  0, 0, 0, 40,  0, 0, 0, 0],
+      [36, 0, 0, 48,  36, 0, 36, 0,  33, 0, 0, 0,  0, 0, 0, 0],
+      [0, 36, 0, 0,  36, 0, 0, 36,  0, 40, 0, 0,  0, 0, 0, 0],
+      [0, 0, 36, 0,  0, 36, 0, 36,  0, 0, 33, 0,  0, 0, 0, 0],
+    ];
+      let durz = [200, 300, 500, 100, 150];
+      let drx = 0;
+      let velz = [100, 100, 120, 127, 127, 90];
+      let vx = 0;
+  }
+  run()
+  {
+    let pat = patz[count % 4];
+    for (let i = 0; i < 16; i++) {
+      if (pat[i] > 0) {
+        note_on_at(dx, pat[i], i * pp, dur = durz[drx], vel = velz[vx]);
+        drx = incr(drx, 0, len(durz));
+        vx = incr(vx, 0, len(velz));
+      }
+    }
+
+  }
+}
+
+let dbblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (i % 4 == 0) {
+        note_on_at(sbdrum, 0, i*pp);
+      }
+      if (i % 2 == 0) {
+        note_on_at(sbdrum, 3, i*pp);
+      }
+    }
+    if (count % 4 == 3) {
+      note_on_at(sbdrum, 4, 15*pp);
+    }
+    if (count % 2 == 1) {
+      note_on_at(sbdrum, 2, 12*pp);
+    }
+  }
+}
+
+let dx3b = comp()
+{
+  setup()
+  {
+    let melz =  [
+      [31, 0, 0, 31,  0, 31, 0, 0,  35, 0, 0, 0,  0, 0, 0, 0],
+      [31, 0, 0, 31,  0, 31, 0, 28,  0, 0, 0, 0,  0, 0, 0, 0],
+      [31, 0, 0, 31,  0, 31, 0, 0,  28, 0, 0, 0,  0, 0, 0, 0],
+      [31, 0, 0, 31,  0, 31, 0, 0,  28, 0, 0, 0,  0, 16, 19, 0]
+    ];
+      let durz = [100, 100, 300, 500, 700, 90, 90, 400, 1000];
+      let drx = 0;
+  }
+  run()
+  {
+    let mel = melz[count % 4];
+    for (let i = 0; i < 16; i++) {
+      if (mel[i] > 0) {
+        note_on_at(dx3, mel[i], i * pp, dur = durz[drx]);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
+
+let flblah_fn = fn()
+{
+  sched(0, 0.0, 1.0, 3840, "global_reverb(%)");   // ramp up
+  sched(0, 0.0, 1.0, 3840, "global_delay(%)");   // ramp up
+  sched(0, 1.0, 0.0, 3840*2, "mvol(%)");             // fade dry
+                                                     // ... reverb tail blooms ...
+  sched(3840*2, 0.0, 1.0, 0, "mvol(1)") ;            // bring dry back
+  sched(3840*2, 1.0, 0.0, 0, "global_reverb(0)");    // clear global send
+  sched(0, 0.0, 1.0, 3840, "global_delay(0)");   // ramp up
+}
