@@ -310,10 +310,10 @@ static std::string help_mixer() {
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  global_reverb(amt)      " << COOL_COLOR_ORANGE << "- Route full dry mix into global reverb (0.0-1.0)\n";
   ss << ANSI_COLOR_WHITE << "  global_delay(amt)       " << COOL_COLOR_ORANGE << "- Route full dry mix into global delay (0.0-1.0)\n";
-  ss << ANSI_COLOR_WHITE << "  global_distort(amt)     " << COOL_COLOR_ORANGE << "- Route full dry mix into global distortion (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  global_eq(amt)          " << COOL_COLOR_ORANGE << "- Route full dry mix into global DJ EQ (0.0-1.0)\n";
   ss << ANSI_COLOR_WHITE << "  global_reverb_fb(amt)   " << COOL_COLOR_ORANGE << "- Feed reverb output back into reverb (0.0-0.98)\n";
   ss << ANSI_COLOR_WHITE << "  global_delay_fb(amt)    " << COOL_COLOR_ORANGE << "- Feed delay output back into delay (0.0-0.98)\n";
-  ss << ANSI_COLOR_WHITE << "  global_distort_fb(amt)  " << COOL_COLOR_ORANGE << "- Feed distort output back into distort (0.0-0.98)\n";
+  ss << ANSI_COLOR_WHITE << "  global_eq_fb(amt)       " << COOL_COLOR_ORANGE << "- Feed EQ output back into EQ (0.0-0.98)\n";
   ss << COOL_COLOR_ORANGE << "  // Additive — per-generator sends still apply\n";
   ss << COOL_COLOR_ORANGE << "  // ps shows global sends and per-FX routing in the header\n";
   ss << COOL_COLOR_ORANGE << "  // Example: slowly suck everything into a reverb swoosh:\n";

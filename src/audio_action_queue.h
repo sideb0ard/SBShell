@@ -109,6 +109,8 @@ struct AudioActionItem {
   int velocity{0};
   int duration{0};
   int note_start_time{0};
+  int bar_anchor{-1};  // midi tick of bar start; when set, schedules relative
+                       // to this instead of current tick
 
   // PREVIEW varz
   std::string preview_filename;

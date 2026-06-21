@@ -520,6 +520,7 @@ class SetStatement : public Statement {
       nullptr};  // set when buf[expr]:param
 
   bool is_xfader_component_{false};
+  bool is_global_send_{false};
   int mixer_fx_num_ = -1;
 };
 

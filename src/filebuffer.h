@@ -98,7 +98,14 @@ class FileBuffer {
   int cur_sixteenth_{0};
 
   double incr_speed_{1};
-  double cur_midi_idx_{0};
+
+  // Sample-counter-based position tracking (replaces cur_midi_idx_).
+  // bar_start_sample_ is the audio sample index at which the current bar began.
+  // GenNext computes read position as (cur_sample - bar_start_sample_) /
+  // loop_len_samples.
+  int64_t bar_start_sample_{0};
+  std::atomic<bool> seek_pending_{
+      false};  // set by interpreter; consumed in GenNext
 
   double plooplen_{16};
   double poffset_{0};

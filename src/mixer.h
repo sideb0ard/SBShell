@@ -162,13 +162,13 @@ struct Mixer {
       0.0f};  // audio callback load 0..100%, EMA smoothed
   double global_reverb_send_{0.0};
   double global_delay_send_{0.0};
-  double global_distort_send_{0.0};
+  double global_eq_send_{0.0};
   double global_reverb_feedback_{0.0};
   double global_delay_feedback_{0.0};
-  double global_distort_feedback_{0.0};
+  double global_eq_feedback_{0.0};
   StereoVal last_reverb_out_{};
   StereoVal last_delay_out_{};
-  StereoVal last_distort_out_{};
+  StereoVal last_eq_out_{};
   std::unordered_map<int, int>
       pending_note_ons_;  // note -> abs pos in multi-bar buffer
   std::unordered_map<int, std::string> midi_mapped_controls_ = {};
@@ -285,7 +285,7 @@ struct Mixer {
 
       StereoVal fx_delay_send{};
       StereoVal fx_reverb_send{};
-      StereoVal fx_distort_send{};
+      StereoVal fx_eq_send{};
 
       // Try shared lock for sound generator access (allows multiple readers).
       // If we can't get the lock (writer is active), use cached values to avoid
@@ -357,7 +357,7 @@ struct Mixer {
 
           fx_delay_send += soundgen_cur_val_[k] * fx_send_cache[k][0] * gain;
           fx_reverb_send += soundgen_cur_val_[k] * fx_send_cache[k][1] * gain;
-          fx_distort_send += soundgen_cur_val_[k] * fx_send_cache[k][2] * gain;
+          fx_eq_send += soundgen_cur_val_[k] * fx_send_cache[k][2] * gain;
         }
       }
 
@@ -370,20 +370,19 @@ struct Mixer {
                             last_delay_out_.left * global_delay_feedback_;
       fx_delay_send.right += output_right * global_delay_send_ +
                              last_delay_out_.right * global_delay_feedback_;
-      fx_distort_send.left += output_left * global_distort_send_ +
-                              last_distort_out_.left * global_distort_feedback_;
-      fx_distort_send.right +=
-          output_right * global_distort_send_ +
-          last_distort_out_.right * global_distort_feedback_;
+      fx_eq_send.left += output_left * global_eq_send_ +
+                         last_eq_out_.left * global_eq_feedback_;
+      fx_eq_send.right += output_right * global_eq_send_ +
+                          last_eq_out_.right * global_eq_feedback_;
 
       auto delay_val = fx_[0]->Process(fx_delay_send);
       auto reverb_val = fx_[1]->Process(fx_reverb_send);
-      auto distort_val = fx_[2]->Process(fx_distort_send);
+      auto eq_val = fx_[2]->Process(fx_eq_send);
       last_delay_out_ = delay_val;
       last_reverb_out_ = reverb_val;
-      last_distort_out_ = distort_val;
-      output_left += (delay_val.left + reverb_val.left + distort_val.left);
-      output_right += (delay_val.right + reverb_val.right + distort_val.right);
+      last_eq_out_ = eq_val;
+      output_left += (delay_val.left + reverb_val.left + eq_val.left);
+      output_right += (delay_val.right + reverb_val.right + eq_val.right);
 
       // Apply volume and clamp to safe range to prevent speaker damage
       double final_left = volume * output_left;

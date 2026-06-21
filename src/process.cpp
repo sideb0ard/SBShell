@@ -9,6 +9,7 @@
 #include <string.h>
 #include <utils.h>
 
+#include <interpreter/builtins.hpp>
 #include <interpreter/evaluator.hpp>
 #include <iostream>
 #include <memory>
@@ -22,6 +23,7 @@
 extern std::unique_ptr<Mixer> global_mixr;
 extern Tsqueue<std::string> eval_command_queue;
 extern Tsqueue<std::string> repl_queue;
+extern Tsqueue<std::unique_ptr<AudioActionItem>> audio_queue;
 extern std::shared_ptr<object::Environment> global_env;
 
 namespace {
@@ -71,7 +73,6 @@ TidalPattern::TidalPattern(
     std::vector<std::string> targets,
     std::vector<std::shared_ptr<PatternFunction>> tidal_functions)
     : target_type_{target_type}, targets_{targets} {
-  for (int j = 0; j < PPBAR; j++) tidal_events_played_[j] = true;
   auto new_env = std::make_shared<object::Environment>(global_env);
   auto tidal_pattern_obj = evaluator::Eval(tidal_pattern, new_env);
   original_pattern_ = tidal_pattern_obj->Inspect();
@@ -85,70 +86,117 @@ TidalPattern::TidalPattern(
   }
 }
 
-void TidalPattern::EventNotify(mixer_timing_info tinfo) {
-  if (tinfo.is_start_of_loop) {
-    if (!started_) {
-      started_ = true;
-      cur_event_idx_ = 0;
-      event_incr_speed_ = 1;
-    }
+void TidalPattern::ScheduleEventsToQueue(int bar_start_tick) {
+  if (!tidal_pattern_root_) return;
 
-    for (int i = 0; i < PPBAR; i++) tidal_events_[i].clear();
-    if (tidal_pattern_root_) EvalPattern(tidal_pattern_root_, 0, PPBAR);
-  }
+  // Simulate the old per-tick idx walk so speed != 1 still works correctly.
+  // For each tick in [0, PPBAR), idx advances by event_incr_speed_; any event
+  // slot swept by that advance is scheduled at that tick relative to bar_start.
+  float idx = 0;
+  std::array<bool, PPBAR> played = {};
+  played.fill(false);
 
-  if (tinfo.is_midi_tick) {
-    if (!started_) return;
+  for (int tick = 0; tick < PPBAR; tick++) {
+    float next_idx = fmodf(idx + event_incr_speed_, (float)PPBAR);
 
-    int cur_tick = (int)cur_event_idx_;
-    // increment for next step
-    cur_event_idx_ = fmodf(cur_event_idx_ + event_incr_speed_, PPBAR);
+    // When next_idx wraps below idx the pattern is repeating within the bar.
+    // Reset played so the same events can fire again on the repeat.
+    if (next_idx < idx) played.fill(false);
 
-    for (int i = cur_tick; i < cur_event_idx_; i++) {
-      int next_idx = (int)cur_event_idx_;
-      if (i == 0) {
-        if ((next_idx - i) >= 1) {
-          for (int j = 0; j < PPBAR; j++) tidal_events_played_[j] = false;
-        }
-      }
+    int from = (int)idx;
+    int to = (next_idx < idx) ? PPBAR : (int)next_idx;
 
-      // Add bounds check to prevent array access out of bounds
-      if (i >= 0 && i < PPBAR && tidal_events_[i].size() > 0 &&
-          !tidal_events_played_[i]) {
-        tidal_events_played_[i] = true;
+    for (int i = from; i < to && i < PPBAR; i++) {
+      if (played[i] || tidal_events_[i].empty()) continue;
+      played[i] = true;
 
-        std::vector<std::shared_ptr<MusicalEvent>> &events = tidal_events_[i];
-
-        if (target_type_ == TidalPatternTargetType::Sample) {
-          for (auto e : events) {
-            if (e->value_ == "~")  // skip blank markers
+      if (target_type_ == TidalPatternTargetType::Sample) {
+        for (auto &e : tidal_events_[i]) {
+          if (e->value_ == "~") continue;
+          auto sg_obj = global_env->Get(e->value_);
+          if (sg_obj) {
+            auto sg = std::dynamic_pointer_cast<object::SoundGenerator>(sg_obj);
+            if (sg && sg->soundgen_id_ >= 0) {
+              auto action = std::make_unique<AudioActionItem>(
+                  AudioAction::MIDI_NOTE_ON_DELAYED);
+              action->soundgen_num = sg->soundgen_id_;
+              action->notes = {60};
+              action->velocity = e->velocity_;
+              action->duration = e->duration_;
+              action->note_start_time = tick;
+              action->bar_anchor = bar_start_tick;
+              audio_queue.push(std::move(action));
               continue;
+            }
+          }
+          // Fallback: name not yet in env
+          std::stringstream ss;
+          ss << "note_on(" << e->value_ << ",60," << e->velocity_ << ","
+             << e->duration_ << ")";
+          eval_command_queue.push(ss.str());
+        }
+      } else if (target_type_ == TidalPatternTargetType::MidiNote) {
+        for (auto &e : tidal_events_[i]) {
+          if (e->value_ == "~") continue;
+          std::string midistring = e->value_;
+          if (IsNote(e->value_))
+            midistring =
+                std::to_string(get_midi_note_from_string(&e->value_[0]));
+          int midi_num = std::stoi(midistring);
+          for (auto &t : targets_) {
+            auto t_obj = global_env->Get(t);
+            if (t_obj) {
+              auto sg =
+                  std::dynamic_pointer_cast<object::SoundGenerator>(t_obj);
+              if (sg && sg->soundgen_id_ >= 0) {
+                auto action = std::make_unique<AudioActionItem>(
+                    AudioAction::MIDI_NOTE_ON_DELAYED);
+                action->soundgen_num = sg->soundgen_id_;
+                action->notes = {midi_num};
+                action->velocity = e->velocity_;
+                action->duration = e->duration_;
+                action->note_start_time = tick;
+                action->bar_anchor = bar_start_tick;
+                audio_queue.push(std::move(action));
+                continue;
+              }
+            }
             std::stringstream ss;
-            ss << "note_on(" << e->value_ << "," << /* midi middle C */
-                60 << "," << e->velocity_ << "," << e->duration_ << ")";
-
+            ss << "note_on(" << t << "," << midistring << "," << e->velocity_
+               << "," << e->duration_ << ")";
             eval_command_queue.push(ss.str());
           }
-        } else if (target_type_ == TidalPatternTargetType::MidiNote) {
-          for (auto e : events) {
-            if (e->value_ == "~") continue;
-            std::string midistring = e->value_;
-            // Convert note names (C4, D#3) to MIDI numbers, otherwise use as-is
-            if (IsNote(e->value_)) {
-              midistring =
-                  std::to_string(get_midi_note_from_string(&e->value_[0]));
-            }
-            for (auto t : targets_) {
-              std::stringstream ss;
-              ss << "note_on(" << t << "," << midistring << "," << e->velocity_
-                 << "," << e->duration_ << ")";
-
-              eval_command_queue.push(ss.str());
-            }
-          }
         }
       }
     }
+
+    idx = next_idx;
+  }
+}
+
+void TidalPattern::EventNotify(mixer_timing_info tinfo) {
+  // First bar: initialise on is_start_of_loop and schedule the current bar.
+  // Beat 1 of this bar will be one tick late (events enter audio_queue during
+  // EmitEvent and are dequeued on the next MidiTick), which is acceptable for
+  // the startup case.
+  if (tinfo.is_start_of_loop && !started_) {
+    started_ = true;
+    for (int i = 0; i < PPBAR; i++) tidal_events_[i].clear();
+    if (tidal_pattern_root_) EvalPattern(tidal_pattern_root_, 0, PPBAR);
+    ScheduleEventsToQueue(tinfo.midi_tick);
+    return;
+  }
+
+  // Look-ahead: at the last tick of each bar, compute the NEXT bar's pattern
+  // and pre-schedule it. Events arrive in audio_queue before bar N+1 starts,
+  // so CheckForAudioActionQueueMessages dequeues them at the first tick of
+  // bar N+1 — beat 1 fires in the same tick as is_start_of_loop, perfectly
+  // aligned.
+  if (tinfo.is_end_of_loop && started_) {
+    for (int i = 0; i < PPBAR; i++) tidal_events_[i].clear();
+    if (tidal_pattern_root_) EvalPattern(tidal_pattern_root_, 0, PPBAR);
+    int next_bar_start = tinfo.midi_tick + 1;
+    ScheduleEventsToQueue(next_bar_start);
   }
 }
 
@@ -160,8 +208,10 @@ void Computation::EventNotify(mixer_timing_info tinfo) {
       auto comp_obj =
           std::dynamic_pointer_cast<object::Computation>(computation_obj);
       if (comp_obj) {
+        builtin::SetNoteBarAnchor(tinfo.midi_tick);
         auto result = evaluator::ApplyComputationRun(
             comp_obj, std::vector<std::shared_ptr<object::Object>>());
+        builtin::SetNoteBarAnchor(-1);
         if (result && result->Type() == object::ERROR_OBJ) {
           repl_queue.push("[comp error] " + result->Inspect() + "\n");
         }

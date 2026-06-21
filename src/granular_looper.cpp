@@ -423,6 +423,10 @@ void GranularLooper::EventNotify(broadcast_event event,
   if (file_buffers_.empty()) return;
   auto& primary = file_buffers_[primary_buf_idx_];
 
+  if (tinfo.is_sixteenth) {
+    primary->cur_sixteenth_ = tinfo.sixteenth_note_tick % 16;
+  }
+
   if (!started_ && tinfo.is_start_of_loop) {
     LaunchGrain(tinfo);
     eg_.StartEg();
@@ -432,59 +436,12 @@ void GranularLooper::EventNotify(broadcast_event event,
 
   const std::vector<double>* audio_buffer = primary->GetAudioBuffer();
 
-  if (tinfo.is_midi_tick) {
-    primary->cur_midi_idx_ =
-        fmodf(primary->cur_midi_idx_ + primary->incr_speed_,
-              PPBAR * primary->loop_len_);
-    if (primary->loop_mode_ == LoopMode::loop_mode) {
-      double decimal_percent_of_loop =
-          primary->cur_midi_idx_ / (PPBAR * primary->loop_len_);
-      double new_read_idx = decimal_percent_of_loop * audio_buffer->size();
-      if (reverse_mode_)
-        new_read_idx = (audio_buffer->size() - 1) - new_read_idx;
-
-      // size_of_sixteenth_ is scaled by loop_len_, so recover the 1-bar
-      // sixteenth size for ploop region bounds — otherwise a 2-bar loop wraps
-      // at half the buffer instead of the full buffer.
-      double one_bar_sixteenth =
-          primary->size_of_sixteenth_ * primary->loop_len_;
-      new_read_idx =
-          fmodf((fmodf(new_read_idx, one_bar_sixteenth * primary->plooplen_) +
-                 primary->poffset_ * one_bar_sixteenth),
-                audio_buffer->size());
-
-      // this ensures new_read_idx is even
-      if (primary->num_channels_ == 2) new_read_idx -= ((int)new_read_idx & 1);
-
-      if (new_read_idx < 0 || new_read_idx > (int)audio_buffer->size() - 1) {
-        new_read_idx = 0;
-        std::cout << "OH YA:" << new_read_idx
-                  << " bufflen:" << (audio_buffer->size() - 1) << std::endl;
-      }
-
-      primary->audio_buffer_read_idx_ = new_read_idx;
-
-      int read_idx = primary->audio_buffer_read_idx_.load();
-      int rel_pos_within_a_sixteenth =
-          fmod(static_cast<double>(read_idx), primary->size_of_sixteenth_);
-
-      if (primary->stutter_mode_ || primary->scramble_mode_ ||
-          primary->speedulate_mode_ || primary->slowdown_mode_ ||
-          primary->repeat_mode_ || primary->strobe_mode_) {
-        int target_slice = primary->scrambled_pattern_[primary->cur_sixteenth_];
-        int normal_slice = primary->cur_sixteenth_;
-
-        // If FX remapped to a different slice, snap to its start
-        // for a punchier transient. Otherwise keep the sub-position.
-        int offset =
-            (target_slice != normal_slice) ? 0 : rel_pos_within_a_sixteenth;
-
-        primary->audio_buffer_read_idx_ = static_cast<int>(
-            fmodf((target_slice * primary->size_of_sixteenth_) + offset,
-                  audio_buffer->size()));
-      }
-    }
+  if (tinfo.is_start_of_loop) {
+    primary->bar_start_sample_ = (int64_t)tinfo.cur_sample;
   }
+
+  bpm_ = tinfo.bpm;
+  last_cur_sample_ = (int64_t)tinfo.cur_sample;
 
   if (tinfo.is_end_of_loop) {
     if (stop_count_pending_) {
@@ -567,10 +524,6 @@ void GranularLooper::EventNotify(broadcast_event event,
     } else
       reverse_mode_ = false;
   }
-
-  if (tinfo.is_sixteenth) {
-    primary->cur_sixteenth_ = tinfo.sixteenth_note_tick % 16;
-  }
 }
 
 // for debugging only
@@ -630,6 +583,65 @@ StereoVal GranularLooper::GenNext(mixer_timing_info tinfo) {
     double diff = xfader_target_ - xfader_pos_;
     double step = std::min(std::abs(diff), xfader_ramp_rate_);
     xfader_pos_ += (diff > 0.0 ? step : -step);
+  }
+
+  // Update read position every sample via the sample counter.
+  // This replaces the old tick-quantised cur_midi_idx_ updates in EventNotify.
+  if (primary->loop_mode_ == LoopMode::loop_mode) {
+    const auto* audio_buffer = primary->GetAudioBuffer();
+
+    // One bar in samples from BPM (4 beats × 60s/bpm × sample_rate).
+    // tinfo.loop_len_in_frames uses an inverted BPM formula and is wrong here.
+    const double bar_len_samples = (240.0 / tinfo.bpm) * SAMPLE_RATE;
+    const double loop_len_samples = bar_len_samples * primary->loop_len_;
+
+    // External seek: interpreter set audio_buffer_read_idx_ + seek_pending_;
+    // convert that position into a bar_start_sample_ adjustment so the counter
+    // continues smoothly from the requested location.
+    if (primary->seek_pending_.exchange(false)) {
+      int ext_idx = primary->audio_buffer_read_idx_.load();
+      double fraction = (double)ext_idx / (double)audio_buffer->size();
+      primary->bar_start_sample_ =
+          (int64_t)tinfo.cur_sample - (int64_t)(fraction * loop_len_samples);
+    }
+
+    int64_t samples_into_loop =
+        (int64_t)tinfo.cur_sample - primary->bar_start_sample_;
+    if (samples_into_loop < 0) samples_into_loop = 0;
+    double effective = (double)samples_into_loop * primary->incr_speed_;
+    double decimal_percent =
+        fmod(effective, loop_len_samples) / loop_len_samples;
+    double new_read_idx = decimal_percent * (double)audio_buffer->size();
+
+    if (reverse_mode_)
+      new_read_idx = (double)(audio_buffer->size() - 1) - new_read_idx;
+
+    // poffset / plooplen: constrain to a sub-region of the buffer
+    double one_bar_sixteenth =
+        (double)primary->size_of_sixteenth_ * primary->loop_len_;
+    new_read_idx =
+        fmod(fmod(new_read_idx, one_bar_sixteenth * primary->plooplen_) +
+                 primary->poffset_ * one_bar_sixteenth,
+             (double)audio_buffer->size());
+
+    if (primary->num_channels_ == 2) new_read_idx -= ((int)new_read_idx & 1);
+    if (new_read_idx < 0 || new_read_idx >= (double)audio_buffer->size())
+      new_read_idx = 0;
+
+    // stutter / scramble / speedulate / slowdown / repeat / strobe: remap slice
+    if (primary->stutter_mode_ || primary->scramble_mode_ ||
+        primary->speedulate_mode_ || primary->slowdown_mode_ ||
+        primary->repeat_mode_ || primary->strobe_mode_) {
+      int rel = (int)fmod(new_read_idx, (double)primary->size_of_sixteenth_);
+      int target_slice = primary->scrambled_pattern_[primary->cur_sixteenth_];
+      int normal_slice = primary->cur_sixteenth_;
+      int offset = (target_slice != normal_slice) ? 0 : rel;
+      new_read_idx =
+          fmod((double)(target_slice * primary->size_of_sixteenth_ + offset),
+               (double)audio_buffer->size());
+    }
+
+    primary->audio_buffer_read_idx_ = (int)new_read_idx;
   }
 
   if (engine_.ShouldLaunch(tinfo.cur_sample)) {
@@ -965,7 +977,13 @@ void GranularLooper::NoteOn(midi_event ev) {
   auto& primary = file_buffers_[primary_buf_idx_];
   started_ = true;
   int sixteenth_pos = ev.data1 % 16;
-  primary->cur_midi_idx_ = sixteenth_pos * PPSIXTEENTH;
+
+  // Adjust bar_start_sample_ so the sample counter computes the requested
+  // position.
+  double loop_len_samples = (240.0 / bpm_) * SAMPLE_RATE * primary->loop_len_;
+  double target_fraction = (double)sixteenth_pos / 16.0;
+  primary->bar_start_sample_ =
+      last_cur_sample_ - (int64_t)(target_fraction * loop_len_samples);
 
   // Snap to the exact start of the sixteenth slice
   double new_read_idx = sixteenth_pos * primary->size_of_sixteenth_;
@@ -1025,9 +1043,11 @@ void GranularLooper::SetParam(std::string name, double val) {
     SetLoopMode(val);
   } else if (name == "idx") {
     if (!file_buffers_.empty() && val <= 100) {
-      double pos = val / 100. *
-                   file_buffers_[primary_buf_idx_]->GetAudioBuffer()->size();
-      file_buffers_[primary_buf_idx_]->SetAudioBufferReadIdx(pos);
+      auto& fb = file_buffers_[primary_buf_idx_];
+      double pos = val / 100. * fb->GetAudioBuffer()->size();
+      fb->audio_buffer_read_idx_ = (int)pos;
+      fb->seek_pending_ =
+          true;  // GenNext will update bar_start_sample_ from this
     }
   } else if (name == "len") {
     SetLoopLen(val);

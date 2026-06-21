@@ -250,23 +250,35 @@ std::shared_ptr<ast::Statement> Parser::ParseSetStatement() {
       stmt->mixer_fx_num_ = 0;
     } else if (cur_token_.literal_.rfind("reverb", 0) == 0) {
       stmt->mixer_fx_num_ = 1;
-    } else if (cur_token_.literal_.rfind("distort", 0) == 0) {
+    } else if (cur_token_.literal_.rfind("distort", 0) == 0 ||
+               cur_token_.literal_.rfind("djeq", 0) == 0 ||
+               cur_token_.literal_.rfind("eq", 0) == 0) {
       stmt->mixer_fx_num_ = 2;
     } else if (cur_token_.literal_.rfind("xfader", 0) == 0) {
       stmt->is_xfader_component_ = true;
+    } else if (cur_token_.literal_ == "grev" ||
+               cur_token_.literal_ == "grvfb" ||
+               cur_token_.literal_ == "gdly" ||
+               cur_token_.literal_ == "gdlfb" || cur_token_.literal_ == "geq" ||
+               cur_token_.literal_ == "geqfb") {
+      stmt->is_global_send_ = true;
     }
-    if (stmt->mixer_fx_num_ == -1 && !stmt->is_xfader_component_) {
-      std::cerr << "Needs to be one of [delay, reverb, distort, xfader] for "
-                   "mixer param."
+    if (stmt->mixer_fx_num_ == -1 && !stmt->is_xfader_component_ &&
+        !stmt->is_global_send_) {
+      std::cerr << "Needs to be one of [delay, reverb, distort, xfader, "
+                   "grev, grvfb, gdly, gdlfb, geq, geqfb] for mixer param."
                 << std::endl;
       return nullptr;
     }
 
-    if (!ExpectPeek(token::SLANG_COLON)) {
-      std::cerr << "NOT GOT COLON ! Peek token is " << peek_token_ << std::endl;
-      return nullptr;
+    if (!stmt->is_global_send_) {
+      if (!ExpectPeek(token::SLANG_COLON)) {
+        std::cerr << "NOT GOT COLON ! Peek token is " << peek_token_
+                  << std::endl;
+        return nullptr;
+      }
+      NextToken();
     }
-    NextToken();
   } else if (cur_token_.literal_.rfind("fx", 0) == 0) {
     if (cur_token_.literal_.size() > 2) {
       int fx_num = std::stoi(cur_token_.literal_.substr(2));

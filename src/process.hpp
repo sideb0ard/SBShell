@@ -79,6 +79,10 @@ class TidalPattern : public ProcessRunner {
   void UpdateLoopLen(int val);
 
  private:
+  // Push this bar's events onto audio_queue with absolute fire times.
+  // bar_start_tick: the midi_tick value of the bar's first tick.
+  void ScheduleEventsToQueue(int bar_start_tick);
+
   TidalPatternTargetType target_type_;
   std::vector<std::string> targets_;
 
@@ -87,8 +91,6 @@ class TidalPattern : public ProcessRunner {
   std::shared_ptr<pattern_parser::PatternNode> tidal_pattern_root_{nullptr};
   std::array<std::vector<std::shared_ptr<MusicalEvent>>, PPBAR> tidal_events_;
 
-  std::array<bool, PPBAR> tidal_events_played_ = {};  // for slow speed
-  float cur_event_idx_{0};
   float event_incr_speed_{1};
 
   std::vector<std::shared_ptr<PatternFunction>> pattern_functions_;

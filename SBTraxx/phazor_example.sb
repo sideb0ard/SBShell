@@ -55,6 +55,9 @@ let phazor_draw = comp()
     # one bar
     let fullramp = phasor(3840);
 
+    let fullandhalframp = phasor(6720);
+    let fullandhalframp2tri = ramp2trigger_factory();
+
     let ramp_div1 = ramp_div_factory();
     let ramp_div2 = ramp_div_factory();
     let ramp_div3 = ramp_div_factory();
@@ -78,6 +81,8 @@ let phazor_draw = comp()
 
       let out_sig3 = ramp_div3(out_sig1, mod_ratio);
 
+      let ramp2val = signal_from(fullandhalframp);
+
       if (i % stride == 0) {
         draw_plot(rampval,  plot_width, "r ",  at = i, row = 1);
         #draw_plot(rampval,  plot_width, "r ",  at = i);
@@ -85,6 +90,10 @@ let phazor_draw = comp()
         draw_plot(out_sig2, plot_width, "s2 ", at = i, row = 3);
         #draw_plot(out_sig2, plot_width, "s2 ", at = i);
         draw_plot(out_sig3, plot_width, "s3 ", at = i, row = 4);
+        draw_plot(ramp2val,  plot_width, "r2 ",  at = i, row = 5);
+      }
+      if (fullandhalframp2tri(ramp2val)) {
+        print("RESETAGAIN:", i);
       }
 
       if (ramp2tri1(out_sig1)) {
@@ -188,7 +197,7 @@ let kblah_comp = comp()
         note_on_at(sbdrum, 0, i * pp);
       }
     }
-    if (count % 8 == 7) {
+    if (count % 4 == 3) {
       #solo(sbdrum, at= 8*pp, dur = 3840 / 4);
       note_on_at(sbdrum, 0, 13 * pp, vel = 80);
     }

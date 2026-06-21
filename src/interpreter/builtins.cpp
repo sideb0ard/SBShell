@@ -36,6 +36,13 @@ extern Tsqueue<std::string> repl_queue;
 extern Tsqueue<int> audio_reply_queue;
 extern siv::PerlinNoise perlinGenerator;
 
+namespace builtin {
+thread_local int g_note_bar_anchor = -1;
+void SetNoteBarAnchor(int tick) {
+  g_note_bar_anchor = tick;
+}
+}  // namespace builtin
+
 const std::vector<std::string> FILES_TO_IGNORE = {".DS_Store"};
 
 namespace {
@@ -173,6 +180,7 @@ void note_on_at(int sgid, const std::vector<int>& midi_nums,
   action->velocity = vel;
   action->duration = dur;
   action->note_start_time = note_start_time;
+  action->bar_anchor = builtin::g_note_bar_anchor;
   audio_queue.push(std::move(action));
 }
 void midi_event_at(int sgid, midi_event ev, int start_time) {
@@ -1866,7 +1874,7 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            }
            return evaluator::NULLL;
          })},
-    {"global_distort",
+    {"global_eq",
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)
              -> std::shared_ptr<object::Object> {
@@ -1877,14 +1885,14 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                    std::make_unique<AudioActionItem>(AudioAction::MIXER_UPDATE);
                action->mixer_fx_id = -1;
                action->is_xfader = false;
-               action->param_name = "global_distort";
+               action->param_name = "global_eq";
                action->param_val = std::to_string(num->value_);
                audio_queue.push(std::move(action));
              }
            }
            return evaluator::NULLL;
          })},
-    {"global_distort_fb",
+    {"global_eq_fb",
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)
              -> std::shared_ptr<object::Object> {
@@ -1895,7 +1903,7 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                    std::make_unique<AudioActionItem>(AudioAction::MIXER_UPDATE);
                action->mixer_fx_id = -1;
                action->is_xfader = false;
-               action->param_name = "global_distort_fb";
+               action->param_name = "global_eq_fb";
                action->param_val = std::to_string(num->value_);
                audio_queue.push(std::move(action));
              }

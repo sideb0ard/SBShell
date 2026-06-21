@@ -110,6 +110,11 @@ class GranularLooper : public SoundGenerator {
   void SetPinc(int pinc);
 
  private:
+  // Cached from EventNotify so NoteOn (which has no tinfo) can compute bar
+  // length.
+  float bpm_{120.0f};
+  int64_t last_cur_sample_{0};
+
   // shhh helpers — only used when file_buffers_.size() > 1 and shhh_mode_ > 0
   FileBuffer* SelectShhhBuffer(bool want_loudest);
   static double ComputeBufferRMS(const std::vector<double>* buf, int num_ch,

@@ -4,7 +4,7 @@
 #include <drumsampler.h>
 #include <event_queue.h>
 #include <fmsynth.h>
-#include <fx/distortion.h>
+#include <fx/djeq.h>
 #include <fx/envelope.h>
 #include <fx/fx.h>
 #include <fx/reverb.h>
@@ -155,7 +155,7 @@ Mixer::Mixer() {
 
   fx_[0] = std::make_shared<StereoDelay>();
   fx_[1] = std::make_shared<Reverb>();
-  fx_[2] = std::make_shared<Distortion>();
+  fx_[2] = std::make_shared<DjEq>();
 
   // the lifetime of these booleans is a single sample
   timing_info.cur_sample = -1;
@@ -195,16 +195,15 @@ std::string Mixer::StatusMixr() {
        << content << COOL_COLOR_GREEN << ' ' << std::string(right, ':') << '\n';
   };
 
-  // Global sends (only shown when any value is non-zero)
-  if (global_reverb_send_ > 0.0 || global_delay_send_ > 0.0 ||
-      global_distort_send_ > 0.0 || global_reverb_feedback_ > 0.0 ||
-      global_delay_feedback_ > 0.0 || global_distort_feedback_ > 0.0) {
+  // Global sends — always shown; this line replaces the plain bottom separator
+  // from get_string_logo() so the values are always visible without noise.
+  {
     char gbuf[128];
     std::snprintf(
         gbuf, sizeof(gbuf),
-        "global  rev:%.2f rvfb:%.2f  dly:%.2f dlfb:%.2f  dst:%.2f dtfb:%.2f",
+        "grev:%.2f grvfb:%.2f  gdly:%.2f gdlfb:%.2f  geq:%.2f geqfb:%.2f",
         global_reverb_send_, global_reverb_feedback_, global_delay_send_,
-        global_delay_feedback_, global_distort_send_, global_distort_feedback_);
+        global_delay_feedback_, global_eq_send_, global_eq_feedback_);
     center80(gbuf);
   }
 
@@ -836,7 +835,9 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
     VolChange(action->new_volume);
   } else if (action->type == AudioAction::MIDI_NOTE_ON_DELAYED) {
     // Schedule note on via delayed_action_items_
-    int on_tick = timing_info.midi_tick + action->note_start_time;
+    int anchor =
+        (action->bar_anchor >= 0) ? action->bar_anchor : timing_info.midi_tick;
+    int on_tick = anchor + action->note_start_time;
     auto note_on = std::make_unique<AudioActionItem>(AudioAction::MIDI_NOTE_ON);
     note_on->soundgen_num = action->soundgen_num;
     note_on->notes = action->notes;
@@ -920,18 +921,24 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
       fx_[action->mixer_fx_id]->SetParam(action->param_name, param_val);
     } else if (action->is_xfader) {
       xfader_.Set(action->param_name, param_val);
-    } else if (action->param_name == "global_reverb") {
+    } else if (action->param_name == "global_reverb" ||
+               action->param_name == "grev") {
       global_reverb_send_ = std::clamp(param_val, 0.0, 1.0);
-    } else if (action->param_name == "global_delay") {
+    } else if (action->param_name == "global_delay" ||
+               action->param_name == "gdly") {
       global_delay_send_ = std::clamp(param_val, 0.0, 1.0);
-    } else if (action->param_name == "global_reverb_fb") {
+    } else if (action->param_name == "global_reverb_fb" ||
+               action->param_name == "grvfb") {
       global_reverb_feedback_ = std::clamp(param_val, 0.0, 0.98);
-    } else if (action->param_name == "global_delay_fb") {
+    } else if (action->param_name == "global_delay_fb" ||
+               action->param_name == "gdlfb") {
       global_delay_feedback_ = std::clamp(param_val, 0.0, 0.98);
-    } else if (action->param_name == "global_distort") {
-      global_distort_send_ = std::clamp(param_val, 0.0, 1.0);
-    } else if (action->param_name == "global_distort_fb") {
-      global_distort_feedback_ = std::clamp(param_val, 0.0, 0.98);
+    } else if (action->param_name == "global_eq" ||
+               action->param_name == "geq") {
+      global_eq_send_ = std::clamp(param_val, 0.0, 1.0);
+    } else if (action->param_name == "global_eq_fb" ||
+               action->param_name == "geqfb") {
+      global_eq_feedback_ = std::clamp(param_val, 0.0, 0.98);
     }
   } else if (action->type == AudioAction::MIXER_FX_UPDATE) {
     for (const auto &soundgen_num : action->group_of_soundgens) {
@@ -1339,7 +1346,7 @@ void Mixer::CheckForDelayedEvents() {
         }
       }
       dit = delayed_action_items_.erase(dit);
-    } else if ((*dit)->start_at == timing_info.midi_tick) {
+    } else if ((*dit)->start_at <= timing_info.midi_tick) {
       if ((*dit)->type == RECORDED_MIDI_EVENT) {
         if (IsValidSoundgenNum((*dit)->mixer_soundgen_idx)) {
           auto &sg = sound_generators_[(*dit)->mixer_soundgen_idx];
