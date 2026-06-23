@@ -114,6 +114,7 @@ class GranularLooper : public SoundGenerator {
   // length.
   float bpm_{120.0f};
   int64_t last_cur_sample_{0};
+  int loop_bar_count_{0};
 
   // shhh helpers — only used when file_buffers_.size() > 1 and shhh_mode_ > 0
   FileBuffer* SelectShhhBuffer(bool want_loudest);

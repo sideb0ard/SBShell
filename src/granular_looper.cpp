@@ -437,7 +437,13 @@ void GranularLooper::EventNotify(broadcast_event event,
   const std::vector<double>* audio_buffer = primary->GetAudioBuffer();
 
   if (tinfo.is_start_of_loop) {
-    primary->bar_start_sample_ = (int64_t)tinfo.cur_sample;
+    // Re-anchor only at the start of each loop_len_-bar cycle so that
+    // samples_into_loop grows across multiple bars and fmod handles wrapping.
+    if (loop_bar_count_ == 0)
+      primary->bar_start_sample_ = (int64_t)tinfo.cur_sample;
+    loop_bar_count_++;
+    if (loop_bar_count_ >= std::max(1, (int)std::ceil(primary->loop_len_)))
+      loop_bar_count_ = 0;
   }
 
   bpm_ = tinfo.bpm;
@@ -965,6 +971,7 @@ void GranularLooper::SetPitchStaircasePending() {
 void GranularLooper::SetLoopLen(double bars) {
   if (bars != 0 && !file_buffers_.empty()) {
     file_buffers_[primary_buf_idx_]->SetLoopLen(bars);
+    loop_bar_count_ = 0;  // re-anchor at the next bar boundary
   }
 }
 

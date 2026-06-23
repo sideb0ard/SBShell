@@ -433,7 +433,12 @@ void *loopy() {
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 1) {
       int rows = static_cast<int>(ws.ws_row);
       global_mixr->term_rows_ = rows;
-      printf("\033[s\033[%d;%dr\033[u", max_plot_row + 1, rows - 1);
+      // Set scroll region [1, rows-1] keeping the bottom row for the status
+      // bar. After printing the logo the cursor is at row `rows` (logo scrolled
+      // the terminal all the way down). Restoring with \033[u would put the
+      // cursor back on the status-bar row, so move explicitly to rows-1
+      // instead.
+      printf("\033[%d;%dr\033[%d;1H", max_plot_row + 1, rows - 1, rows - 1);
       fflush(stdout);
       rl_set_screen_size(rows - 1,
                          ws.ws_col);  // keep readline out of status row

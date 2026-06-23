@@ -1,4 +1,17 @@
 
+let simp = NULL;
+let soul = NULL;
+
+let init = fn()
+{
+  bpm 110;
+  simp = loop(dloops/simple_song.aiff);
+  set simp:len 2;
+  add_fx(simp, "distort");
+  soul = loop(loops/soulsoulstrings2bar.aiff);
+  set soul:len 2;
+}
+
 # StabBanjo
 let patzblah_comp = comp()
 {
@@ -34,12 +47,15 @@ let dbblah_comp = comp()
 {
   setup()
   {
+    let veat =  [1, 0, 0, 1,  0, 0, 1, 0,  1, 0, 1, 0,  0, 0, 0, 0];
   }
   run()
   {
     for (let i = 0; i < 16; i++) {
-      if (i % 4 == 0) {
-        note_on_at(sbdrum, 0, i*pp);
+      if (count % 4 < 3) {
+        if (veat[i] == 1) {
+          note_on_at(sbdrum, 0, i*pp);
+        }
       }
       if (i % 2 == 0) {
         note_on_at(sbdrum, 3, i*pp);
@@ -88,4 +104,26 @@ let flblah_fn = fn()
   sched(3840*2, 0.0, 1.0, 0, "mvol(1)") ;            // bring dry back
   sched(3840*2, 1.0, 0.0, 0, "global_reverb(0)");    // clear global send
   sched(0, 0.0, 1.0, 3840, "global_delay(0)");   // ramp up
+}
+
+let soulblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    if (count % 8 == 0) {
+      set soul:poffset 0;
+      set soul:plooplen 8;
+    }
+    if (count % 8 == 7) {
+      set soul:poffset 8;
+      set simp:gate 1;
+    }
+    if (count % 16 == 14) {
+      set soul:plooplen 4;
+      set simp:reverse 1;
+    }
+  }
 }
