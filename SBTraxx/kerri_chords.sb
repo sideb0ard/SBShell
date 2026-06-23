@@ -62,3 +62,17 @@ let kerriblah_comp = comp()
     }
   }
 }
+
+# C#
+let key = 37;
+let chrrblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    let chrd = kerri_min7(key);
+    print(chrd);
+  }
+}

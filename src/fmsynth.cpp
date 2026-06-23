@@ -689,8 +689,8 @@ void FMSynth::Randomize() {
 }
 
 namespace {
-nlohmann::json FmSettingsToJson(const SBAudio::fmsynthsettings &s) {
-  nlohmann::json j;
+nlohmann::ordered_json FmSettingsToJson(const SBAudio::fmsynthsettings &s) {
+  nlohmann::ordered_json j;
   j["m_lfo1_intensity"] = s.m_lfo1_intensity;
   j["m_lfo1_rate"] = s.m_lfo1_rate;
   j["m_lfo1_waveform"] = s.m_lfo1_waveform;
@@ -753,13 +753,13 @@ void FMSynth::Save(std::string preset) {
   }
   strncpy(m_settings.m_settings_name, preset.c_str(), 256);
 
-  nlohmann::json root;
+  nlohmann::ordered_json root;
   std::ifstream infile(FM_PRESET_FILENAME_JSON);
   if (infile.is_open()) {
     try {
       infile >> root;
     } catch (...) {
-      root = nlohmann::json::object();
+      root = nlohmann::ordered_json::object();
     }
   }
   root[preset] = FmSettingsToJson(m_settings);

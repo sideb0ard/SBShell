@@ -287,8 +287,17 @@ void FMSynthVoice::SetOutputEGs() {
 }
 
 bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
+  bool was_pending = m_note_pending;
   if (!Voice::DoVoice(left_output, right_output)) {
     return false;
+  }
+  // Clear stale FM feedback when a stolen note just committed — otherwise the
+  // old operator outputs modulate the new note's reset oscillator, causing a
+  // click.
+  if (was_pending && !m_note_pending) {
+    m_op1_last_out = 0.0;
+    m_op2_last_out = 0.0;
+    m_op3_last_out = 0.0;
   }
 
   if (m_portamento_inc > 0.0 && m_op1.m_osc_fo != m_osc_pitch) {
