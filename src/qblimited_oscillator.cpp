@@ -78,12 +78,16 @@ double QBLimitedOscillator::DoOscillate(double *aux_output) {
 
 inline void QBLimitedOscillator::Reset() {
   Oscillator::Reset();
-  if (m_waveform == SAW1 || m_waveform == SAW2 || m_waveform == SAW3 ||
-      m_waveform == TRI)
-    m_modulo = 0.5;
+  if (m_waveform == SAW1 || m_waveform == SAW3 || m_waveform == TRI) {
+    m_modulo = 0.5;  // zero crossing for SAW1/SAW3/TRI
+  } else if (m_waveform == SAW2) {
+    // SAW2 = 2*(tanh(1.5*m)/tanh(1.5))-1; zero crossing != 0.5
+    const double k = 1.5;
+    m_modulo = atanh(tanh(k) / 2.0) / k;  // ≈ 0.3253
+  }
 }
 void QBLimitedOscillator::StartOscillator() {
-  Oscillator::Reset();
+  Reset();
   m_note_on = true;
 }
 

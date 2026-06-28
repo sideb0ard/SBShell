@@ -25,6 +25,7 @@ class Voice {
   virtual void Update();
   virtual void Reset();
   virtual bool DoVoice(double *left_output, double *right_output);
+  virtual void OnFreshNoteOn() {}
 
   void NoteOn(int midi_note, int midi_velocity, double frequency,
               double last_note_frequency);

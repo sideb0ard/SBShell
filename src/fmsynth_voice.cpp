@@ -185,6 +185,18 @@ void FMSynthVoice::Reset() {
   m_op3_last_out = 0.0;
 }
 
+void FMSynthVoice::OnFreshNoteOn() {
+  // Reset operator amplitudes so the Update() slew prevents the self-feedback
+  // explosion on the first few samples. With fb=30, a tiny initial output (from
+  // the SAW having moved one sample off its zero crossing) gets amplified 30x
+  // per sample, causing audible chaos in 2-3 samples. Starting amplitude at 0
+  // and slewing to the target over ~2ms hides this onset transient.
+  m_op1.m_amplitude = 0.0;
+  m_op2.m_amplitude = 0.0;
+  m_op3.m_amplitude = 0.0;
+  m_op4.m_amplitude = 0.0;
+}
+
 bool FMSynthVoice::CanNoteOff() {
   bool ret = false;
   if (!m_note_on)
@@ -287,17 +299,36 @@ void FMSynthVoice::SetOutputEGs() {
 }
 
 bool FMSynthVoice::DoVoice(double *left_output, double *right_output) {
-  bool was_pending = m_note_pending;
+  bool was_note_pending = m_note_pending;
   if (!Voice::DoVoice(left_output, right_output)) {
-    return false;
-  }
-  // Clear stale FM feedback when a stolen note just committed — otherwise the
-  // old operator outputs modulate the new note's reset oscillator, causing a
-  // click.
-  if (was_pending && !m_note_pending) {
     m_op1_last_out = 0.0;
     m_op2_last_out = 0.0;
     m_op3_last_out = 0.0;
+    return false;
+  }
+
+  // During steal-SHUTDOWN (m_note_pending) and during carrier release/shutdown,
+  // zero self-feedback accumulators every sample. When modulator EGs (eg2, eg3)
+  // do a 2ms SHUTDOWN while eg1 (carrier) stays high, the sudden drop in
+  // modulation depth shifts the FM operating point and causes an audible click.
+  // Disabling self-feedback during fade-out keeps the carrier stable.
+  auto eg1_state = m_eg1.GetState();
+  if (m_note_pending || eg1_state == RELEASE || eg1_state == SHUTDOWN) {
+    m_op1_last_out = 0.0;
+    m_op2_last_out = 0.0;
+    m_op3_last_out = 0.0;
+  }
+
+  // Steal just committed: reset operator amplitudes so the slew ramp prevents
+  // abrupt onset. Output was already 0 (EG finished SHUTDOWN) so no click.
+  if (was_note_pending && !m_note_pending) {
+    m_op1_last_out = 0.0;
+    m_op2_last_out = 0.0;
+    m_op3_last_out = 0.0;
+    m_op1.m_amplitude = 0.0;
+    m_op2.m_amplitude = 0.0;
+    m_op3.m_amplitude = 0.0;
+    m_op4.m_amplitude = 0.0;
   }
 
   if (m_portamento_inc > 0.0 && m_op1.m_osc_fo != m_osc_pitch) {

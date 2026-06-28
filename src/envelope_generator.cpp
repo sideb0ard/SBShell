@@ -261,14 +261,9 @@ double EnvelopeGenerator::DoEnvelope(double *p_biased_output) {
       break;
     }
     case SHUTDOWN: {
-      if (m_reset_to_zero) {
-        m_envelope_output += m_inc_shutdown;
-        if (m_envelope_output <= 0) {
-          m_envelope_output = 0.0;
-          m_state = OFFF;
-          break;
-        }
-      } else {
+      m_envelope_output += m_inc_shutdown;
+      if (m_envelope_output <= 0) {
+        m_envelope_output = 0.0;
         m_state = OFFF;
       }
       break;
@@ -293,14 +288,22 @@ void EnvelopeGenerator::NoteOff() {
   }
 
   if (m_envelope_output > 0) {
-    m_state = RELEASE;
+    if (m_release_time_msec < m_shutdown_time_msec) {
+      // Release shorter than de-click window: use shutdown ramp to prevent
+      // timbre snap from fast-dying modulators in FM chains.
+      m_inc_shutdown =
+          -(1000.0 * m_envelope_output) / m_shutdown_time_msec / SAMPLE_RATE;
+      m_state = SHUTDOWN;
+      m_release_pending = false;
+    } else {
+      m_state = RELEASE;
+    }
   } else {
     m_state = OFFF;
   }
 }
 
 void EnvelopeGenerator::Shutdown() {
-  // std::cout << "EG SHUTDOWN\n";
   if (m_legato_mode) return;
   m_inc_shutdown =
       -(1000.0 * m_envelope_output) / m_shutdown_time_msec / SAMPLE_RATE;

@@ -73,7 +73,7 @@ class EnvelopeGenerator {
   double m_decay_time_msec{EG_DEFAULT_STATE_TIME};
   double m_release_time_msec{EG_DEFAULT_STATE_TIME};
 
-  double m_shutdown_time_msec{10.};
+  double m_shutdown_time_msec{2.};
 
   double m_sustain_level{0.7};
 

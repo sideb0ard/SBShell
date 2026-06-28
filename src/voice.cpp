@@ -288,6 +288,8 @@ void Voice::NoteOn(int midi_note, int midi_velocity, double frequency,
     if (m_osc3) m_osc3->StartOscillator();
     if (m_osc4) m_osc4->StartOscillator();
 
+    OnFreshNoteOn();
+
     m_eg1.StartEg();
     m_eg2.StartEg();
     m_eg3.StartEg();
@@ -401,12 +403,8 @@ bool Voice::DoVoice(double *left_output, double *right_output) {
       if (m_osc3) m_osc3->m_midi_note_number = m_midi_note_number;
       if (m_osc4) m_osc4->m_midi_note_number = m_midi_note_number;
 
-      if (!m_legato_mode) {
-        if (m_osc1) m_osc1->Reset();
-        if (m_osc2) m_osc2->Reset();
-        if (m_osc3) m_osc3->Reset();
-        if (m_osc4) m_osc4->Reset();
-      }
+      // Oscillators keep running mid-wave — resetting phase causes an
+      // amplitude discontinuity (click). Frequency update above is enough.
 
       m_eg1.StartEg();
       m_eg2.StartEg();

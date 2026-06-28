@@ -39,6 +39,7 @@ struct FMSynthVoice : public Voice {
   void PrepareForPlay() override;
   void Update() override;
   void Reset() override;
+  void OnFreshNoteOn() override;
   bool DoVoice(double *left_output, double *right_output) override;
 
   void SetLFO1Destination(unsigned int op, unsigned int dest);

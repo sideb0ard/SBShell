@@ -527,7 +527,13 @@ StereoVal HandClap::Generate() {
 
   out = ApplyRetriggerFade(out);
 
-  if (eg_.GetState() == OFFF) {
+  bool all_noise_done = !voice2_pending_ && !voice3_pending_ &&
+                        !voice4_pending_ &&
+                        voices_[0].noise_eg.GetState() == OFFF &&
+                        voices_[1].noise_eg.GetState() == OFFF &&
+                        voices_[2].noise_eg.GetState() == OFFF &&
+                        voices_[3].noise_eg.GetState() == OFFF;
+  if (eg_.GetState() == OFFF || all_noise_done) {
     for (int i = 0; i < 4; ++i) {
       voices_[i].noise->StopOscillator();
       voices_[i].lfo->StopOscillator();
