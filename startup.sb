@@ -21,6 +21,10 @@ let ramp_div_factory = fn()
   let accum = 0;
 
   return fn(sig_val, ratio) {
+    if (sig_val == NULL) {
+      accum = 0;
+      return 0;
+    }
     let val = normalize_ramp(sig_val) / ratio;
     accum = accum + val;
     if (accum >= 1) {

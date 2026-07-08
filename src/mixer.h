@@ -381,8 +381,13 @@ struct Mixer {
       last_delay_out_ = delay_val;
       last_reverb_out_ = reverb_val;
       last_eq_out_ = eq_val;
-      output_left += (delay_val.left + reverb_val.left + eq_val.left);
-      output_right += (delay_val.right + reverb_val.right + eq_val.right);
+      // EQ is an insert: reduce dry by send amount so geq=1 fully replaces dry.
+      // Delay and reverb remain parallel sends (dry is unaffected by their
+      // send).
+      output_left = output_left * (1.0 - global_eq_send_) + delay_val.left +
+                    reverb_val.left + eq_val.left;
+      output_right = output_right * (1.0 - global_eq_send_) + delay_val.right +
+                     reverb_val.right + eq_val.right;
 
       // Apply volume and clamp to safe range to prevent speaker damage
       double final_left = volume * output_left;

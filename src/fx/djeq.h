@@ -23,4 +23,5 @@ class DjEq : public Fx {
 
   double lo_freq_{80};     // HPF cutoff - default wide open (bass passes)
   double hi_freq_{18000};  // LPF cutoff - default wide open (treble passes)
+  double gain_{1.0};  // makeup gain to compensate for filter insertion loss
 };

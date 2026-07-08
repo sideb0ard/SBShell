@@ -18,6 +18,10 @@ let init = fn()
   set disc:buf[2]:pitch 2;
 }
 
+
+# dx - mo_jazz
+
+
 let dbblah_comp = comp()
 {
   setup()
@@ -122,5 +126,36 @@ let dxrcblah_comp = comp()
       }
     }
 
+  }
+}
+
+let dxxxblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    if (count % 6 < 3) {
+      dxrcblah_comp();
+    } else {
+      lblah_comp();
+    }
+  }
+}
+
+let mediahypeblah_comp = comp()
+{
+  setup()
+  {
+    let seed = [1, 1, 0, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 1, 1];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (seed[i] == 1) {
+        note_on_at(media, i, i * pp);
+      }
+    }
   }
 }

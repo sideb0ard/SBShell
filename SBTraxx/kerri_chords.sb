@@ -62,9 +62,39 @@ let init = fn()
   band = loop(dloops2/banduLU.wav);
   set band:pitch 2;
   note_off(band, 0);
-
-
 }
+
+
+# OCWAR2
+let kerri_dsharp_prog = comp()
+{
+  setup()
+  {
+    let pat1 = [1, 0, 0, 1,  1, 0, 1, 1,  0, 0, 1, 0,  1, 1, 1, 0];
+    let pat2 =  [1, 1, 1, 0,  1, 0, 0, 1,  0, 1, 0, 0,  1, 0, 1, 0];
+    let durz = [350, 100, 100, 400, 300, 200];
+    let drx = 0;
+    let velz = [127, 100, 100, 120, 120, 90, 127];
+    let vlx = 0;
+  }
+  run()
+  {
+    let pat = pat1;
+    if (count % 3 == 2) {
+      pat = pat2;
+    }
+    let chrd = kc_dsh_ext[count % 2];
+    for (let i = 0; i < 16; i++) {
+      if (pat[i] == 1) {
+        note_on_at(dx, chrd, i * pp, dur = durz[drx], vel = velz[vlx]);
+        drx = incr(drx, 0, len(durz));
+        vlx = incr(vlx, 0, len(velz));
+      }
+    }
+  }
+}
+
+
 let kerriblah_comp = comp()
 {
   setup()
@@ -229,5 +259,39 @@ let dlblah_comp = comp()
         }
       }
     }
+  }
+}
+
+let dbbbbblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if(i%4 == 0) {
+        note_on_at(sbdrum, 0,  i *pp);
+      }
+    }
+    if (count % 4 == 3) {
+      note_on_at(sbdrum, 0, 14 * pp, vel = 100);
+    }
+  }
+}
+
+let ohblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (i % 4 == 2) {
+        note_on_at(sbdrum, 4, i * pp);
+      }
+    }
+
   }
 }

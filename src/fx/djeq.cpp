@@ -36,8 +36,8 @@ StereoVal DjEq::Process(StereoVal input) {
   lpf_right_->Update();
 
   StereoVal out;
-  out.left = lpf_left_->DoFilter(hpf_left_->DoFilter(input.left));
-  out.right = lpf_right_->DoFilter(hpf_right_->DoFilter(input.right));
+  out.left = gain_ * lpf_left_->DoFilter(hpf_left_->DoFilter(input.left));
+  out.right = gain_ * lpf_right_->DoFilter(hpf_right_->DoFilter(input.right));
   return out;
 }
 
@@ -50,11 +50,14 @@ void DjEq::SetParam(std::string name, double val) {
     hi_freq_ = val;
     lpf_left_->SetFcControl(hi_freq_);
     lpf_right_->SetFcControl(hi_freq_);
+  } else if (name == "gain") {
+    gain_ = val;
   }
 }
 
 std::string DjEq::Status() {
   std::stringstream ss;
-  ss << "djeq lo(hpf):" << lo_freq_ << "hz  hi(lpf):" << hi_freq_ << "hz";
+  ss << "djeq lo(hpf):" << lo_freq_ << "hz  hi(lpf):" << hi_freq_
+     << "hz  gain:" << gain_;
   return ss.str();
 }
