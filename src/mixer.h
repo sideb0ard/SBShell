@@ -149,9 +149,9 @@ struct Mixer {
   double volume{1};
 
   PortMidiStream *midi_stream;
-  bool have_midi_controller;
+  bool have_midi_controller{false};
   std::string midi_controller_name{};
-  int midi_target;
+  int midi_target{-1};
   // std::vector<int> midi_targets{};  // sound_generators_ idx
   bool midi_recording = {false};
   bool midi_loop_{false};
@@ -212,7 +212,8 @@ struct Mixer {
   const std::vector<MultiEventMidiPattern> &RecordingBufferAll() const {
     return recording_buffer_;
   }
-  std::vector<MultiEventMidiPattern> recording_buffer_{1};  // record_bars_ bars
+  std::vector<MultiEventMidiPattern> recording_buffer_{
+      2};  // must match record_bars_
 
   void UpdateBpm(int bpm);
   void UpdateTimeUnit(unsigned int time_type, int val);

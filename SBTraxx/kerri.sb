@@ -1,22 +1,314 @@
 
+let init = fn()
+{
+  add_fx(dx, "delay");
+  load_preset(dx, "kerrizx");
+  set dx:algo 4;
+  load_preset(dx3, "kerrizx");
+  set dx3:algo 4;
+  add_fx(dx, "reverb");
+  add_fx(dx, "filter");
+  add_fx(dx3, "reverb");
+
+  set dx:fx2:freq 80;
+  p1 # kerri2blah_comp;
+  sched(0, 80, 18000, 3840*32, "set dx:fx2:freq %");
+
+  pan dx -0.2;
+  pan dx3 0.3;
+
+  p99 # RUNblah_comp;
+
+}
+
+# p2 # dxxopoutzlah_comp;
+
+# p4 # kerriblah_comp;
+
+# p2 # "";
+
+# p4 # ""; sched(0, 80, 18000, 3840*32, "set dx:fx2:freq %");
+# p4 # kerriMOOblah_comp;
+
+# p2 # dxxopoutzlah_comp; p4 # "";  p1 # kerriblah_comp
+
+# p6 # dxdelayblah_comp; p4 # ""; sched(0, 80, 18000, 3840*32, "set dx:fx2:freq %");
+# p2 # dxxopoutzlah_comp; sched(0, 80, 18000, 3840*32, "set dx:fx2:freq %");
+
+let RUNblah_comp = comp()
+{
+  setup()
+  {
+    let stepc = 0;
+  }
+  run()
+  {
+    if ( stepc == 7) {
+      p2 # dxxopoutzlah_comp;
+    }
+    if ( stepc == 12) {
+      p2 # "";
+    }
+    if ( stepc == 15) {
+      p1 # "";
+    }
+    if ( stepc == 16) {
+      p4 # kerriMOOblah_comp;
+      p2 # dxxopoutzlah_comp;
+    }
+    if ( stepc == 18) {
+      p4 # "";
+      p1 # kerri2blah_comp;
+      sched(0, 80, 18000, 3840*32, "set dx:fx2:freq %");
+    }
+    if ( stepc == 26) {
+      p2 # "";
+      sched(0, 80, 18000, 3840*32, "set dx:fx2:freq %");
+    }
+    if ( stepc == 32) {
+      p6 # dxdelayblah_comp;
+    }
+    if ( stepc == 36) {
+      p4 # "";
+      p1 # kerriblah_comp;
+    }
+    if ( stepc == 42) {
+      p2 # dxxopoutzlah_comp;
+      p4 # kerriMOOblah_comp;
+      bpm 1;
+    }
+    print(stepc);
+    stepc++;
+  }
+}
+
 
 let kerriblah_comp = comp()
 {
   setup()
   {
-    let mel = [[58,54,49], 0, 0, 0, [58,54,49], 0, [51,47], 0,
+    let melbase = [[58,54,49], 0, 0, 0, [58,54,49], 0, [51,47], 0,
         [51,47], 0, [51,47], 0, [56,51,47], 0, [56,51], 51
     ];
-    let bass = [ 39, 0, 51, 0, 0, 0, [44,42], 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+    let bassbase = [ 39, 0, 51, 0, 0, 0, [44,42], 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+    let bassbase2 = [ 46, 0, 20, 0, 42, 0, [44,42], 0, 32, 0, 0, 0, 32, 0, 0, 0 ];
+
+    let durz = [100, 200, 300, 400, 150, 70, 50, 800, 500];
+    let drx = 0;
+
+    let velz = [127, 127, 127, 120, 90, 100, 90, 100, 90, 50];
+    let vlx = 0;
   }
   run()
   {
-    for (let i = 0; i < 16; i++) {
-      if (type(mel[i]) == "ARRAY" || mel[i] > 0) {
-        note_on_at(dx, mel[i], i * pp, dur = 300);
+    let mel = melbase;
+    let bass = bassbase;
+
+    if (count % 8 == 7) {
+      bass = bassbase2;
+    }
+    if (count % 17 == 16) {
+      mel = reverse(melbase);
+      bass = reverse(bass);
+    }
+    if (count % 15 < 14) {
+      for (let i = 0; i < 16; i++) {
+        if (type(mel[i]) == "ARRAY" || mel[i] > 0) {
+          note_on_at(dx, mel[i], i * pp, dur = durz[drx], vel = velz[vlx]);
+          drx = incr(drx, 0, len(durz));
+        }
       }
+    }
+    for (let i = 0; i < 16; i++) {
       if (type(bass[i]) == "ARRAY" || bass[i] > 0) {
-        note_on_at(dx2, bass[i], i * pp, dur = 300);
+        note_on_at(dx, bass[i], i * pp, dur = durz[drx], vel = velz[vlx]);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
+# kerrizx
+let kerri2blah_comp = comp()
+{
+  setup()
+  {
+    let melbase = [[58,49], 0, 0, 0, 58, 0, 51, 0,
+        [51,47], 0, 47, 0, [56,47], 0, [56,51], 51 ];
+    let bassbase = [ 39, 0, 51, 0, 0, 0, [44,42], 0, 0, 0, 0, 0, 32, 0, 0, 0 ];
+
+    let durz = [100, 200, 300, 400, 150, 70, 50, 800, 500];
+    let drx = 0;
+
+    let velz = [127, 127, 127, 120, 90, 100, 90, 100, 90, 50];
+    let vlx = 0;
+  }
+  run()
+  {
+    let mel = melbase;
+    let bass = bassbase;
+
+    if (count % 17 == 16) {
+      mel = reverse(melbase);
+      bass = reverse(bass);
+    }
+    if (count % 15 < 14) {
+      for (let i = 0; i < 16; i++) {
+        if (type(mel[i]) == "ARRAY" || mel[i] > 0) {
+          note_on_at(dx, mel[i], i * pp, dur = durz[drx], vel = velz[vlx]);
+          drx = incr(drx, 0, len(durz));
+        }
+      }
+    }
+    for (let i = 0; i < 16; i++) {
+      if (type(bass[i]) == "ARRAY" || bass[i] > 0) {
+        note_on_at(dx, bass[i], i * pp, dur = durz[drx], vel = velz[vlx]);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
+
+let dxdelayblah_comp = comp()
+{
+  setup()
+  {
+    let granul = 480;
+    let fullramp = phasor(granul);
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+    let plot_width = 80;
+    let stride = granul / plot_width;
+    let fbz= [0, 10, 90, 20, 5];
+    let fbx = 0;
+
+    let fblenz = [3, 5, 10, 13, 20, 23, 35];
+    let fblx = 0;
+  }
+  run()
+  {
+    for (let i = 0; i < granul; i++) {
+      let rampval  = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 3/8);
+      let out_sig2 = ramp_div2(rampval, 3/15);
+      #let mod_ratio = max(out_sig2, 0.001);
+      #let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      if (i % stride == 0) {
+        draw_plot(rampval,  650, "r  ", at=i, row=1);
+        draw_plot(out_sig1, 650, "s1 ", at=i, row=2);
+        draw_plot(out_sig2, 650, "s2 ", at=i, row=3);
+        #draw_plot(out_sig3, plot_width, "s3 ", at=i, row=4);
+      }
+      if (ramp2tri1(out_sig1)) {
+        #print("s1 NOTEON:", i * pp);
+        set dx:fx0:fb fbz[fbx] at = i * 8;
+        fbx = incr(fbx, 0, len(fbz));
+      }
+      if (ramp2tri2(out_sig2)) {
+        #print("s2 NOTEON:", i * pp);
+        set dx:fx0:ms fblenz[fblx] at = i * 8;
+        fblx = incr(fblx, 0, len(fblenz));
+
+      }
+      #if (ramp2tri3(out_sig3)) { print("s3 NOTEON:", i * pp); }
+    }
+  }
+}
+
+let dxxopoutzlah_comp = comp()
+{
+  setup()
+  {
+    let granul = 480;
+    let fullramp = phasor(granul);
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+    let plot_width = 80;
+    let stride = granul / plot_width;
+
+    #let outz = [62, 85, 10, 90, 76, 40];
+    let outz = [62, 85, 62, 62, 76, 60, 37];
+    let ox = 0;
+    let targz = [3, 2, 2, 2];
+    let tx = 0;
+
+  }
+  run()
+  {
+    for (let i = 0; i < granul; i++) {
+      let rampval  = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 3/8);
+      let out_sig2 = ramp_div2(rampval, 3/15);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      if (i % stride == 0) {
+        #draw_plot(rampval,  650, "r  ", at=i, row=1);
+        #draw_plot(out_sig1, 650, "s1 ", at=i, row=2);
+        #draw_plot(out_sig2, 650, "s2 ", at=i, row=3);
+        #draw_plot(out_sig3, 650, "s3 ", at=i, row=4);
+      }
+      if (ramp2tri3(out_sig3)) {
+        if (targz[tx] == 2) {
+          set dx:op2out outz[ox] at = i * 8;
+        }
+        if (targz[tx] == 3) {
+          set dx:op3out outz[ox] at = i * 8;
+        }
+        tx = incr(tx, 0, len(targz));
+        ox = incr(ox, 0, len(outz));
+        #print("s3 NOTEON:", i * 8);
+      }
+    }
+  }
+}
+
+let kerriMOOblah_comp = comp()
+{
+  setup()
+  {
+    let melbase = [[46,54,37], 0, 0, 0, [58,54,49], 0, [51,47], 0,
+        [51,47], 0, [39,35], 0, [56,51,47], 0, [56,51], 51
+    ];
+    let bassbase = [ 0, 0, 20, 0, 0, 0, [44,42], 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+    let bassbase2 = [ 46, 0, 20, 0, 42, 0, [56,54], 0, 32, 0, 0, 0, 32, 0, 0, 0 ];
+
+    let durz = [100, 200, 300, 400, 150, 70, 50, 800, 500];
+    let drx = 0;
+
+    let velz = [127, 127, 127, 120, 90, 100, 90, 100, 90, 50];
+    let vlx = 0;
+  }
+  run()
+  {
+    let mel = melbase;
+    let bass = bassbase;
+
+    if (count % 11 == 7) {
+      bass = bassbase2;
+    }
+    if (count % 4 == 3) {
+      mel = reverse(melbase);
+      bass = reverse(bass);
+    }
+    if (count % 15 < 14) {
+      for (let i = 0; i < 16; i++) {
+        if (type(mel[i]) == "ARRAY" || mel[i] > 0) {
+          note_on_at(dx3, mel[i], i * pp, dur = durz[drx], vel = velz[vlx]);
+          drx = incr(drx, 0, len(durz));
+        }
+      }
+    }
+    for (let i = 0; i < 16; i++) {
+      if (type(bass[i]) == "ARRAY" || bass[i] > 0) {
+        note_on_at(dx3, bass[i], i * pp, dur = durz[drx], vel = velz[vlx]);
+        drx = incr(drx, 0, len(durz));
       }
     }
   }

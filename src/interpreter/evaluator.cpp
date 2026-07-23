@@ -667,6 +667,15 @@ std::shared_ptr<object::Object> Eval(std::shared_ptr<ast::Node> node,
       std::cerr << "Nae sample path!!\n";
   }
 
+  std::shared_ptr<ast::ImageSounderExpression> img =
+      std::dynamic_pointer_cast<ast::ImageSounderExpression>(node);
+  if (img) {
+    if (!img->path_.empty()) {
+      return std::make_shared<object::ImageSounder>(img->path_);
+    } else
+      std::cerr << "Nae image path!!\n";
+  }
+
   std::shared_ptr<ast::ProcessStatement> proc =
       std::dynamic_pointer_cast<ast::ProcessStatement>(node);
   if (proc) return EvalProcessStatement(proc, env);

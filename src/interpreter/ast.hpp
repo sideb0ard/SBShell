@@ -287,6 +287,16 @@ class GranularExpression : public Expression {
   int loop_mode_{0};  // 0 is loop, 1 is static grain, 2 is granular wash
 };
 
+class ImageSounderExpression : public Expression {
+ public:
+  ImageSounderExpression() {}
+  explicit ImageSounderExpression(Token token) : Expression{token} {}
+  std::string String() const override {
+    return "IMAGESOUNDER";
+  }
+  std::string path_;
+};
+
 class CallExpression : public Expression {
  public:
   CallExpression() {}

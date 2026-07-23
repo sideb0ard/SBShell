@@ -7,11 +7,22 @@ let init = fn()
   bpm 110;
   simp = loop(dloops/simple_song.aiff);
   set simp:len 2;
+  set simp:pitch 0.8;
   add_fx(simp, "distort");
+  add_fx(soul, "distort");
   soul = loop(loops/soulsoulstrings2bar.aiff);
   set soul:len 2;
+  add_buf(soul, "dloops2/hazehop.wav");
+  set soul:buf[1]:pitch 2;
+  p4 # soulblah_comp;
+  set soul:shhh 2;
+  flblah_fn();
+  add_fx(dx, "distort");
+  set sbdrum:bd_vol 1;
 }
 
+# mo_jazz
+# gentlepipe
 # StabBanjo
 let patzblah_comp = comp()
 {
@@ -27,6 +38,7 @@ let patzblah_comp = comp()
       let drx = 0;
       let velz = [100, 100, 120, 127, 127, 90];
       let vx = 0;
+
   }
   run()
   {
@@ -48,6 +60,10 @@ let dbblah_comp = comp()
   setup()
   {
     let veat =  [1, 0, 0, 1,  0, 0, 1, 0,  1, 0, 1, 0,  0, 0, 0, 0];
+
+    let velz = [120, 120, 100, 120, 100, 80];
+    let vlx = 0;
+
   }
   run()
   {
@@ -57,8 +73,11 @@ let dbblah_comp = comp()
           note_on_at(sbdrum, 0, i*pp);
         }
       }
-      if (i % 2 == 0) {
-        note_on_at(sbdrum, 3, i*pp);
+      if (count % 12 < 10) {
+        if (i % 2 == 0) {
+          note_on_at(sbdrum, 3, i*pp, vel = velz[vlx]);
+          vlx = incr(vlx, 0, len(velz));
+        }
       }
     }
     if (count % 4 == 3) {
@@ -75,10 +94,10 @@ let dx3b = comp()
   setup()
   {
     let melz =  [
-      [31, 0, 0, 31,  0, 31, 0, 0,  35, 0, 0, 0,  0, 0, 0, 0],
-      [31, 0, 0, 31,  0, 31, 0, 28,  0, 0, 0, 0,  0, 0, 0, 0],
-      [31, 0, 0, 31,  0, 31, 0, 0,  28, 0, 0, 0,  0, 0, 0, 0],
-      [31, 0, 0, 31,  0, 31, 0, 0,  28, 0, 0, 0,  0, 16, 19, 0]
+      [43, 0, 0, 45,  0, 31, 0, 0,  35, 0, 0, 0,  0, 0, 0, 0],
+      [43, 0, 0, 31,  0, 43, 0, 28,  0, 0, 0, 0,  0, 0, 0, 0],
+      [31, 0, 0, 31,  0, 31, 0, 0,  45, 45, 0, 43,  0, 45, 0, 0],
+      [31, 0, 0, 31,  0, 31, 0, 0,  52, 0, 0, 0,  0, 0, 0, 0]
     ];
       let durz = [100, 100, 300, 500, 700, 90, 90, 400, 1000];
       let drx = 0;
@@ -87,8 +106,12 @@ let dx3b = comp()
   {
     let mel = melz[count % 4];
     for (let i = 0; i < 16; i++) {
+      let offs = 20;
+      if (i % 2 == 0) {
+        offs = 0;
+      }
       if (mel[i] > 0) {
-        note_on_at(dx3, mel[i], i * pp, dur = durz[drx]);
+        note_on_at(dx3, mel[i], i * pp + offs, dur = durz[drx]);
         drx = incr(drx, 0, len(durz));
       }
     }
@@ -110,20 +133,239 @@ let soulblah_comp = comp()
 {
   setup()
   {
+    let lenz = [1, 2, 3, 4, 6];
+    let lx = 0;
+    let pitchz = [1, 2, 0.5, 1, 1.5, 2, 2];
+    let px = 0;
+    let bufz = [0, 1];
+    let bx = 0;
+    let shzz = [1, 2, 2, 1, 0];
+    let shx = 0;
+    let simpitz = [0.5, 0.8, 1];
+    let smx = 0;
   }
   run()
   {
-    if (count % 8 == 0) {
-      set soul:poffset 0;
-      set soul:plooplen 8;
+    let mask = rand_array(16, 0, 1);
+    for (let i = 0; i < 16; i++) {
+      if (mask[i] == 1) {
+        note_on_at(soul, i, i * pp);
+      }
+    }
+
+    if (count % 3 == 0) {
+      set simp:pitch simpitz[smx];
+      smx = incr(smx, 0, len(simpitz));
+    }
+
+    note_on(simp, 0, dur = 0);
+    if (count % 5 == 4) {
+      let sbeat = rand_beat();
+      for (let i = 0; i < 16; i++) {
+        if (sbeat[i] == 1) {
+          note_on_at(simp, i, i * pp);
+        }
+      }
+    }
+    if (count % 7 == 6) {
+      let sbeat = rand_beat();
+      for (let i = 0; i < 16; i++) {
+        if (sbeat[i] == 1) {
+          note_on_at(simp, 1, i * pp);
+        }
+      }
     }
     if (count % 8 == 7) {
+      set simp:slowdown 1;
+    }
+
+    if (count % 8 == 0) {
+      set soul:poffset 0;
+      set soul:buf[1]:plooplen 8;
+    }
+    if (count % 13 == 1) {
       set soul:poffset 8;
       set simp:gate 1;
+
     }
-    if (count % 16 == 14) {
-      set soul:plooplen 4;
-      set simp:reverse 1;
+    if (count % 5 == 3) {
+      set soul:buf[1]:plooplen lenz[lx];
+      lx = incr(lx, 0, len(lenz));
+      set soul:buf[bufz[bx]]:pitch pitchz[px];
+      bx = incr(bx, 0, len(bufz));
+      px = incr(px, 0, len(pitchz));
     }
+    if (count % 8 == 3) {
+      set soul:reverse 1;
+      set souls:shhh shzz[shx];
+      shx = incr(shx, 0, len(shzz));
+    }
+  }
+}
+
+let dxfxblah_comp = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(32);
+    let ramp_div1 = ramp_div_factory(); // each holds own accum
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+    let plot_width = 80;
+    let stride = 32 / plot_width;     // 48 ticks per column
+    let ratez = [2, 12, 1, 20, 13];
+    let rx = 0;
+    let rintz = [0.1, 0.3, 0.7, 1, 0.5];
+    let rix = 0;
+
+    let dfbz = [0, 1, 2, 0.5, 6, 4];
+    let dfx = 0;
+
+  }
+  run()
+  {
+    let lpp = 3840 / 32;
+    for (let i = 0; i < 17; i++) {
+      let rampval  = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 3/8);     // ~2.67/bar
+      let out_sig2 = ramp_div2(rampval, 3/15);    // 5/bar
+      let mod_ratio = max(out_sig2, 0.001);        // avoid /0
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio); // FM!
+      # if (i % stride == 0) {
+        #   draw_plot(rampval,  plot_width, "r  ", at=i*lpp, row=1);
+        #   draw_plot(out_sig1, plot_width, "s1 ", at=i*lpp, row=2);
+        #   draw_plot(out_sig2, plot_width, "s2 ", at=i*lpp, row=3);
+        #   draw_plot(out_sig3, plot_width, "s3 ", at=i*lpp, row=4);
+        # }
+      if (ramp2tri1(out_sig1)) {
+        set dx:l1_int rintz[rix] at = i * lpp;
+        rix = incr(rix, 0, len(rintz));
+        #print("s1 NOTEON:", i*lpp);
+      }
+      if (ramp2tri2(out_sig2)) {
+        set dx:l1_rate ratez[rx] at = i * lpp;
+        rx = incr(rx, 0, len(ratez));
+      }
+      if (ramp2tri3(out_sig3)) {
+        set dx:op1fb dfbz[dfx];
+        dfx = incr(dfx, 0, len(dfbz));
+      }
+    }
+  }
+}
+
+let perccblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+  }
+}
+
+let brkxblah_comp = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(32);
+    let ramp_div1 = ramp_div_factory(); // each holds own accum
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+    let plot_width = 80;
+    let stride = 32 / plot_width;     // 48 ticks per column
+
+    let brkpz = [1, 2, 0.5, 1.2, 1.3, 0.1];
+    let brx = 0;
+
+    let offz = [0, 4, 8, 6, 7];
+    let ofx = 0;
+
+  }
+  run()
+  {
+
+    if (count % 2 == 1) {
+      set brk:scramble 1;
+    }
+    if (count % 4 == 3) {
+      let beat = rand_beat();
+      for (let i = 0; i < 16; i++) {
+        if (beat[i] == 1) {
+          note_on_at(brk, 0, i * pp);
+        }
+      }
+    } else {
+      note_on_at(brk, 0, 0, dur = 0);
+      let lpp = 3840 / 32;
+      for (let i = 0; i < 32; i++) {
+        let rampval  = signal_from(fullramp);
+        let out_sig1 = ramp_div1(rampval, 4/9);
+        let out_sig2 = ramp_div2(rampval, 3/13);
+        let mod_ratio = max(out_sig2, 0.001);
+        let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+        # if (i % stride == 0) {
+          #   draw_plot(rampval,  plot_width, "r  ", at=i*lpp, row=1);
+          #   draw_plot(out_sig1, plot_width, "s1 ", at=i*lpp, row=2);
+          #   draw_plot(out_sig2, plot_width, "s2 ", at=i*lpp, row=3);
+          #   draw_plot(out_sig3, plot_width, "s3 ", at=i*lpp, row=4);
+          # }
+        if (ramp2tri1(out_sig1)) {
+          #print("s1 NOTEON:", i*lpp);
+          set brk:pitch brkpz[brx] at = i * lpp;
+          brx = incr(brx, 0, len(brkpz));
+        }
+        if (ramp2tri2(out_sig2)) {
+          set brk:offset offz[ofx] at = i * lpp;
+          ofx = incr(ofx, 0, len(offz));
+        }
+        if (ramp2tri3(out_sig3)) {
+          set sd:pitch brkpz[brx] at = i * lpp;
+        }
+      }
+    }
+  }
+}
+
+let snnnblah_comp = comp()
+{
+  setup()
+  {
+    let sn1 = [0, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+    let sn2 = [0, 0, 0, 0,  0, 0, 1, 0,  1, 1, 0, 1,  0, 0, 0, 1];
+    let sn3 = [0, 0, 0, 0,  0, 0, 1, 0,  1, 0, 0, 1,  1, 0, 0, 1];
+
+    let snz = [sn1, sn2, sn2, sn1, sn3];
+    let snx = 0;
+    let velz = [90, 90, 100, 120, 120, 100, 70];
+    let vx = 0;
+  }
+  run()
+  {
+    if (count % 8 < 6) {
+      let snrz = snz[snx];
+      snx = incr(snx, 0, len(snz));
+      for (let i = 0; i < 16; i++) {
+        let v = 127;
+        let offs = 60;
+        if (i % 2 == 0) {
+          offs = 0;
+        }
+        if (i != 8) {
+          v = velz[vx];
+          vx = incr(vx, 0, len(velz));
+        }
+        if (snrz[i] == 1) {
+          note_on_at(sd, 1, i * pp + offs, vel = v);
+        }
+      }
+    }
+
   }
 }

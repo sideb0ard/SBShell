@@ -122,6 +122,7 @@ class Parser {
   std::shared_ptr<ast::Expression> ParseStepSequencerExpression();
   std::shared_ptr<ast::Expression> ParseSampleExpression();
   std::shared_ptr<ast::Expression> ParseGranularExpression();
+  std::shared_ptr<ast::Expression> ParseImageSounderExpression();
   ast::TimingEventType ParseTimingEventLiteral();
 
   std::shared_ptr<ast::Expression> ParseCallExpression(

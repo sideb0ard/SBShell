@@ -4,6 +4,7 @@
 #include <drumsampler.h>
 #include <fmsynth.h>
 #include <granular_looper.h>
+#include <imagesounder.h>
 #include <mixer.h>
 #include <subsynth.h>
 #include <utils.h>
@@ -44,6 +45,9 @@ int AddSoundGenerator(unsigned int type, std::string filepath = "",
     case (WAVSYNTH_TYPE):
       sg = std::make_unique<SBAudio::WavSynth>();
       break;
+    case (IMAGESOUNDER_TYPE):
+      sg = std::make_unique<SBAudio::ImageSounder>(filepath);
+      break;
   }
   auto action = std::make_unique<AudioActionItem>(AudioAction::ADD);
   action->soundgenerator_type = type;
@@ -64,7 +68,7 @@ namespace object {
 
 bool IsSoundGenerator(object::ObjectType type) {
   if (type == object::SYNTH_OBJ || type == object::SAMPLE_OBJ ||
-      type == object::GRANULAR_OBJ)
+      type == object::GRANULAR_OBJ || type == object::IMAGESOUNDER_OBJ)
     return true;
   return false;
 }
@@ -228,6 +232,10 @@ std::string Granular::Inspect() {
 }
 ObjectType Granular::Type() {
   return GRANULAR_OBJ;
+}
+ImageSounder::ImageSounder(std::string sample_path) {
+  soundgen_id_ = AddSoundGenerator(IMAGESOUNDER_TYPE, sample_path);
+  soundgenerator_type = IMAGESOUNDER_TYPE;
 }
 
 std::string ReturnValue::Inspect() {

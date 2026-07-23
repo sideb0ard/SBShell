@@ -47,6 +47,7 @@ constexpr char STEP_SEQUENCER_OBJ[] = "STEP SEQUENCER";
 constexpr char SYNTH_OBJ[] = "SYNTH";
 constexpr char SAMPLE_OBJ[] = "SAMPLE";
 constexpr char GRANULAR_OBJ[] = "GRANULAR";
+constexpr char IMAGESOUNDER_OBJ[] = "IMAGESOUNDER";
 
 constexpr char MIDI_ARRAY[] = "MIDI_ARRAY";
 
@@ -460,6 +461,21 @@ class Granular : public SoundGenerator {
   ~Granular() = default;
   ObjectType Type() override;
   std::string Inspect() override;
+};
+
+class ImageSounder : public SoundGenerator {
+ public:
+  explicit ImageSounder(std::string image_path);
+  ~ImageSounder() = default;
+  ObjectType Type() override {
+    return IMAGESOUNDER_OBJ;
+  }
+  std::string Inspect() override {
+    return "ImageSounder: " + path_;
+  }
+
+ private:
+  std::string path_;
 };
 
 class WavSynth : public SoundGenerator {

@@ -29,6 +29,8 @@ const std::unordered_map<std::string, TokenType> keywords{
     {"for", SLANG_FOR},
     {"comp", SLANG_COMPUTATION},
     {"grain", SLANG_GRAIN},
+    {"imagesounder", SLANG_IMAGESOUNDER},
+    {"image", SLANG_IMAGESOUNDER},
     {"granular", SLANG_GRANULAR},
     {"gran", SLANG_GRANULAR},
     {"help", SLANG_HELP},

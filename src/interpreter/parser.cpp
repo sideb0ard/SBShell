@@ -653,6 +653,8 @@ std::shared_ptr<ast::Expression> Parser::ParseForPrefixExpression() {
            cur_token_.type_ == token::SLANG_SUB_SYNTH ||
            cur_token_.type_ == token::SLANG_DRUM_SYNTH)
     return ParseSynthExpression();
+  else if (cur_token_.type_ == token::SLANG_IMAGESOUNDER)
+    return ParseImageSounderExpression();
   else if (cur_token_.type_ == token::SLANG_STEP_SEQUENCER)
     return ParseStepSequencerExpression();
   else if (cur_token_.type_ == token::SLANG_PATTERN)
@@ -1004,6 +1006,27 @@ std::shared_ptr<ast::Expression> Parser::ParseGranularExpression() {
   }
 
   return granular;
+}
+
+std::shared_ptr<ast::Expression> Parser::ParseImageSounderExpression() {
+  auto imagesounder = std::make_shared<ast::ImageSounderExpression>(cur_token_);
+
+  if (!ExpectPeek(token::SLANG_LPAREN)) return nullptr;
+  NextToken();
+
+  std::stringstream ss;
+  while (!CurTokenIs(token::SLANG_EOFF) && !CurTokenIs(token::SLANG_RPAREN)) {
+    ss << cur_token_.literal_;
+    NextToken();
+  }
+  imagesounder->path_ = ss.str();
+
+  if (!CurTokenIs(token::SLANG_RPAREN)) {
+    std::cout << "OOFT! where ya PAREN?\n";
+    return nullptr;
+  }
+
+  return imagesounder;
 }
 
 std::shared_ptr<ast::Expression> Parser::ParsePatternExpression() {

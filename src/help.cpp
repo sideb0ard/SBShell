@@ -105,7 +105,8 @@ static std::string help_generators() {
   ss << ANSI_COLOR_WHITE << "  subsynth()             " << COOL_COLOR_ORANGE << "- Subtractive synth\n";
   ss << ANSI_COLOR_WHITE << "  wavsynth()             " << COOL_COLOR_ORANGE << "- Wavetable/sample synth (8-voice poly)\n";
   ss << ANSI_COLOR_WHITE << "  loop(file)             " << COOL_COLOR_ORANGE << "- Granular looper\n";
-  ss << ANSI_COLOR_WHITE << "  sample(path)           " << COOL_COLOR_ORANGE << "- One-shot sample player\n\n";
+  ss << ANSI_COLOR_WHITE << "  sample(path)           " << COOL_COLOR_ORANGE << "- One-shot sample player\n";
+  ss << ANSI_COLOR_WHITE << "  imagesounder(file)     " << COOL_COLOR_ORANGE << "- Image-as-spectrogram synthesizer\n\n";
   ss << COOL_COLOR_GREEN << "  Common to all generators:\n";
   ss << ANSI_COLOR_WHITE << "  vol <gen> <val>        " << COOL_COLOR_ORANGE << "- Volume (0.0-1.0+)\n";
   ss << ANSI_COLOR_WHITE << "  pan <gen> <val>        " << COOL_COLOR_ORANGE << "- Pan (-1.0=L, 0=centre, 1.0=R)\n";
@@ -119,8 +120,9 @@ static std::string help_generators() {
   ss << ANSI_COLOR_WHITE << "  help subsynth     " << COOL_COLOR_ORANGE << "- subtractive synth params\n";
   ss << ANSI_COLOR_WHITE << "  help drumsynth    " << COOL_COLOR_ORANGE << "- drum voices in depth\n";
   ss << ANSI_COLOR_WHITE << "  help wavsynth     " << COOL_COLOR_ORANGE << "- wavetable/sample synth\n";
-  ss << ANSI_COLOR_WHITE << "  help looper       " << COOL_COLOR_ORANGE << "- granular looper\n";
-  ss << ANSI_COLOR_WHITE << "  help fx           " << COOL_COLOR_ORANGE << "- all effects\n\n";
+  ss << ANSI_COLOR_WHITE << "  help looper           " << COOL_COLOR_ORANGE << "- granular looper\n";
+  ss << ANSI_COLOR_WHITE << "  help imagesounder     " << COOL_COLOR_ORANGE << "- image-as-spectrogram synth\n";
+  ss << ANSI_COLOR_WHITE << "  help fx               " << COOL_COLOR_ORANGE << "- all effects\n\n";
   ss << ANSI_COLOR_RESET;
   return ss.str();
 }
@@ -723,6 +725,41 @@ static std::string help_overview() {
   return ss.str();
 }
 
+static std::string help_imagesounder() {
+  std::stringstream ss;
+  ss << COOL_COLOR_GREEN << "\nIMAGE SOUNDER\n"
+     << ANSI_COLOR_WHITE
+     << "------------------------------------------------------------------------\n";
+  ss << "Treats a PNG image as a spectrogram: columns play left-to-right,\n"
+     << "rows map to frequency bins (log scale), pixel brightness = amplitude.\n\n";
+  ss << COOL_COLOR_GREEN << "  Create\n";
+  ss << ANSI_COLOR_WHITE << "  let img = imagesounder(\"/path/to/file.png\")  "
+     << COOL_COLOR_ORANGE << "- load PNG and start playing\n\n";
+  ss << COOL_COLOR_GREEN << "  Parameters (set img:param val)\n";
+  ss << ANSI_COLOR_WHITE << "  set img:speed 512   " << COOL_COLOR_ORANGE
+     << "- samples per column (lower=faster, default 512)\n";
+  ss << ANSI_COLOR_WHITE << "  set img:lo    80    " << COOL_COLOR_ORANGE
+     << "- low frequency in Hz (default 80)\n";
+  ss << ANSI_COLOR_WHITE << "  set img:hi    8000  " << COOL_COLOR_ORANGE
+     << "- high frequency in Hz (default 8000)\n";
+  ss << ANSI_COLOR_WHITE << "  set img:gain  0.3   " << COOL_COLOR_ORANGE
+     << "- output level multiplier (default 0.3)\n\n";
+  ss << COOL_COLOR_GREEN << "  Volume / pan\n";
+  ss << ANSI_COLOR_WHITE << "  vol img 0.8         " << COOL_COLOR_ORANGE
+     << "- master volume (0.0-1.0)\n";
+  ss << ANSI_COLOR_WHITE << "  pan img -0.3        " << COOL_COLOR_ORANGE
+     << "- stereo pan (-1=L, 0=C, 1=R)\n\n";
+  ss << COOL_COLOR_GREEN << "  Tips\n";
+  ss << ANSI_COLOR_WHITE
+     << "  - Each column is RMS-normalised so sparse and dense cols play equally loud\n"
+     << "  - Frequency mapping is logarithmic (equal octave spacing per row)\n"
+     << "  - Sierpinski triangle:  (x & y) == 0   — self-similar descending tones\n"
+     << "  - XOR stripes:          (x ^ y) % N == 0 — shifting chord clusters\n"
+     << "  - Image loops continuously; position shown as col:N/W in ps\n\n";
+  ss << ANSI_COLOR_RESET;
+  return ss.str();
+}
+
 // ─── dispatch ────────────────────────────────────────────────────────────────
 
 std::string build_help(const std::string& topic) {
@@ -740,6 +777,9 @@ std::string build_help(const std::string& topic) {
   if (topic == "looper"
    || topic == "loop"
    || topic == "granular")        return help_looper();
+  if (topic == "imagesounder"
+   || topic == "imgsounder"
+   || topic == "img")             return help_imagesounder();
   if (topic == "drums"
    || topic == "drum"
    || topic == "drumsynth")       return help_drums();

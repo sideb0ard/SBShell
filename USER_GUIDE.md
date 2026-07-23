@@ -7,7 +7,7 @@
   frameborder="0" allowfullscreen style="border:1px solid #1e1e1e; border-radius:4px; margin:16px 0;">
 </iframe>
 
-Soundb0ard Shell is my Unix shell inspired music making environment. Rather than being the shell around an operating system, it is a shell around an audio mixing desk with several music instruments - FM synth, subtractive synth, drum synth, granular looper, and one-shot sample player. You control the shell via a javascript-like programming language called Slang.
+Soundb0ard Shell is my Unix shell inspired music making environment. Rather than being the shell around an operating system, it is a shell around an audio mixing desk with several music instruments - FM synth, subtractive synth, drum synth, granular looper, one-shot sample player, and image sounder (spectrogram synthesis from PNG images). You control the shell via a javascript-like programming language called Slang.
 
 Once launched from the command line, you enter an interactive shell where you can type commands. The color scheme is designed for a dark terminal.
 
@@ -607,6 +607,46 @@ pan kick 0.2;   // Pan right (range -1.0 to 1.0)
 // Pitch shifting
 set kick:pitch 1.5;   // 1.5x speed (higher pitch)
 set kick:pitch 0.5;   // 0.5x speed (lower pitch)
+```
+
+---
+### Image Sounder - imagesounder()
+
+Treats a PNG image as a spectrogram: columns play left-to-right, rows map to frequency bins (log scale), and pixel brightness controls amplitude. Inspired by Photo Sounder / Nnirror's Facet.
+
+```javascript
+let img = imagesounder("/tmp/sierpinski.png");
+vol img 0.8;
+```
+
+#### Parameters
+
+```javascript
+set img:speed 512    // samples per column — lower = faster playback (default 512)
+set img:lo    80     // low frequency Hz (default 80)
+set img:hi    8000   // high frequency Hz (default 8000)
+set img:gain  0.3    // output level multiplier (default 0.3)
+```
+
+Each column is RMS-normalised so sparse and dense columns play at consistent loudness. Frequency mapping is logarithmic (equal octave spacing per row). The image loops continuously; current position shows as `col:N/W` in `ps`.
+
+#### Generating images
+
+```python
+# Sierpinski triangle — self-similar descending tones
+from PIL import Image
+img = Image.new("L", (1024, 1024), 0)
+px = img.load()
+for y in range(1024):
+    for x in range(1024):
+        px[x, y] = 255 if (x & y) == 0 else 0
+img.save("/tmp/sierpinski.png")
+
+# XOR stripes — shifting chord clusters
+for y in range(1024):
+    for x in range(1024):
+        px[x, y] = 255 if (x ^ y) % 32 == 0 else 0
+img.save("/tmp/xor.png")
 ```
 
 ---

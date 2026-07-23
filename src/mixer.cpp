@@ -942,11 +942,15 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
     }
   } else if (action->type == AudioAction::MIXER_FX_UPDATE) {
     for (const auto &soundgen_num : action->group_of_soundgens) {
-      if (IsValidSoundgenNum(soundgen_num)) {
+      if (soundgen_num == -1) {
+        // sentinel: clear this send for all generators
+        int count = sound_generators_idx_.load();
+        for (int k = 0; k < count; k++)
+          if (sound_generators_[k])
+            sound_generators_[k]->SetFxSend(action->mixer_fx_id, 0.0);
+      } else if (IsValidSoundgenNum(soundgen_num)) {
         auto &sg = sound_generators_[soundgen_num];
-        if (sg) {
-          sg->SetFxSend(action->mixer_fx_id, action->fx_intensity);
-        }
+        if (sg) sg->SetFxSend(action->mixer_fx_id, action->fx_intensity);
       }
     }
   } else if (action->type == AudioAction::MIXER_XFADE_ACTION) {

@@ -557,9 +557,9 @@ let xblah_comp = comp()
   {
     for (let i = 0; i < 3840; i++) {
       let rampval = signal_from(fullramp);
-      print("RAMPVAL:", rampval);
+      #print("RAMPVAL:", rampval);
       let out_sig1 = ramp_div1(rampval, 3 / 8);
-      print("OUTSIG1:", out_sig1);
+      #print("OUTSIG1:", out_sig1);
       let out_sig2 = ramp_div2(rampval, 2 / 4);
       let mod_ratio = max(out_sig2, 0.001);
       let out_sig3 = ramp_div3(out_sig1, mod_ratio);
@@ -716,6 +716,20 @@ let rockmblah_comp = comp()
         set rockm:repeat 1;
       }
       fxid = incr(fxid, 0, 7);
+    }
+  }
+}
+let fmmmmblah_comp = comp()
+{
+  setup()
+  {
+    let chrd = [47, 51, 54, 58];
+  }
+  run()
+  {
+    if (count % 3 == 1) {
+      print("YO");
+      note_on_at(dx3, chrd, 0, dur = 3000);
     }
   }
 }

@@ -112,6 +112,7 @@ const TokenType SLANG_FM_SYNTH = "FM_SYNTH";
 const TokenType SLANG_WAV_SYNTH = "WAV_SYNTH";
 const TokenType SLANG_SUB_SYNTH = "SUB_SYNTH";
 const TokenType SLANG_DRUM_SYNTH = "DRUM_SYNTH";
+const TokenType SLANG_IMAGESOUNDER = "IMAGESOUNDER";
 
 const TokenType SLANG_MIDI_ARRAY = "MIDI_ARRAY";
 

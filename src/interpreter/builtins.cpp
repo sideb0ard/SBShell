@@ -1453,6 +1453,61 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
            audio_queue.push(std::move(action));
            return evaluator::NULLL;
          })},
+    {"unsend",
+     std::make_shared<object::BuiltIn>(
+         [](std::vector<std::shared_ptr<object::Object>> input)
+             -> std::shared_ptr<object::Object> {
+           if (input.empty())
+             return evaluator::NewError(
+                 "`unsend` requires fx name (delay/reverb/distort) and "
+                 "optionally a generator");
+           int fx_id = -1;
+           if (auto str = std::dynamic_pointer_cast<object::String>(input[0])) {
+             if (str->value_ == "delay" || str->value_ == "dly")
+               fx_id = 0;
+             else if (str->value_ == "reverb" || str->value_ == "rev")
+               fx_id = 1;
+             else if (str->value_ == "distort" || str->value_ == "dst")
+               fx_id = 2;
+           } else if (auto num =
+                          std::dynamic_pointer_cast<object::Number>(input[0])) {
+             fx_id = static_cast<int>(num->value_);
+           }
+           if (fx_id < 0 || fx_id > 2)
+             return evaluator::NewError(
+                 "unsend: fx must be delay/reverb/distort (or 0/1/2)");
+
+           auto action =
+               std::make_unique<AudioActionItem>(AudioAction::MIXER_FX_UPDATE);
+           action->mixer_fx_id = fx_id;
+           action->fx_intensity = 0.0;
+           action->delayed_by = 0;
+
+           if (input.size() >= 2) {
+             // unsend specific generator(s)
+             auto sg =
+                 std::dynamic_pointer_cast<object::SoundGenerator>(input[1]);
+             if (sg) {
+               action->group_of_soundgens.push_back(sg->soundgen_id_);
+             } else {
+               auto arr = std::dynamic_pointer_cast<object::Array>(input[1]);
+               if (arr) {
+                 for (auto const& e : arr->elements_) {
+                   auto asg =
+                       std::dynamic_pointer_cast<object::SoundGenerator>(e);
+                   if (asg)
+                     action->group_of_soundgens.push_back(asg->soundgen_id_);
+                 }
+               }
+             }
+           } else {
+             // unsend all — sentinel -1
+             action->group_of_soundgens.push_back(-1);
+           }
+
+           audio_queue.push(std::move(action));
+           return evaluator::NULLL;
+         })},
     {"xassign",
      std::make_shared<object::BuiltIn>(
          [](std::vector<std::shared_ptr<object::Object>> input)

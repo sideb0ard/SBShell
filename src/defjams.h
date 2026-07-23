@@ -145,6 +145,7 @@ typedef enum {
   DRUMSAMPLER_TYPE,
   DRUMSYNTH_TYPE,
   WAVSYNTH_TYPE,
+  IMAGESOUNDER_TYPE,
   NUM_SOUNDGEN_TYPE
 } sound_generator_type;
 
