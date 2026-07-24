@@ -1,6 +1,7 @@
 
 let simp = NULL;
 let soul = NULL;
+let brk = NULL;
 
 let init = fn()
 {
@@ -19,6 +20,76 @@ let init = fn()
   flblah_fn();
   add_fx(dx, "distort");
   set sbdrum:bd_vol 1;
+  load_preset(dx3, "kerrizx");
+  brk = loop(hallow/brkLOOP.wav);
+  note_off(brk, 0);
+  p99 # PLAYITblah_comp;
+}
+
+let PLAYITblah_comp = comp()
+{
+  setup()
+  {
+    let countr = 0;
+  }
+  run()
+  {
+    if (countr == 2) {
+      p1 # patzblah_comp;
+      p2 # dbblah_comp;
+    }
+    if (countr == 8) {
+      p6 # dxfxblah_comp;
+      p4 # "";
+      p8 # snnnblah_comp;
+      flblah_fn();
+    }
+    if (countr == 12) {
+      p1 # "";
+      p4 # soulblah_comp;
+    }
+    if (countr == 16) {
+      p4 # "";
+      p2 # "";
+      p3 # dx3b;
+      flblah_fn();
+    }
+    if (countr == 20) {
+      p8 # "";
+      note_on(brk, 0, dur = 0);
+      p4 # brkxblah_comp;
+    }
+    if (countr == 22) {
+      p3 # dx3blah_comp;
+    }
+    if (countr == 24) {
+      vol brk 0;
+      flblah_fn();
+    }
+    if (countr == 28) {
+      # strings
+      p1 # patzblah_comp;
+      vol brk 1;
+      p8 # snnnblah_comp;
+      p3 # dx3b;
+    }
+    if (countr == 30) {
+      p1 # "";
+    }
+    if (countr == 32) {
+      p1 # "";
+      vol brk 0;
+      p3 # "";
+    }
+    if (countr == 36) {
+      p1 # "";
+      vol brk 0;
+      p4 # soulblah_comp;
+      flblah_fn();
+    }
+    print("countr", countr);
+    countr++;
+  }
 }
 
 # mo_jazz
@@ -158,6 +229,10 @@ let soulblah_comp = comp()
       smx = incr(smx, 0, len(simpitz));
     }
 
+    if (count % 4 == 0) {
+      set simp:scramble 1;
+      solo(simp, at=12*pp);
+    }
     note_on(simp, 0, dur = 0);
     if (count % 5 == 4) {
       let sbeat = rand_beat();
@@ -367,5 +442,35 @@ let snnnblah_comp = comp()
       }
     }
 
+  }
+}
+
+let dx3blah_comp = comp()
+{
+  setup()
+  {
+    let melz1 = [52, 0, 52, 52,  0, 52, 52, 48,  48, 0, 0, 0,  0, 0, 0, 0];
+    let melz2 = [52, 0, 52, 52,  0, 52, 0, 48,  48, 0, 0, 45,  0, 0, 0, 52];
+    let durz1 = [223, 0, 202, 155,  0, 212, 207, 365,  470, 0, 0, 0,  0, 0, 0, 0];
+    let durz2 = [315, 0, 230, 222,  0, 175, 0, 641,  859, 0, 0, 764,  0, 0, 0, 238];
+    let velz = [107, 107, 100, 90, 90, 100, 117];
+    let vx = 0;
+  }
+  run()
+  {
+    if (count % 9 < 7) {
+      let mel = melz1;
+      let durz = durz1;
+      if (count % 3 == 2) {
+        mel = melz2;
+        durz = durz2;
+      }
+      for (let i = 0; i < 16; i++) {
+        if (mel[i] > 0) {
+          note_on_at(dx3, mel[i], i * pp, dur = durz[i], vel = velz[vx]);
+          vx = incr(vx, 0, len(velz));
+        }
+      }
+    }
   }
 }
