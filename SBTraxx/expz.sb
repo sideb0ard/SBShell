@@ -54,13 +54,20 @@ let PLAYITblah_comp = comp()
       p3 # dx3b;
       flblah_fn();
     }
-    if (countr == 20) {
+    if (countr == 18) {
       p8 # "";
+    }
+    if (countr == 20) {
       note_on(brk, 0, dur = 0);
       p4 # brkxblah_comp;
+      p8 # snnnblah_comp;
+    }
+    if (countr == 21) {
+      note_off(brk, 0);
     }
     if (countr == 22) {
       p3 # dx3blah_comp;
+      note_on(brk, 0, dur = 0);
     }
     if (countr == 24) {
       vol brk 0;

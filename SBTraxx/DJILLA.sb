@@ -10,16 +10,87 @@ let init = fn()
   disc = loop(dloops2/dicsoc.wav); set disc:len 2;
   add_buf(disc, "dloops2/hatbeatz.wav");
   add_buf(disc, "dloops2/newjackwav.wav");
-  set disc:buf[0]:distort 1;
+  # set disc:buf[0]:distort 1;
   set disc:shhh 2;
   load_preset(dx, "club_organ");
   set disc:buf[0]:pitch 4;
   set disc:buf[1]:pitch 4;
   set disc:buf[2]:pitch 2;
+  #load_preset(dx3, "Mega_Jammy");
+  load_preset(dx3, "kotokoto__");
+  load_drum_part(sbdrum, "CRISP", "sd");
+  set sbdrum:oh_decay 300;
+
+  p99 # PLAYSblah_comp;
 }
 
 
 # dx - mo_jazz
+
+let PLAYSblah_comp = comp()
+{
+  setup()
+  {
+    let cntr = 0;
+  }
+  run()
+  {
+    if (cntr == 0) {
+      p6 # cPPblah_comp;
+      p1 # disscblah_comp;
+      #sched(3840, 80, 18000, 3840*4, "set mo:fc %");
+    }
+    if (cntr == 4) {
+      disscblah_comp();
+    }
+    if (cntr == 8) {
+      p1 # DB2blah_comp;
+      p13 # snblahFx_comp;
+    }
+    if (cntr == 14) {
+      p1 # "";
+      p3 # "";
+      p1 # disscblah_comp;
+      p6 # cPPwMOblah_comp;
+    }
+    if (cntr == 18) {
+      p1 # "";
+      DB2blah_comp();
+    }
+    if (cntr == 20) {
+      p1 # dbblah_comp;
+    }
+    if (cntr == 22) {
+    }
+    if (cntr == 24) {
+      p6 # cPPblah_comp;
+
+    }
+    if (cntr == 28) {
+      p1 # "";
+      p9 $ "hh*16";
+      p10 < osc 17 "-0.3 0.4" "pan hh %";
+      p11 < osc 19 "0.7 0.4" "vol hh %";
+    }
+    if (cntr == 32) {
+      DB2blah_comp();
+    }
+    if (cntr == 34) {
+      dbblah_comp();
+    }
+    if (cntr == 34) {
+      p1 # dbblah_comp;
+      p6 # cPPblah_comp;
+      p4 # disscblah_comp;
+      p9 # "";
+    }
+    if (cntr == 38) {
+      p9 # "";
+    }
+    print("CNTR:", cntr);
+    cntr++;
+  }
+}
 
 
 let dbblah_comp = comp()
@@ -32,19 +103,23 @@ let dbblah_comp = comp()
   run()
   {
     for (let i = 0; i < 16; i++) {
-      if (beat[i] == 1) {
-        note_on_at(sbdrum, 0, i * pp);
+      if (count % 12 < 11) {
+        if (beat[i] == 1 && rand(100) < 90) {
+          note_on_at(sbdrum, 0, i * pp);
+        }
       }
-      if (i % 2 == 0) {
-        note_on_at(sbdrum, 3, i * pp);
+      if (count % 4 < 3) {
+        if (i % 2 == 0) {
+          note_on_at(sbdrum, 3, i * pp);
+        }
       }
       if (count % 2 == 1) {
         note_on_at(sbdrum, 4, 13 * pp);
         note_on_at(fmp, 1, 15 * pp, dur = 0);
       }
-      if (count % 8 == 7) {
-        solo([sbdrum,fmp], at = i * 15, dur = 3840 / 2);
-      }
+      # if (count % 8 == 7) {
+        #   solo([sbdrum,fmp], at = i * 15, dur = 3840 / 2);
+        # }
       # if (beat[i] == 1) {
         #   note_on_at(sbdrum, 1, i * pp);
         # }
@@ -52,6 +127,45 @@ let dbblah_comp = comp()
 
   }
 }
+
+let DB2blah_comp = comp()
+{
+  setup()
+  {
+    let db = [1, 0, 0, 0,  1, 0, 1, 0,  0, 0, 1, 0,  1, 0, 0, 0];
+    let prangz = [64, 4, 120, 60, 30, 20];
+    let prx = 0;
+
+    let hhz = [1, 1, 1, 0,  0, 1, 0, 1,  0, 1, 0, 0,  1, 0, 0, 0];
+    let velz = [100, 100, 120, 90, 100, 90, 127];
+    let vlx = 0;
+  }
+  run()
+  {
+    set sbdrum:bd_pitch_env2_range prangz[prx];
+    prx = incr(prx, 0, len(prangz));
+    for (let i = 0; i < 16; i++) {
+      if (db[i] == 1) {
+        note_on_at(sbdrum, 0, i * pp);
+      }
+
+      if (count % 2 == 1) {
+        if (hhz[i] == 1) {
+          let swng = 60;
+          if (i % 2 == 0) {
+            swng = 0;
+          }
+          note_on_at(sbdrum, 3, i * pp + swng, vel = velz[vlx]);
+          vlx = incr(vlx, 0, len(velz));
+        }
+      }
+    }
+    if (count % 3 == 2) {
+      note_on_at(sbdrum, 4, 12 * pp, vel = 100);
+    }
+  }
+}
+
 
 # D#
 let key = 39;
@@ -88,7 +202,57 @@ let lblah_comp = comp()
       chx = incr(chx, 0, len(chord_prog));
     }
     for (let i = 0; i < 16; i++) {
-      note_on_at(dx, notes[seq[i % len(seq)]], i * pp, dur=durz[drx]);
+      note_on_at(dx3, notes[seq[i % len(seq)]], i * pp, dur=durz[drx]);
+    }
+    drx = incr(drx, 0, len(durz));
+  }
+}
+
+let llblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    if (count % 3 == 2) {
+      lblah_comp();
+    } else {
+      lblah2_comp();
+    }
+  }
+}
+
+
+# jazz_organ
+let lblah2_comp = comp()
+{
+  setup()
+  {
+    let notes = notes_in_chord(44, key, chord_mod, key_mod);
+    let rules = [
+      [0, 2, 4],
+      [1, 3, 0],
+      [2, 4, 1],
+      [3, 0, 2],
+      [4, 1, 3]
+    ];
+      let seq = lsys_expand([0], rules, 3);
+
+      let chord_prog = [56, 53, 53];
+      let chx = 0;
+      let durz = [900, 90, 510, 150, 180, 200];
+      let drx = 0;
+  }
+  run()
+  {
+    #print(seq);
+    if (count % 4 == 3) {
+      notes = notes_in_chord(chord_prog[chx], key, chord_mod, key_mod);
+      chx = incr(chx, 0, len(chord_prog));
+    }
+    for (let i = 0; i < 16; i++) {
+      note_on_at(dx3, notes[seq[i % len(seq)]], i * pp, dur=durz[drx]);
     }
     drx = incr(drx, 0, len(durz));
   }
@@ -111,6 +275,7 @@ let ixxxblah_comp = comp()
   }
 }
 
+# Mega_Jammy
 let dxrcblah_comp = comp()
 {
   setup()
@@ -122,7 +287,7 @@ let dxrcblah_comp = comp()
 
     for (let i = 0; i < 16; i++) {
       if (pat[i] > 0) {
-        note_on_at(dx, pat[i], i * pp, dur = 200);
+        note_on_at(dx3, pat[i], i * pp, dur = 500);
       }
     }
 
@@ -136,10 +301,10 @@ let dxxxblah_comp = comp()
   }
   run()
   {
-    if (count % 6 < 3) {
-      dxrcblah_comp();
-    } else {
+    if (count % 2 == 0) {
       lblah_comp();
+    } else {
+      lblah2_comp();
     }
   }
 }
@@ -156,6 +321,172 @@ let mediahypeblah_comp = comp()
       if (seed[i] == 1) {
         note_on_at(media, i, i * pp);
       }
+    }
+  }
+}
+
+let MOOblah_comp = comp()
+{
+  setup()
+  {
+    # F# G# C#
+    let notez = [30, 32, 37, 37];
+    let nx = 0;
+    #let firsteight = [1, 0, 0, 1,  0, 0, 1, 0];
+    let firsteight = [1, 0, 0, 1,  0, 1, 0, 0];
+    let mcntr = 0;
+  }
+  run()
+  {
+    if (mcntr % 8 < 6) {
+      note_on(mo, notez[nx], dur = 3840 - 10);
+    } else {
+      for (let i = 0; i < 8; i++) {
+        if (firsteight[i] == 1) {
+          note_on_at(mo, notez[nx], i * pp, dur = pp);
+        }
+      }
+      note_on_at(mo, notez[nx], 8 * pp, dur = 3840 / 2 - 20);
+    }
+
+    nx = incr(nx, 0, len(notez));
+
+    mcntr++;
+  }
+}
+
+let disscblah_comp = comp()
+{
+  setup()
+  {
+    let percA = [1, 0, 0, 1,  1, 0, 1, 0,  1, 1, 1, 1,  0, 0, 0, 0];
+    let px = 0;
+    let pmax = 3;
+    let durz = [30, 60, 100, 180, 50];
+    let drx = 0;
+    let velz = [100, 100, 120,100, 120, 100, 120];
+    let vlx = 0;
+    let shhz = [1, 1, 2, 1, 0];
+    let shx = 0;
+    let bufz = [0, 1, 1, 2];
+    let bfx = 0;
+    let pitchz = [17, 1, 4, 4, 4, 2, 1, 1.1, 0.6];
+    let pchx = 0;
+  }
+  run()
+  {
+    let perc = percA;
+    if (count % 4 == 3) {
+      perc = rand_array(16, 0, 1);
+    }
+    set disc:shhh shhz[shx];
+    shx = incr(shx, 0, len(shhz));
+
+    for (let i = 0; i < 16; i++) {
+      let swng = 80;
+      if (i % 2 == 0) {
+        swng = 0;
+      }
+      if (perc[i] == 1) {
+        note_on_at(disc, px, i * pp + swng, dur = durz[drx], vel = velz[vlx]);
+        px = incr(px, 0, pmax);
+        drx = incr(drx, 0, len(durz));
+        vlx = incr(vlx, 0, len(velz));
+        set disc:buf[bufz[bfx]]:pitch pitchz[pchx] at = i * [[;
+        pchx = incr(pchx, 0, len(pitchz));
+        bfx = incr(bfx, 0, len(bufz));
+      }
+    }
+    if (count % 4 == 3) {
+      pmax = incr(pmax, 3, 16);
+    }
+  }
+}
+
+let cPPblah_comp = comp()
+{
+  setup()
+  {
+    let bjx = [3, 5, 7, 11, 13];
+    let bx = 0;
+    let velz = [80, 80, 90, 100, 90, 120, 100, 120, 80, 127, 80, 127];
+    let vlx = 0;
+  }
+  run()
+  {
+    let pat = bjork(bjx[bx], 16);
+
+    for (let i = 0; i < 16; i++) {
+      let swng = 10;
+      if (i % 2 == 0) {
+        swng = 0;
+      }
+      if (pat[i] == 1) {
+        note_on_at(sbdrum, 1, i * pp + swng, vel = velz[vlx] - bjx[bx]);
+        vlx = incr(vlx, 0, len(velz));
+      }
+    }
+    if (count % 3 == 2) {
+      bx = incr(bx, 0, len(bjx));
+    }
+  }
+}
+
+let snblahFx_comp = comp()
+{
+  setup()
+  {
+    let enz = [0, 0, 1, 0, 1];
+    let ex = 0;
+    let delz = [1, 3, 5, 10, 20, 20, 30, 50];
+    let dlx = 0;
+    let pat = [1, 0, 1, 1,  0, 0, 1, 0,  0, 1, 0, 1,  1, 0, 1, 0];
+  }
+  run()
+  {
+    set sbdrum:sd_delay_en enz[ex];
+    if (enz[ex] == 1) {
+      for (let i = 0; i < 16; i++) {
+        if (pat[i] == 1) {
+          set sbdrum:sd_delay_ms delz[dlx] at = i * pp;
+        }
+      }
+    }
+    ex = incr(ex, 0, len(enz));
+  }
+}
+
+let cPPwMOblah_comp = comp()
+{
+  setup()
+  {
+    let bjx = [3, 5, 7, 11, 13];
+    let bx = 0;
+    let velz = [80, 80, 90, 100, 90, 120, 100, 120, 80, 127, 80, 127];
+    let vlx = 0;
+    # F# G# C#
+    let notez = [30, 32, 37, 37];
+    let nx = 0;
+  }
+  run()
+  {
+    let pat = bjork(bjx[bx], 16);
+    let ldur = 3840 / bjx[bx];
+
+    for (let i = 0; i < 16; i++) {
+      let swng = 10;
+      if (i % 2 == 0) {
+        swng = 0;
+      }
+      if (pat[i] == 1) {
+        note_on_at(sbdrum, 1, i * pp + swng, vel = velz[vlx] - bjx[bx]);
+        note_on_at(mo, notez[nx], i * pp + swng, vel = velz[vlx] - bjx[bx]);
+        vlx = incr(vlx, 0, len(velz));
+      }
+    }
+    nx = incr(nx, 0, len(notez));
+    if (count % 2 == 1) {
+      bx = incr(bx, 0, len(bjx));
     }
   }
 }

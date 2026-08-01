@@ -2,9 +2,50 @@
 # [1, 0, 1, 1,  0, 1, 1, 0,  1, 0, 0, 0,  0, 0, 0, 0]
 # [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0]
 
-# load_preset(sbdrum, "HUT1");
-# load_preset(dx2, "fnc");
-let drblah_gen = gen()
+let init = fn()
+{
+  load_preset(sbdrum, "HUT1");
+  load_preset(dx2, "fnc");
+  p99 # RUNITblah_comp;
+}
+
+let RUNITblah_comp = comp()
+{
+  setup()
+  {
+    let cntr = 0;
+  }
+  run()
+  {
+    if (cntr == 0) {
+      p1 # drblah_comp;
+      p2 # bsssblah_comp;
+    }
+    if (cntr == 4) {
+      p3 # padblah_comp;
+    }
+    if (cntr == 8) {
+      p1 # "";
+    }
+    if (cntr == 12) {
+      p1 # drblah_comp;
+      p2 # "";
+    }
+    if (cntr == 16) {
+      p1 # "";
+      p2 # bsssblah_comp;
+      p3 # "";
+    }
+    if (cntr == 20) {
+      p1 # drblah_comp;
+      p3 # padblah_comp;
+    }
+    print("CNTR:", cntr);
+    cntr++;
+  }
+}
+
+let drblah_comp = comp()
 {
   setup()
   {
@@ -51,7 +92,7 @@ let drblah_gen = gen()
   }
 }
 
-let bsssblah_gen = gen()
+let bsssblah_comp = comp()
 {
   setup()
   {
@@ -72,7 +113,7 @@ let bsssblah_gen = gen()
   }
 }
 
-let padblah_gen = gen()
+let padblah_comp = comp()
 {
   setup()
   {

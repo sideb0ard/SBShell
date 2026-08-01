@@ -5,7 +5,80 @@ let init = fn()
   wavv = wavsynth();
   add_buf(wavv, "notes/stabbY.aiff");
   load_preset(dx, "simplePiano");
+  load_drum_part(sbdrum, "CRISP", "sd");
+  load_preset(dx3, "ClockBone");
+  load_preset(dx2, "aqua2lung");
+  p99 # PLAYblah_comp;
 }
+
+let PLAYblah_comp = comp()
+{
+  setup()
+  {
+    let cntr = 0;
+  }
+  run()
+  {
+    if (cntr == 0) {
+      p1 # dbblah_comp;
+      p7 # wavblah_comp;
+      harpblah_comp();
+    }
+    if (cntr == 4) {
+      p3 # dxblah_comp;
+    }
+    if (cntr == 6) {
+      harpblah_comp();
+    }
+    if (cntr == 8) {
+      p1 # "";
+      harpblah_comp();
+    }
+    if (cntr == 10) {
+      p1 # dbblah_comp;
+      p4 # crblah_comp;
+    }
+    if (cntr == 14) {
+      p1 # "";
+      p3 # "";
+    }
+    if (cntr == 16) {
+      p1 # dbblah_comp;
+      p5 # harpblah_comp;
+      p7 # "";
+    }
+    if (cntr == 20) {
+      p1 # "";
+      p3 # dxblah_comp;
+    }
+    if (cntr == 28) {
+      p2 # db2blah_comp;
+    }
+    if (cntr == 42) {
+      p2 # dbblah_comp;
+      p6 # dx2blah_comp;
+    }
+    if (cntr == 48) {
+      p2 # db2blah_comp;
+      p3 # "";
+    }
+    if (cntr == 50) {
+      p4 # "";
+    }
+    if (cntr == 52) {
+      p2 # "";
+      p1 # dbblah_comp;
+      p5 # harpblah_comp;
+      p4 # crblah_comp;
+      p3 # dxblah_comp;
+      p6 # "";
+      p7 # wavblah_comp;
+    }
+    print("CNTR:", cntr);
+    cntr++;
+  }
+}
+
 
 let dbblah_comp = comp()
 {
@@ -33,6 +106,58 @@ let dbblah_comp = comp()
       if (count % 4 < 3) {
         if (hhz[i] == 1) {
           note_on_at(sbdrum, 3, i * pp);
+        }
+      }
+      if (count % 2 == 1) {
+        if (ohz[i] == 1) {
+          note_on_at(sbdrum, 4, i * pp);
+        }
+        if (cpz[i] == 1) {
+          note_on_at(sbdrum, 2, i * pp);
+        }
+      }
+    }
+
+  }
+}
+let db2blah_comp = comp()
+{
+  setup()
+  {
+    let bdz = [1, 1, 0, 0,  0, 0, 1, 0,  0, 1, 0, 0,  0, 0, 0, 0];
+    let snz = [0, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 1, 0];
+    let cpz = [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  1, 1, 1, 0];
+    let hhz = [1, 0, 1, 0,  1, 0, 1, 1,  1, 0, 1, 0,  0, 0, 0, 0];
+    let ohz = [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1,  0, 0, 0, 0];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      if (count % 8 < 7) {
+        if (bdz[i] == 1) {
+          let v = 127;
+          if (i % 4 != 0) {
+            v = 90 + rand(37);
+          }
+          note_on_at(sbdrum, 0, i * pp, vel = v);
+        }
+      }
+      if (count % 16 < 15) {
+        let v = 90 + rand(37);
+        if (i == 8) {
+          v = 127;
+        }
+        if (snz[i] == 1) {
+          note_on_at(sbdrum, 1, i * pp, vel = v);
+        }
+      }
+      if (count % 4 < 3) {
+        let swng = 30;
+        if (i % 2 == 0) {
+          swng = 0;
+        }
+        if (hhz[i] == 1) {
+          note_on_at(sbdrum, 3, i * pp + swng);
         }
       }
       if (count % 2 == 1) {
@@ -104,6 +229,125 @@ let dxblah_comp = comp()
           drx = incr(drx, 0, len(durz));
         }
       }
+    }
+  }
+}
+
+let kerri_min7_11 = fn(root)
+{
+  return [root-2, root, root+3, root+5];
+}
+
+# soft_harp_
+# LOUIS
+let harpblah_comp = comp()
+{
+  setup()
+  {
+    let mel1 = [80, 0, 0, 63,  0, 76, 80, 0,  0, 0, 0, 78,  0, 0, 0, 78];
+    let mel2 = [80, 0, 0, 0,  80, 0, 0, 0,  0, 75, 68, 0,  75, 0, 0, 75];
+
+    let durz1 = [242, 50, 162, 400,  30, 0, 420, 0,  0, 0, 0, 407,  0, 519, 0, 396];
+    let durz2 = [176, 182, 0, 237,  465, 0, 0, 0,  300, 0, 0, 0,  195, 0, 230, 257];
+
+    let velz = [100, 100, 120, 127, 127, 90, 127, 80, 127, 120, 50];
+    let vlx = 0;
+  }
+  run()
+  {
+    let mel = mel1;
+    let durz = durz1;
+    if (count % 2 == 1) {
+      mel = mel2;
+      durz = durz2;
+    }
+    for (let i = 0; i < 16; i++) {
+      let swng = 40;
+      if (i % 2 == 0) {
+        swng = 0;
+      }
+      if (mel[i] > 0) {
+        note_on_at(dx3, mel[i], i * pp + swng, dur = durz[i], vel = velz[vlx]);
+        vlx = incr(vlx, 0, len(velz));
+      }
+    }
+
+  }
+}
+
+let crblah_comp = comp()
+{
+  setup()
+  {
+    let beat = [1, 1, 0, 0,  1, 0, 1, 1,  1, 1, 0, 1,  0, 0, 0, 0];
+    let perxz = [rim, oh, ch, shkr, shkr2];
+    let px = 0;
+    let pmax = 2;
+    let durz = [50, 50, 30, 20, 10, 0];
+    let drx = 0;
+    let velz = [80, 80, 90, 120, 127, 127, 50];
+    let vlx = 0;
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      let swng = 40;
+      if (i % 2 == 0) {
+        swng = 0;
+      }
+      if (beat[i] == 1) {
+        note_on_at(perxz[px], 1, i * pp + swng, dur = durz[drx], vel = velz[vlx]);
+        px = incr(px, 0, pmax);
+        drx = incr(drx, 0, len(durz));
+        vlx = incr(vlx, 0, len(velz));
+      }
+    }
+    if (count % 2 == 1) {
+      pmax = incr(pmax, 1, len(perxz));
+    }
+  }
+}
+
+let dx2blah_comp = comp()
+{
+  setup()
+  {
+    let chrd1 = [48, 52, 45];
+    let chrd2 = [45, 48, 41, 43];
+    let chrd3 =  [50, 53, 47];
+    let beat1 = [1, 1, 0, 1,  1, 1, 1, 0,  0, 1, 0, 1,  0, 0, 0, 0];
+    let beat2 = [1, 0, 1, 1,  0, 0, 1, 1,  1, 1, 0, 1,  0, 0, 0, 0];
+    let durz = [50, 50, 100, 70, 90, 60, 130];
+    let drx = 0;
+    let velz = [90, 90, 100, 120, 127, 127, 127, 90, 127];
+    let vlx = 0;
+
+    let keyz = [chrd1, chrd2, chrd2, chrd1, chrd3];
+    let kx = 0;
+    let klenz = [2000, 3000, 4000, 500, 100];
+    let klx = 0;
+  }
+  run()
+  {
+    let chrd = chrd1;
+    if (count % 2 == 1) {
+      chrd = chrd2;
+    }
+    let beat = beat1;
+    if (count % 3 == 2) {
+      beat = beat2;
+    }
+    for (let i = 0; i < 16; i++) {
+      if (beat[i] == 1) {
+        note_on_at(dx2, chrd, i * pp, dur = durz[drx], vel = velz[vlx]);
+        drx = incr(drx, 0, len(durz));
+        vlx = incr(vlx, 0, len(velz));
+      }
+    }
+    if (count % 4 == 3) {
+      note_on(dx2, keyz[kx], dur = klenz[klx]);
+      kx = incr(kx, 0, len(keyz));
+      klx = incr(klx, 0, len(klenz));
     }
   }
 }

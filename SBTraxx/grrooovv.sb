@@ -18,23 +18,23 @@ let key_mod = 3;
 # [30, 32, 33, 35,  37, 39, 40, 42]
 
 # newjblah_fn();
-# p2 $ drumblah_gen; p7 $ newjblah_gen
-# p1 $ mblah_gen
-# note_off(newj, 0); p7 $ "";  p3 $ bsslah_gen
-# p4 $ chordblah_gen
+# p2 $ drumblah_comp; p7 $ newjblah_comp
+# p1 $ mblah_comp
+# note_off(newj, 0); p7 $ "";  p3 $ bsslah_comp
+# p4 $ chordblah_comp
 # doscozblah_fn(); load_preset(dx3, "purlp");
-# p5 $ vocblah_gen ; p2 $ ""
+# p5 $ vocblah_comp ; p2 $ ""
 
 # p5 $ ""
-# p8 $ hhatblah_gen; vol hdzdd 0; vol dcg 0;
-# p7 $ newjblah_gen ; p2 $ drumblah_gen
+# p8 $ hhatblah_comp; vol hdzdd 0; vol dcg 0;
+# p7 $ newjblah_comp ; p2 $ drumblah_comp
 
-# p3 $ bss2lah_gen
-# p4 $ chord2blah_gen
+# p3 $ bss2lah_comp
+# p4 $ chord2blah_comp
 
 # p2 $ ""
-# p9 $ snblah_gen ; p7 $ ""
-# p2 $ drumblah_gen; p3 $ bsslah_gen;  p4 $ chordblah_gen
+# p9 $ snblah_comp ; p7 $ ""
+# p2 $ drumblah_comp; p3 $ bsslah_comp;  p4 $ chordblah_comp
 
 let doscozblah_fn = fn()
 {
@@ -42,7 +42,7 @@ let doscozblah_fn = fn()
   sched(0, 0, 0.5, 3840 * 2, "vol hdzdd %");
 }
 
-let mblah_gen = gen()
+let mblah_comp = comp()
 {
   setup()
   {
@@ -91,7 +91,7 @@ let mblah_gen = gen()
   }
 }
 
-let bsslah_gen = gen()
+let bsslah_comp = comp()
 {
   setup()
   {
@@ -116,7 +116,7 @@ let bsslah_gen = gen()
   }
 }
 
-let bss2lah_gen = gen()
+let bss2lah_comp = comp()
 {
   setup()
   {
@@ -150,7 +150,7 @@ let playblah_fn = fn(mid_note, pat)
   }
 }
 
-let drumblah_gen = gen()
+let drumblah_comp = comp()
 {
   setup()
   {
@@ -182,7 +182,7 @@ let drumblah_gen = gen()
   }
 }
 
-let vocblah_gen = gen()
+let vocblah_comp = comp()
 {
   setup()
   {
@@ -200,7 +200,7 @@ let vocblah_gen = gen()
   }
 }
 
-let chordblah_gen = gen()
+let chordblah_comp = comp()
 {
   setup()
   {
@@ -234,7 +234,7 @@ let chordblah_gen = gen()
   }
 }
 
-let chord2blah_gen = gen()
+let chord2blah_comp = comp()
 {
   setup()
   {
@@ -268,7 +268,7 @@ let chord2blah_gen = gen()
   }
 }
 
-let snblah_gen = gen()
+let snblah_comp = comp()
 {
   setup()
   {
@@ -294,7 +294,7 @@ let newjblah_fn = fn()
 
 let skq = sample(scratchz/skqc.wav);
 
-let newjblah_gen = gen()
+let newjblah_comp = comp()
 {
   setup()
   {
@@ -322,7 +322,7 @@ let newjblah_gen = gen()
 let ch1 = sample(ch/hh8.aif);
 let oh1 = sample(oh/2stepOPENhh.aiff);
 
-let hhatblah_gen = gen()
+let hhatblah_comp = comp()
 {
   setup()
   {

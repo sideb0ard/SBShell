@@ -39,6 +39,9 @@ let init = fn()
   p1 # peshblah_comp;
   p2 # bd_comp;
   p10 # wahblah_comp;
+  p99 # PLAYYblah_comp;
+  load_drum_part(sbdrum, "CRISP", "sd");
+  add_fx(wash, "sidechain", sbdrum, "bd");
 }
 
 # p6 # dx1blah_comp;
@@ -46,6 +49,95 @@ let init = fn()
 # p9 # bounce_roll;
 # p8 # nested_tuplet_roll;
 # p11 # percblah_comp
+
+let PLAYYblah_comp = comp()
+{
+  setup()
+  {
+    let countrr = 0;
+  }
+  run()
+  {
+    if (countrr == 0) {
+      set mixer:gdlfb 0.2;
+      set mixer:gdly 0.1;
+    }
+    if (countrr == 1) {
+      set mixer:gdlfb 0;
+      set mixer:gdly 0;
+    }
+    if (countrr == 3) {
+      p7 # twiblah_comp;
+      p6 # dx1blah_comp;
+    }
+    if (countrr == 5) {
+      nested_tuplet_roll();
+    }
+    if (countrr == 6) {
+      bounce_roll();
+      vol pesh 0;
+      p11 # percblah_comp;
+    }
+    if (countrr == 8) {
+      vol pesh 1;
+      send("reverb", wash);
+    }
+    if (countrr == 23) {
+      p2 # "";
+      p6 # "";
+      p7 # "";
+      p9 # "";
+      vol wash 0;
+    }
+    if (countrr == 26) {
+      set mixer:gdlfb 0.2;
+      set mixer:gdly 0.5;
+    }
+    if (countrr == 28) {
+      p1 # "";
+      p11 # "";
+      p8 # "";
+      p6 # dx1blah_comp;
+    }
+    if (countrr == 31) {
+      bounce_roll();
+      set mixer:gdlfb 0;
+      set mixer:gdly 0;
+    }
+    if (countrr == 32) {
+      percblah_comp();
+      p7 # twiblah_comp;
+    }
+    if (countrr == 34) {
+      bounce_roll();
+      p2 # bd_comp;
+    }
+    if (countrr == 38) {
+      vol pesh 1;
+      p1 # peshblah_comp;
+      set mixer:gdlfb 0.4;
+      set mixer:gdly 0.1;
+    }
+    if (countrr == 40) {
+      set mixer:gdlfb 0.1;
+      set mixer:gdly 0.1;
+    }
+    if (countrr == 48) {
+      p2 # "";
+    }
+    if (countrr == 52) {
+      set mixer:gdlfb 0;
+      set mixer:gdly 0;
+    }
+    if (countrr == 54) {
+      p7 # "";
+      vol pesh 0;
+      p1 # "";
+    }
+    print("COUNTR:", countrr);
+    countrr++;
+  }
+}
 
 let bd_comp = comp()
 {
@@ -187,7 +279,7 @@ let dx1blah_comp = comp()
     let bjz = [3, 5, 7, 9, 11];
     let bx = 0;
 
-    let durz = [10000, 800, 300, 2000, 6000, 15000];
+    let durz = [10000, 8000, 7000, 2000, 6000, 15000];
     let drx = 0;
     let velz = [90, 100, 120, 127, 127, 110];
     let vx = 0;
@@ -203,15 +295,15 @@ let dx1blah_comp = comp()
       vx = incr(vx, 0, len(velz));
     }
 
-    if (count % 4 == 3) {
-      let pat = bjork(bjz[bx], 16);
-      bx = incr(bx, 0, len(bjz));
-      for (let i = 0; i < 16; i++) {
-        if (pat[i] == 1) {
-          note_on_at(dx, notz[nx] + 24, i * pp, dur = 200);
-        }
-      }
-    }
+    # if (count % 4 == 3) {
+      #   let pat = bjork(bjz[bx], 16);
+      #   bx = incr(bx, 0, len(bjz));
+      #   for (let i = 0; i < 16; i++) {
+        #     if (pat[i] == 1) {
+          #       note_on_at(dx, notz[nx] + 24, i * pp, dur = 200);
+          #     }
+        #   }
+      # }
   }
 }
 
@@ -224,18 +316,16 @@ let nested_tuplet_roll = comp()
   }
   run()
   {
-    if (count % 8 == 7) {
-      for (let i = 0; i < 5; i++) {
-        note_on_at(sbdrum, 1, i * third / 5, vel = 70);
-      }
+    for (let i = 0; i < 5; i++) {
+      note_on_at(sbdrum, 1, i * third / 5, vel = 50);
+    }
 
-      for (let i = 0; i < 7; i++) {
-        note_on_at(sbdrum, 1, third + (i * third / 7), vel = 90);
-      }
+    for (let i = 0; i < 7; i++) {
+      note_on_at(sbdrum, 1, third + (i * third / 7), vel = 70);
+    }
 
-      for (let i = 0; i < 3; i++) {
-        note_on_at(sbdrum, 1, (third * 2) + (i * third / 3), vel = 110);
-      }
+    for (let i = 0; i < 3; i++) {
+      note_on_at(sbdrum, 1, (third * 2) + (i * third / 3), vel = 90);
     }
   }
 }
@@ -249,19 +339,17 @@ let bounce_roll = comp()
   }
   run()
   {
-    if (count % 16 == 3) {
-      let pos = 0;
-      let gap = pp * 4;
+    let pos = 0;
+    let gap = pp * 4;
 
-      for (let i = 0; i < num_hits; i++) {
-        let v = 60 + (i * 5);
-        if (v > 127) { v = 127; }
+    for (let i = 0; i < num_hits; i++) {
+      let v = 60 + (i * 5);
+      if (v > 127) { v = 127; }
 
-        note_on_at(sbdrum, 1, pos, vel = v);
+      note_on_at(sbdrum, 1, pos, vel = v);
 
-        pos = pos + gap;
-        gap = gap * decay;
-      }
+      pos = pos + gap;
+      gap = gap * decay;
     }
   }
 }

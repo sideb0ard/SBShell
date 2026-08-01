@@ -11,6 +11,33 @@ let init = fn()
 #   load_preset(sbdrum, "SNDX3");
   send(delay, backz);
   add_fx(backz, sculptor);
+
+  p99 # PLAYblah_comp;
+}
+
+let PLAYblah_comp = comp()
+{
+  setup()
+  {
+    let cntr = 0;
+  }
+  run()
+  {
+    if (cntr == 0) {
+      p1 # granblah_comp;
+      p2 # dkickblah_comp;
+    }
+    if (cntr == 4) {
+      p11 < osc 4 "10 95" "set dx:op2out %";
+      p12 < osc 7 "3 95" "set dx3:e2att %";
+      p13 # dxblah_comp;
+    }
+    if (cntr == 8) {
+      p1 # "";
+    }
+    print("CNTR:", cntr);
+    cntr++;
+  }
 }
 
 let granblah_comp = comp()

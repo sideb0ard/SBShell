@@ -1,0 +1,7 @@
+phasors
+visualization
+status bar animated
+help system
+drum machine voices
+Import DX100 voices
+MIDI recording
