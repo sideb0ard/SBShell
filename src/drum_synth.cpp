@@ -397,6 +397,8 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.fm1.modulator_eg_sustain = val;
   else if (name == "fm1_mod_eg_release")
     settings_.fm1.modulator_eg_release = val;
+  else if (name == "fm1_mod_amp")
+    settings_.fm1.modulator_amplitude = val;
 
   else if (name == "fm2_vol")
     settings_.fm2.vol = val;
@@ -422,6 +424,8 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.fm2.modulator_eg_sustain = val;
   else if (name == "fm2_mod_eg_release")
     settings_.fm2.modulator_eg_release = val;
+  else if (name == "fm2_mod_amp")
+    settings_.fm2.modulator_amplitude = val;
 
   else if (name == "fm3_vol")
     settings_.fm3.vol = val;
@@ -447,6 +451,8 @@ void DrumSynth::SetParam(std::string name, double val) {
     settings_.fm3.modulator_eg_sustain = val;
   else if (name == "fm3_mod_eg_release")
     settings_.fm3.modulator_eg_release = val;
+  else if (name == "fm3_mod_amp")
+    settings_.fm3.modulator_amplitude = val;
 
   else if (name == "lz_vol")
     settings_.lz.vol = val;
@@ -595,7 +601,8 @@ std::string DrumSynth::Info() {
   ss << COOL_COLOR_ORANGE "     fm1(5): fm1_vol:" << settings_.fm1.vol
      << " fm1_pan:" << settings_.fm1.pan
      << " fm1_car_freq:" << settings_.fm1.carrier_freq
-     << " fm1_mod_freq_rat:" << settings_.fm1.modulator_freq_ratio << std::endl;
+     << " fm1_mod_freq_rat:" << settings_.fm1.modulator_freq_ratio
+     << " fm1_mod_amp:" << settings_.fm1.modulator_amplitude << std::endl;
   ss << "     fm1_car_eg_attack:" << settings_.fm1.carrier_eg_attack
      << " fm1_car_eg_decay:" << settings_.fm1.carrier_eg_decay
      << " fm1_car_eg_sustain:" << settings_.fm1.carrier_eg_sustain
@@ -608,7 +615,8 @@ std::string DrumSynth::Info() {
   ss << COOL_COLOR_YELLOW_MELLOW "     fm2(6): fm2_vol:" << settings_.fm2.vol
      << " fm2_pan:" << settings_.fm2.pan
      << " fm2_car_freq:" << settings_.fm2.carrier_freq
-     << " fm2_mod_freq_rat:" << settings_.fm2.modulator_freq_ratio << std::endl;
+     << " fm2_mod_freq_rat:" << settings_.fm2.modulator_freq_ratio
+     << " fm2_mod_amp:" << settings_.fm2.modulator_amplitude << std::endl;
   ss << "     fm2_car_eg_attack:" << settings_.fm2.carrier_eg_attack
      << " fm2_car_eg_decay:" << settings_.fm2.carrier_eg_decay
      << " fm2_car_eg_sustain:" << settings_.fm2.carrier_eg_sustain
@@ -621,7 +629,8 @@ std::string DrumSynth::Info() {
   ss << COOL_COLOR_ORANGE "     fm3(7): fm3_vol:" << settings_.fm3.vol
      << " fm3_pan:" << settings_.fm3.pan
      << " fm3_car_freq:" << settings_.fm3.carrier_freq
-     << " fm3_mod_freq_rat:" << settings_.fm3.modulator_freq_ratio << std::endl;
+     << " fm3_mod_freq_rat:" << settings_.fm3.modulator_freq_ratio
+     << " fm3_mod_amp:" << settings_.fm3.modulator_amplitude << std::endl;
   ss << "     fm3_car_eg_attack:" << settings_.fm3.carrier_eg_attack
      << " fm3_car_eg_decay:" << settings_.fm3.carrier_eg_decay
      << " fm3_car_eg_sustain:" << settings_.fm3.carrier_eg_sustain
@@ -1012,6 +1021,7 @@ void DrumSynth::Update() {
   //
   fm1_->modulator_->m_osc_fo =
       fm1_->carrier_->m_osc_fo * settings_.fm1.modulator_freq_ratio;
+  fm1_->modulator_->m_amplitude = settings_.fm1.modulator_amplitude;
   fm1_->modulator_eg_.SetAttackTimeMsec(settings_.fm1.modulator_eg_attack);
   fm1_->modulator_eg_.SetDecayTimeMsec(settings_.fm1.modulator_eg_decay);
   fm1_->modulator_eg_.SetSustainLevel(settings_.fm1.modulator_eg_sustain);
@@ -1027,6 +1037,7 @@ void DrumSynth::Update() {
   //
   fm2_->modulator_->m_osc_fo =
       fm2_->carrier_->m_osc_fo * settings_.fm2.modulator_freq_ratio;
+  fm2_->modulator_->m_amplitude = settings_.fm2.modulator_amplitude;
   fm2_->modulator_eg_.SetAttackTimeMsec(settings_.fm2.modulator_eg_attack);
   fm2_->modulator_eg_.SetDecayTimeMsec(settings_.fm2.modulator_eg_decay);
   fm2_->modulator_eg_.SetSustainLevel(settings_.fm2.modulator_eg_sustain);
@@ -1042,6 +1053,7 @@ void DrumSynth::Update() {
   //
   fm3_->modulator_->m_osc_fo =
       fm3_->carrier_->m_osc_fo * settings_.fm3.modulator_freq_ratio;
+  fm3_->modulator_->m_amplitude = settings_.fm3.modulator_amplitude;
   fm3_->modulator_eg_.SetAttackTimeMsec(settings_.fm3.modulator_eg_attack);
   fm3_->modulator_eg_.SetDecayTimeMsec(settings_.fm3.modulator_eg_decay);
   fm3_->modulator_eg_.SetSustainLevel(settings_.fm3.modulator_eg_sustain);

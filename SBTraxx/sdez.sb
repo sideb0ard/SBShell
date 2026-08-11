@@ -4,6 +4,8 @@ let backz = NULL;
 # send(delay, backz);
 # add_fx(backz, sculptor);
 
+let rocka = NULL;
+
 let init = fn()
 {
   backz = loop(qebo/QEBO-LOCKDOWNFM-23FMPERCUSSION1.wav); set backz:len 4;
@@ -11,6 +13,15 @@ let init = fn()
 #   load_preset(sbdrum, "SNDX3");
   send(delay, backz);
   add_fx(backz, sculptor);
+  load_drum_part(sbdrum, "CRISP", "sd");
+
+  rocka = loop(dloops/rockafellayall2bar.aiff);
+  set rocka:len 4;
+  set rocka:pitch 0.8;
+  vol rocka 0;
+
+  set sbdrum:cp_tone 600;
+  load_preset(dx3, "gentlepipe");
 
   p99 # PLAYblah_comp;
 }
@@ -34,6 +45,26 @@ let PLAYblah_comp = comp()
     }
     if (cntr == 8) {
       p1 # "";
+    }
+    if (cntr == 12) {
+      p2 # "";
+    }
+    if (cntr == 24) {
+      sched(3840, 0, 1, 3840 * 2, "vol rocka %");
+      p14 # rockablah_comp;
+    }
+    if (cntr == 28) {
+      send("delay", rocka);
+      sched(0, 1, 0, 3840, "vol rocka %");
+    }
+    if (cntr == 29) {
+      p2 # NEWKICblah_comp;
+    }
+    if (cntr == 32) {
+      p15 # hhblah_comp;
+    }
+    if (cntr == 40) {
+      p13 # "";
     }
     print("CNTR:", cntr);
     cntr++;
@@ -104,6 +135,8 @@ let dkickblah_comp = comp()
     let scx = 0;
     let sdelz = [14, 140, 40, 240];
     let sdlx = 0;
+    let sdfreqz = [1, 10, 17, 40, 70, 100];
+    let sdx = 0;
   }
   run()
   {
@@ -123,11 +156,10 @@ let dkickblah_comp = comp()
       }
     }
     if (count % 8 < 6) {
-      note_on_at(sbdrum, 1, 12 * pp + 50);
-      if (count % 2 == 1) {
-        set sbdrum:sd_tone sdtonz[sdx];
-        sdx = incr(sdx, 0, len(sdtonz));
-      }
+      note_on_at(sbdrum, 1, 12 * pp - 50);
+      set sbdrum:sd_freq sdfreqz[sdx] at = i * pp;
+      sdx = incr(sdx, 0, len(sdfreqz));
+
       if (count % 3 == 1) {
         set sbdrum:sd_decay sdecz[scx];
         scx = incr(scx, 0, len(sdecz));
@@ -135,6 +167,9 @@ let dkickblah_comp = comp()
       if (count % 4 == 1) {
         set sbdrum:sd_delay_ms sdelz[sdlx];
         sdlx = incr(sdlx, 0, len(sdelz));
+      }
+      if (rand(100) < 20) {
+        note_on_at(sbdrum, 1, 15 * pp, vel = 80);
       }
     }
   }
@@ -329,5 +364,126 @@ let mfblah_comp = comp()
     set bd:fx0:freq bdfreqz[bdfx];
     bdfx = incr(bdfx, 0, len(bdfreqz));
 
+  }
+}
+
+let rockablah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    if (count % 4 == 3) {
+      set rocka:strobe 1;
+    }
+    if (count % 6 == 2) {
+      set rocka:scramble 1;
+    }
+    if (count % 7 == 3) {
+      set rocka:stutter 1;
+    }
+    if (count % 15 == 2) {
+      set rocka:reverse 1;
+    }
+  }
+}
+
+let NEWKICblah_comp = comp()
+{
+  setup()
+  {
+    let kb1 = [1, 0, 0, 1,  0, 0, 1, 0,  1, 0, 0, 0,  0, 0, 0, 0];
+    let kb2 = [1, 0, 1, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 1, 0, 0];
+    let snz = [0, 0, 0, 0,  30, 0, 0, 0,  0, 20, 0, 0,  90, 0, 0, 10];
+    let velz = [100, 100, 110, 120, 90, 90, 60];
+    let vx = 0;
+    let bdrz = [10, 20, 50, 64, 4];
+    let bdx = 0;
+  }
+  run()
+  {
+    let kb = kb1;
+    if (count % 4 == 3) {
+      kb = kb2;
+    }
+    for (let i = 0; i < 16; i++) {
+      if (kb[i] == 1 ) {
+        note_on_at(sbdrum, 0, i * pp);
+        set sbdrum:bd_pitch_env2_range bdrz[bdx] at = i * pp;
+        bdx = incr(bdx, 0, len(bdrz));
+      }
+
+      if (snz[i] > 0 ) {
+        let swng = 40;
+        if (i % 2 == 0) {
+          swng = 0;
+        }
+        let chance = rand(100);
+        if (chance < snz[i]) {
+          note_on_at(sbdrum, 2, i * pp + swng, vel = velz[vx]);
+          vx = incr(vx, 0, len(velz));
+        }
+      }
+    }
+  }
+}
+
+let hhblah_comp = comp()
+{
+  setup()
+  {
+    let hazman = [1, 0, 1, 0,  0, 0, 1, 0,  1, 0, 1, 0,  0, 1, 1, 1];
+    let velz = [90, 90, 90, 100, 80, 70, 90, 127];
+    let vx = 0;
+    let panz = [0.2, -0.3, 0.4, -0.2, 0.4];
+    let px = 0;
+  }
+  run()
+  {
+
+    let haz = hazman;
+    if (count % 4 == 3) {
+      haz = rand_array(16, 0, 1);
+    }
+
+    for (let i = 0; i < 16; i++) {
+      let swng = 20;
+      if (i % 2 == 0) {
+        swng = 0;
+      }
+      if (haz[i] == 1) {
+        set sbdrum:hh_pan panz[px] at = i * pp;
+        px = incr(px, 0, len(panz));
+        note_on_at(sbdrum, 3, i * pp + swng, vel = velz[vx]);
+        vx = incr(vx, 0, len(velz));
+      }
+    }
+  }
+}
+
+# gentlepipe
+let dbX3dbdbbdblah_comp = comp()
+{
+  setup()
+  {
+    let chrd1 = [34, 38, 30];
+    let chrd2 = [37, 34, 41];
+    let chrdz = [chrd1, chrd1, chrd2];
+    let chx = 0;
+    let durz = [1000, 5000, 8000, 500, 100, 2000];
+    let drx = 0;
+    let gapz = [100, 200, 500, 1000, 2000];
+    let gx = 0;
+    let nexton = 0;
+    let curon = 0;
+  }
+  run()
+  {
+    if (curon == nexton) {
+      note_on_at(dx3, chrdz[chx], curon, dur = durz[drx]);
+      chx = incr(chx, 0, len(chrdz));
+      drx = incr(drx, 0, len(durz));
+    }
   }
 }

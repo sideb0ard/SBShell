@@ -193,6 +193,7 @@ struct FmDrumSettings {
   double carrier_eg_sustain{0.2};
   double carrier_eg_release{10};
   double modulator_freq_ratio{13};
+  double modulator_amplitude{0.6};  // FM index: higher = more sidebands/noise
   double modulator_eg_attack{15};
   double modulator_eg_decay{15};
   double modulator_eg_sustain{0.5};
@@ -202,8 +203,8 @@ struct FmDrumSettings {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     FmDrumSettings, vol, pan, carrier_freq, carrier_eg_attack, carrier_eg_decay,
     carrier_eg_sustain, carrier_eg_release, modulator_freq_ratio,
-    modulator_eg_attack, modulator_eg_decay, modulator_eg_sustain,
-    modulator_eg_release)
+    modulator_amplitude, modulator_eg_attack, modulator_eg_decay,
+    modulator_eg_sustain, modulator_eg_release)
 
 struct LazerSettings {
   double vol{0.7};

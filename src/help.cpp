@@ -664,6 +664,38 @@ static std::string help_midi() {
   ss << ANSI_COLOR_WHITE << "  freq2midi(freq)       " << COOL_COLOR_ORANGE << "- Frequency → nearest MIDI number\n";
   ss << ANSI_COLOR_WHITE << "  midi_ref()            " << COOL_COLOR_ORANGE << "- Print full note-name to MIDI number table\n\n";
 
+  ss << COOL_COLOR_GREEN << "NOTE SCHEDULING\n";
+  ss << ANSI_COLOR_WHITE
+     << "  note_on(gen, note, vel=128, dur=240)\n"
+     << "  note_on_at(gen, note, time, vel=128, dur=240)\n"
+     << "  note_off(gen, note)\n"
+     << "  note_off_at(gen, note, time)\n\n";
+  ss << COOL_COLOR_ORANGE
+     << "  gen   " << ANSI_COLOR_WHITE << "- any SoundGenerator (dx, sub, loop ...)\n"
+     << COOL_COLOR_ORANGE
+     << "  note  " << ANSI_COLOR_WHITE << "- MIDI note number (0-127), or array for chords: [60,64,67]\n"
+     << COOL_COLOR_ORANGE
+     << "  time  " << ANSI_COLOR_WHITE << "- position in midi ticks within the current bar (0-3839)\n"
+     << "          bar=3840 ticks, beat=960, 8th=480, 16th=240, 32nd=120\n"
+     << COOL_COLOR_ORANGE
+     << "  vel=  " << ANSI_COLOR_WHITE << "- velocity 0-128 (default 128 = full)\n"
+     << COOL_COLOR_ORANGE
+     << "  dur=  " << ANSI_COLOR_WHITE << "- note duration in ticks (default 240 = one 16th)\n\n";
+  ss << ANSI_COLOR_WHITE
+     << "  note_on fires immediately; note_on_at schedules to a tick position\n"
+     << "  inside run() / loop closures, time is usually i * pp where pp=240.\n"
+     << "  note is auto-released after dur ticks — no need for manual note_off\n"
+     << "  unless you want to cut a note short.\n\n";
+  ss << COOL_COLOR_GREEN << "  Examples\n";
+  ss << COOL_COLOR_ORANGE
+     << "  note_on(dx, 60)                        // C4, full vel, 1/16th dur\n"
+     << "  note_on(dx, 60, vel=80, dur=480)       // softer, held for an 8th\n"
+     << "  note_on(dx, [60,64,67])                // C major chord\n"
+     << "  note_on_at(dx, 60, 0)                  // beat 1\n"
+     << "  note_on_at(dx, 64, 480)                // beat 1 + 8th (off-beat)\n"
+     << "  note_on_at(dx, 67, i*240, dur=120)     // 16th grid, 32nd duration\n"
+     << "  note_on_at(dx, 60, i*240+24, dur=10)   // 55% swing offset on odd steps\n\n";
+
   ss << COOL_COLOR_GREEN << "TYPICAL WORKFLOW\n";
   ss << COOL_COLOR_ORANGE
      << "  midi_init()                      // connect device\n"
@@ -760,6 +792,50 @@ static std::string help_imagesounder() {
   return ss.str();
 }
 
+// ─── swing ───────────────────────────────────────────────────────────────────
+
+static std::string help_swing() {
+  std::stringstream ss;
+  ss << COOL_COLOR_GREEN << "\nSWING\n"
+     << ANSI_COLOR_WHITE
+     << "------------------------------------------------------------------------\n";
+  ss << "Swing delays every other 16th note (the 'off-beats') by a fixed tick\n"
+     << "offset. A bar = 3840 ticks, a 16th = 240 ticks, an 8th = 480 ticks.\n\n";
+
+  ss << COOL_COLOR_GREEN << "FORMULA\n";
+  ss << COOL_COLOR_ORANGE
+     << "  offset_ticks = round((swing_pct - 50) / 100.0 * 480)\n\n";
+
+  ss << ANSI_COLOR_WHITE
+     << "  50% = perfectly straight (offset 0).  66.7% = full triplet feel.\n"
+     << "  DAW presets typically sit in the 54–62% range.\n\n";
+
+  ss << COOL_COLOR_GREEN << "REFERENCE TABLE\n";
+  ss << ANSI_COLOR_WHITE
+     << "  DAW swing %   Offset (ticks)   Feel\n"
+     << "  ----------    --------------   ---------------------------\n"
+     << "  50%            0               Perfectly straight\n"
+     << "  54%           19               Barely perceptible\n"
+     << "  55%           24               Light\n"
+     << "  57%           34               Medium\n"
+     << "  58%           38               Medium-heavy\n"
+     << "  60%           48               Strong\n"
+     << "  62%           58               Very strong\n"
+     << "  66.7%         80               Full triplet / jazz swing\n\n";
+
+  ss << COOL_COLOR_GREEN << "USAGE PATTERN\n";
+  ss << COOL_COLOR_ORANGE
+     << "  let pp = 240  // ticks per 16th\n"
+     << "  let swng = 24 // e.g. 55% swing\n"
+     << "  for (let i = 0; i < 16; i++) {\n"
+     << "    let offset = (i % 2 == 0) ? 0 : swng\n"
+     << "    if (pattern[i] == 1) note_on_at(gen, ch, i * pp + offset, 10)\n"
+     << "  }\n\n";
+
+  ss << ANSI_COLOR_RESET;
+  return ss.str();
+}
+
 // ─── dispatch ────────────────────────────────────────────────────────────────
 
 std::string build_help(const std::string& topic) {
@@ -791,6 +867,9 @@ std::string build_help(const std::string& topic) {
    || topic == "reverb"
    || topic == "delay")           return help_fx();
   if (topic == "midi")             return help_midi();
+  if (topic == "swing"
+   || topic == "groove"
+   || topic == "timing")           return help_swing();
   if (topic == "mixer"
    || topic == "mix"
    || topic == "routing")         return help_mixer();

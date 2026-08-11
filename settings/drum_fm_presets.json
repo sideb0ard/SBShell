@@ -1,16 +1,30 @@
 {
-    "DEFAULT": {
-        "carrier_eg_attack": 19.0,
-        "carrier_eg_decay": 90.0,
-        "carrier_eg_release": 90.0,
-        "carrier_eg_sustain": 0.2,
-        "carrier_freq": 65.4,
-        "modulator_eg_attack": 10.0,
-        "modulator_eg_decay": 10.0,
-        "modulator_eg_release": 180.0,
-        "modulator_eg_sustain": 0.5,
-        "modulator_freq_ratio": 3.4,
-        "pan": 0.1,
-        "vol": 0.4
-    }
+  "DEFAULT": {
+    "carrier_eg_attack": 19.0,
+    "carrier_eg_decay": 90.0,
+    "carrier_eg_release": 90.0,
+    "carrier_eg_sustain": 0.2,
+    "carrier_freq": 65.4,
+    "modulator_eg_attack": 10.0,
+    "modulator_eg_decay": 10.0,
+    "modulator_eg_release": 180.0,
+    "modulator_eg_sustain": 0.5,
+    "modulator_freq_ratio": 3.4,
+    "pan": 0.1,
+    "vol": 0.4
+  },
+  "FMHH": {
+    "carrier_eg_attack": 1.0,
+    "carrier_eg_decay": 50.0,
+    "carrier_eg_release": 10.0,
+    "carrier_eg_sustain": 0.0,
+    "carrier_freq": 180.0,
+    "modulator_eg_attack": 1.0,
+    "modulator_eg_decay": 20.0,
+    "modulator_eg_release": 15.0,
+    "modulator_eg_sustain": 0.0,
+    "modulator_freq_ratio": 13.7,
+    "pan": -0.1,
+    "vol": 0.4
+  }
 }
