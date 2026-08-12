@@ -379,9 +379,13 @@ struct Mixer {
       auto delay_val = fx_[0]->Process(fx_delay_send);
       auto reverb_val = fx_[1]->Process(fx_reverb_send);
       auto eq_val = fx_[2]->Process(fx_eq_send);
-      last_delay_out_ = delay_val;
-      last_reverb_out_ = reverb_val;
-      last_eq_out_ = eq_val;
+      // Clamp before storing — last_*_out_ feeds back into fx sends next
+      // sample. Unclamped growth (e.g. delay fb + gdlfb combining) causes NaN
+      // which bypasses the output clamp and silences one channel.
+      auto clamp1 = [](double v) { return std::max(-1.0, std::min(1.0, v)); };
+      last_delay_out_ = {clamp1(delay_val.left), clamp1(delay_val.right)};
+      last_reverb_out_ = {clamp1(reverb_val.left), clamp1(reverb_val.right)};
+      last_eq_out_ = {clamp1(eq_val.left), clamp1(eq_val.right)};
       // EQ is an insert: reduce dry by send amount so geq=1 fully replaces dry.
       // Delay and reverb remain parallel sends (dry is unaffected by their
       // send).

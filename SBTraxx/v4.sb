@@ -956,6 +956,9 @@ let phaseblah_comp = comp()
         l1ix = incr(l1ix, 0, len(l1intz));
       }
 
+      let o4fb = scale(out_sig2, 0, 1, 0, 50);
+      set dx:op4fb o4fb at = i * mpp;
+
       if (ramp2tri3(out_sig3)) {
         if (count % 4 == 3) {
           set dx:op1fb o1fbz[o1fbx] at = i * mpp;
