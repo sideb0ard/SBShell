@@ -198,6 +198,8 @@ void StereoDelay::SetParam(std::string name, double val) {
     SetSync(val);
   else if (name == "sync_len")
     SetSyncLen(val);
+  else if (name == "reset")
+    Reset();
 }
 void StereoDelay::SetMode(unsigned mode) {
   switch (mode) {
