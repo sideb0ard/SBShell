@@ -147,6 +147,8 @@ struct Mixer {
   std::chrono::microseconds mTimeAtLastClick{0};
 
   double volume{1};
+  double volume_smooth_{
+      1.0};  // ramps toward volume each sample to de-click hard cuts
 
   PortMidiStream *midi_stream;
   bool have_midi_controller{false};
@@ -395,8 +397,13 @@ struct Mixer {
                      reverb_val.right + eq_val.right;
 
       // Apply volume and clamp to safe range to prevent speaker damage
-      double final_left = volume * output_left;
-      double final_right = volume * output_right;
+      if (volume_smooth_ < volume)
+        volume_smooth_ = std::min(volume_smooth_ + kSoloRampRate, volume);
+      else if (volume_smooth_ > volume)
+        volume_smooth_ = std::max(volume_smooth_ - kSoloRampRate, volume);
+
+      double final_left = volume_smooth_ * output_left;
+      double final_right = volume_smooth_ * output_right;
 
       // Hard clamp to [-1.0, 1.0] to protect speakers/ears
       if (final_left > 1.0) final_left = 1.0;

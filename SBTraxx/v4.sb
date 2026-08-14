@@ -9,6 +9,8 @@ let wash = NULL;
 
 let key = NULL;
 
+let swww = NULL;
+
 let init = fn()
 {
 #   load_preset(sbdrum, "V4");
@@ -26,7 +28,13 @@ let init = fn()
   vol rock 0;
   vol pesh 0;
 
+  swww = loop(noises/SBwooshIDM.aiff);
+  set swww:len 17.5;
+  set swww:pitch 0.41;
+  vol swww 0;
+
   send("delay", sd);
+  send("reverb", dx);
   set sd:pitch 1.8;
   # load_preset(dx, "spacepiano");
   # load_preset(dx3, "jazz_organ");
@@ -50,6 +58,7 @@ let init = fn()
   load_drum_part(sbdrum, "CRISP", "sd");
   #add_fx(wash, "sidechain", sbdrum, "bd");
   load_drum_part(sb2, "RVB", "sd");
+  set sb2:sd_vol 0.4;
   load_drum_part(sb2, "FMHH", "fm1");
   load_drum_part(sb2, "OOH", "oh");
   set sb2:hh_vol 0.6;
@@ -84,9 +93,7 @@ let PLAY2blah_comp = comp()
   run()
   {
     if (countrr == 0) {
-      SENDDELLblah_fn();
       p1 # dx1blah_comp;
-      p2 # phaseblah_comp;
     }
     if (countrr == 1) {
       SENDDELLblah_fn();
@@ -94,6 +101,7 @@ let PLAY2blah_comp = comp()
     if (countrr == 8) {
       SENDDELLblah_fn();
       percblah_comp();
+      p2 # phaseblah_comp;
     }
     if (countrr == 16) {
       percblah_comp();
@@ -115,15 +123,28 @@ let PLAY2blah_comp = comp()
       p10 # BASSblah_comp;
       p11 # dx3LOWblah_comp;
       p12 # dx2blah_comp;
-      p4 # phase2blah_comp;
       p15 # hhblah_comp;
       nested_tuplet_roll();
+    }
+
+    if (countrr == 40) {
+      p15 # "";
+    }
+    if (countrr == 47) {
+      p10 # "";
+    }
+
+    if (countrr == 50) {
+      p12 # "";
     }
 
     if (countrr == 54) {
       p6 # "";
       p10 # "";
-      p15 # "";
+      p11 # "";
+      p20 < osc 7 "0.1 0.6" "vol swww %";
+      send("delay", swww);
+      p21 < osc 17 "10 90" "set mixer:delay:fb %";
     }
 
     if (countrr == 64) {
@@ -150,17 +171,18 @@ let PLAY2blah_comp = comp()
       p4 # "";
     }
     if (countrr == 96) {
+      p9 # "";
     }
     if (countrr == 100) {
       p8 # "";
     }
     if (countrr == 108) {
       p1 # dx1blah_comp;
-      p9 # "";
       p3 # "";
       p15 # "";
     }
     if (countrr == 112) {
+      p5 # "";
       p10 # "";
       p11 # "";
       p12 # "";
@@ -171,11 +193,17 @@ let PLAY2blah_comp = comp()
     }
     if (countrr == 132) {
       p8 # "";
+      p15 # "";
+      p20 # "";
+      vol swww 0;
     }
     if (countrr == 144) {
       p8 # bd_comp;
+      p7 # "";
+      p9 # "";
     }
     if (countrr == 160) {
+      p8 # "";
       p3 # "";
       p9 # "";
       p7 # "";
@@ -522,7 +550,7 @@ let hhblah_comp = comp()
   run()
   {
     for (let i = 0; i < 16; i++) {
-      let offz = 40;
+      let offz = 24;
       if (i % 2 == 0) {
         offz = 0;
       }

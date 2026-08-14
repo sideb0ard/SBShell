@@ -836,6 +836,52 @@ static std::string help_swing() {
   return ss.str();
 }
 
+// ─── presets ─────────────────────────────────────────────────────────────────
+
+static std::string help_presets() {
+  std::stringstream ss;
+  ss << COOL_COLOR_GREEN << "\nPRESETS\n"
+     << ANSI_COLOR_WHITE
+     << "------------------------------------------------------------------------\n";
+  ss << "Presets save and restore all parameters for a generator.\n"
+     << "Each generator type has its own preset file (FM, sub, drum, etc).\n\n";
+
+  ss << COOL_COLOR_GREEN << "LIST\n";
+  ss << ANSI_COLOR_WHITE
+     << "  list_presets(gen)              " << COOL_COLOR_ORANGE << "- show all saved presets for this generator type\n";
+  ss << ANSI_COLOR_WHITE
+     << "  list_presets(drums, \"part\")    " << COOL_COLOR_ORANGE << "- drum part presets: \"bd\",\"sd\",\"hh\",\"oh\",\"cp\",\"fm1\"...\n\n";
+
+  ss << COOL_COLOR_GREEN << "LOAD\n";
+  ss << ANSI_COLOR_WHITE
+     << "  load_preset(gen, \"name\")       " << COOL_COLOR_ORANGE << "- load a named preset onto gen\n";
+  ss << ANSI_COLOR_WHITE
+     << "  rand_preset(gen)               " << COOL_COLOR_ORANGE << "- load a random preset\n\n";
+
+  ss << COOL_COLOR_GREEN << "SAVE\n";
+  ss << ANSI_COLOR_WHITE
+     << "  save_preset(gen, \"name\")       " << COOL_COLOR_ORANGE << "- save current settings as a new preset\n";
+  ss << ANSI_COLOR_WHITE
+     << "  save_preset(gen, \"name\", true) " << COOL_COLOR_ORANGE << "- overwrite an existing preset (force flag)\n";
+  ss << ANSI_COLOR_WHITE
+     << "  save_drum_part(dx, \"name\", \"part\") " << COOL_COLOR_ORANGE << "- save one drum voice (\"bd\",\"sd\",\"hh\" etc)\n\n";
+
+  ss << COOL_COLOR_GREEN << "EXAMPLES\n";
+  ss << COOL_COLOR_ORANGE
+     << "  list_presets(dx)                     // see what FM presets exist\n"
+     << "  load_preset(dx, \"kotokoto__\")        // load a preset by name\n"
+     << "  save_preset(dx, \"kotokoto__\")        // fails if name already exists\n"
+     << "  save_preset(dx, \"kotokoto__\", true)  // overwrite existing preset\n"
+     << "  save_preset(dx, \"kotokoto_v2\")       // save as a new name instead\n\n";
+
+  ss << ANSI_COLOR_WHITE
+     << "  Without the 'true' flag, saving an existing name prints a warning\n"
+     << "  and does nothing — you must pass true to confirm the overwrite.\n\n";
+
+  ss << ANSI_COLOR_RESET;
+  return ss.str();
+}
+
 // ─── dispatch ────────────────────────────────────────────────────────────────
 
 std::string build_help(const std::string& topic) {
@@ -870,6 +916,10 @@ std::string build_help(const std::string& topic) {
   if (topic == "swing"
    || topic == "groove"
    || topic == "timing")           return help_swing();
+  if (topic == "presets"
+   || topic == "preset"
+   || topic == "save"
+   || topic == "load")             return help_presets();
   if (topic == "mixer"
    || topic == "mix"
    || topic == "routing")         return help_mixer();
