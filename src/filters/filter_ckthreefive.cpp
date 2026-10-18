@@ -10,7 +10,7 @@
 #include "filter_onepole.h"
 
 CKThreeFive::CKThreeFive() {
-  m_filter_type = LPF2;
+  filter_type_ = LPF2;
 }
 
 void CKThreeFive::SetQControl(double qcontrol) {
@@ -18,77 +18,77 @@ void CKThreeFive::SetQControl(double qcontrol) {
   // Higher K = more resonance
   // Starting from 0.5 to keep low-Q bass drum audible while still having good
   // resonance range
-  m_k = 0.5 + (2.0 - 0.5) * (qcontrol - 1.0) / 9.0;
+  k_ = 0.5 + (2.0 - 0.5) * (qcontrol - 1.0) / 9.0;
 }
 
 void CKThreeFive::Update() {
   Filter::Update();
 
-  double wd = 2.0 * M_PI * m_fc;
+  double wd = 2.0 * M_PI * fc_;
   double T = 1.0 / SAMPLE_RATE;
   double wa = (2.0 / T) * tan(wd * T / 2.0);
   double g = wa * T / 2.0;
 
   double G = g / (1.0 + g);
 
-  m_LPF1.m_alpha = G;
-  m_LPF2.m_alpha = G;
-  m_HPF1.m_alpha = G;
-  m_HPF2.m_alpha = G;
+  lpf1_.SetAlpha(G);
+  lpf2_.SetAlpha(G);
+  hpf1_.SetAlpha(G);
+  hpf2_.SetAlpha(G);
 
-  m_alpha0 = 1.0 / (1.0 - m_k * G + m_k * G * G);
+  alpha0_ = 1.0 / (1.0 - k_ * G + k_ * G * G);
 
-  if (m_filter_type == LPF2) {
-    m_LPF2.m_beta = (m_k - m_k * G) / (1.0 + g);
-    m_HPF1.m_beta = -1.0 / (1.0 + g);
+  if (filter_type_ == LPF2) {
+    lpf2_.SetBeta((k_ - k_ * G) / (1.0 + g));
+    hpf1_.SetBeta(-1.0 / (1.0 + g));
   } else  // HPF
   {
-    m_HPF2.m_beta = -1.0 * G / (1.0 + g);
-    m_LPF1.m_beta = 1.0 / (1.0 + g);
+    hpf2_.SetBeta(-1.0 * G / (1.0 + g));
+    lpf1_.SetBeta(1.0 / (1.0 + g));
   }
 }
 
 void CKThreeFive::Reset() {
-  m_LPF1.Reset();
-  m_LPF2.Reset();
-  m_HPF1.Reset();
-  m_HPF2.Reset();
+  lpf1_.Reset();
+  lpf2_.Reset();
+  hpf1_.Reset();
+  hpf2_.Reset();
 }
 
 double CKThreeFive::DoFilter(double xn) {
-  if (m_filter_type != LPF2 && m_filter_type != HPF2) return xn;
+  if (filter_type_ != LPF2 && filter_type_ != HPF2) return xn;
 
   double y = 0.0;
-  if (m_filter_type == LPF2) {
-    double y1 = m_LPF1.DoFilter(xn);
+  if (filter_type_ == LPF2) {
+    double y1 = lpf1_.DoFilter(xn);
 
-    double S35 = m_HPF1.GetFeedbackOutput() + m_LPF2.GetFeedbackOutput();
+    double S35 = hpf1_.GetFeedbackOutput() + lpf2_.GetFeedbackOutput();
 
-    double u = m_alpha0 * (y1 + S35);
+    double u = alpha0_ * (y1 + S35);
 
-    if (m_nlp) u = tanh(m_saturation * u);
+    if (nlp_) u = tanh(saturation_ * u);
 
-    y = m_k * m_LPF2.DoFilter(u);
+    y = k_ * lpf2_.DoFilter(u);
 
-    m_HPF1.DoFilter(y);
+    hpf1_.DoFilter(y);
   } else  // HPF
   {
-    double y1 = m_HPF1.DoFilter(xn);
+    double y1 = hpf1_.DoFilter(xn);
 
-    double S35 = m_HPF2.GetFeedbackOutput() + m_LPF1.GetFeedbackOutput();
-    double u = m_alpha0 * y1 + S35;
-    y = m_k * u;
+    double S35 = hpf2_.GetFeedbackOutput() + lpf1_.GetFeedbackOutput();
+    double u = alpha0_ * y1 + S35;
+    y = k_ * u;
 
-    if (m_nlp) y = tanh(m_saturation * y);
+    if (nlp_) y = tanh(saturation_ * y);
 
-    m_LPF1.DoFilter(m_HPF2.DoFilter(y));
+    lpf1_.DoFilter(hpf2_.DoFilter(y));
   }
 
   // Compensate for output gain, but use sqrt to preserve more resonance
   // character This keeps the filter stable while allowing resonance to affect
   // tone
-  if (m_k > 0) {
-    y *= 1.0 / sqrt(m_k);
+  if (k_ > 0) {
+    y *= 1.0 / sqrt(k_);
   }
 
   return y;

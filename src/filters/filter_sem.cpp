@@ -8,71 +8,71 @@
 #include "defjams.h"
 
 FilterSem::FilterSem() {
-  // m_aux_control = 0.5;
-  m_aux_control = 1;
-  m_filter_type = LPF2;
+  // aux_control_ = 0.5;
+  aux_control_ = 1;
+  filter_type_ = LPF2;
 
-  m_alpha = 1.0;
-  m_alpha0 = 1.0;
-  m_rho = 1.0;
+  alpha_ = 1.0;
+  alpha0_ = 1.0;
+  rho_ = 1.0;
 
   Reset();
 }
 
 void FilterSem::Reset() {
-  m_z11 = 0;
-  m_z12 = 0;
+  z11_ = 0;
+  z12_ = 0;
 }
 
 void FilterSem::SetQControl(double qcontrol) {
-  m_q = (25.0 - 0.5) * (qcontrol - 1.0) / (10.0 - 1.0) + 0.5;
+  q_ = (25.0 - 0.5) * (qcontrol - 1.0) / (10.0 - 1.0) + 0.5;
 }
 
 void FilterSem::Update() {
   Filter::Update();  // update base class
 
-  double wd = 2 * M_PI * m_fc;
+  double wd = 2 * M_PI * fc_;
   double T = 1.0 / SAMPLE_RATE;
   double wa = (2 / T) * tan(wd * T / 2);
   double g = wa * T / 2;
 
-  double R = 1.0 / (2.0 * m_q);
-  m_alpha0 = 1.0 / (1.0 + 2.0 * R * g + g * g);
-  m_alpha = g;
-  m_rho = 2.0 * R + g;
+  double R = 1.0 / (2.0 * q_);
+  alpha0_ = 1.0 / (1.0 + 2.0 * R * g + g * g);
+  alpha_ = g;
+  rho_ = 2.0 * R + g;
 }
 
 double FilterSem::DoFilter(double xn) {
-  if (m_filter_type != LPF2 && m_filter_type != HPF2 && m_filter_type != BPF2 &&
-      m_filter_type != BSF2) {
+  if (filter_type_ != LPF2 && filter_type_ != HPF2 && filter_type_ != BPF2 &&
+      filter_type_ != BSF2) {
     std::cerr << "SORRY BUD, NOT SUPPORTED!\n";
     return xn;
   }
 
-  double hpf = m_alpha0 * (xn - m_rho * m_z11 - m_z12);
+  double hpf = alpha0_ * (xn - rho_ * z11_ - z12_);
 
-  double bpf = m_alpha * hpf + m_z11;
+  double bpf = alpha_ * hpf + z11_;
 
-  if (m_nlp) bpf = tanh(m_saturation * bpf);
+  if (nlp_) bpf = tanh(saturation_ * bpf);
 
-  double lpf = m_alpha * bpf + m_z12;
+  double lpf = alpha_ * bpf + z12_;
 
-  // double R = 1.0 / (2.0 * m_q);
+  // double R = 1.0 / (2.0 * q_);
 
   // double bsf = xn - 2.0 * R * bpf; // hmm, this is unused - mistake?
 
-  double semBSF = m_aux_control * hpf + (1.0 - m_aux_control) * lpf;
+  double semBSF = aux_control_ * hpf + (1.0 - aux_control_) * lpf;
 
-  m_z11 = m_alpha * hpf + bpf;
-  m_z12 = m_alpha * bpf + lpf;
+  z11_ = alpha_ * hpf + bpf;
+  z12_ = alpha_ * bpf + lpf;
 
-  if (m_filter_type == LPF2)
+  if (filter_type_ == LPF2)
     return lpf;
-  else if (m_filter_type == HPF2)
+  else if (filter_type_ == HPF2)
     return hpf;
-  else if (m_filter_type == BPF2)
+  else if (filter_type_ == BPF2)
     return bpf;
-  else if (m_filter_type == BSF2)
+  else if (filter_type_ == BSF2)
     return semBSF;
 
   // Should never reach here due to check above, but needed for compiler

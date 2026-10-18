@@ -8,52 +8,52 @@
 #include "defjams.h"
 
 OnePole::OnePole() {
-  m_filter_type = LPF1;
+  filter_type_ = LPF1;
   Reset();
 }
 
 void OnePole::Update() {
   Filter::Update();
-  double wd = TWO_PI * m_fc;
+  double wd = TWO_PI * fc_;
   double T = 1.0 / SAMPLE_RATE;
   double wa = (2.0 / T) * tan(wd * T / 2.0);
   double g = wa * T / 2.0;
 
-  m_alpha = g / (1.0 + g);
+  alpha_ = g / (1.0 + g);
 }
 
 void OnePole::SetFeedback(double fb) {
-  m_feedback = fb;
+  feedback_ = fb;
 }
 
 double OnePole::GetFeedbackOutput() {
-  return m_beta * (m_z1 + m_feedback * m_delta);
+  return beta_ * (z1_ + feedback_ * delta_);
 }
 
 void OnePole::Reset() {
-  m_z1 = 0.0;
-  m_feedback = 0.0;
+  z1_ = 0.0;
+  feedback_ = 0.0;
 }
 
 double OnePole::DoFilter(double xn) {
-  if (m_filter_type != LPF1 && m_filter_type != HPF1) {
+  if (filter_type_ != LPF1 && filter_type_ != HPF1) {
     std::cerr << "OnePole filter - wrong type!\n";
     return xn;
   }
 
-  xn = xn * m_gamma + m_feedback + m_epsilon * GetFeedbackOutput();
+  xn = xn * gamma_ + feedback_ + epsilon_ * GetFeedbackOutput();
 
-  double vn = (m_a0 * xn - m_z1) * m_alpha;
+  double vn = (a0_ * xn - z1_) * alpha_;
 
-  double lpf = vn + m_z1;
+  double lpf = vn + z1_;
 
-  m_z1 = vn + lpf;
+  z1_ = vn + lpf;
 
   double hpf = xn - lpf;
 
-  if (m_filter_type == LPF1)
+  if (filter_type_ == LPF1)
     return lpf;
-  else if (m_filter_type == HPF1)
+  else if (filter_type_ == HPF1)
     return hpf;
 
   std::cerr << "SHOULD NOT REACH\n";

@@ -142,15 +142,15 @@ void Voice::PrepareForPlay() {
   }
 
   if (m_filter1) {
-    m_filter1->modmatrix = &modmatrix;
-    m_filter1->m_mod_source_fc = DEST_FILTER1_FC;
-    m_filter1->m_mod_source_fc_control = DEST_ALL_FILTER_KEYTRACK;
+    m_filter1->modmatrix_ = &modmatrix;
+    m_filter1->mod_source_fc_ = DEST_FILTER1_FC;
+    m_filter1->mod_source_fc_control_ = DEST_ALL_FILTER_KEYTRACK;
   }
 
   if (m_filter2) {
-    m_filter2->modmatrix = &modmatrix;
-    m_filter2->m_mod_source_fc = DEST_FILTER2_FC;
-    m_filter2->m_mod_source_fc_control = DEST_ALL_FILTER_KEYTRACK;
+    m_filter2->modmatrix_ = &modmatrix;
+    m_filter2->mod_source_fc_ = DEST_FILTER2_FC;
+    m_filter2->mod_source_fc_control_ = DEST_ALL_FILTER_KEYTRACK;
   }
 }
 

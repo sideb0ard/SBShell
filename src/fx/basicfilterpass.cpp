@@ -44,12 +44,12 @@ void FilterPass::Update() {
 
 std::string FilterPass::Status() {
   std::stringstream ss;
-  ss << "freq:" << filter_left_->m_fc_control;
-  ss << " q:" << filter_left_->m_q_control;
-  ss << " k:" << filter_left_->m_k;
-  ss << " type:" << k_filter_type_names[filter_left_->m_filter_type];
-  ss << " nlp:" << filter_left_->m_nlp;
-  ss << " sat:" << filter_left_->m_saturation;
+  ss << "freq:" << filter_left_->fc_control_;
+  ss << " q:" << filter_left_->q_control_;
+  ss << " k:" << filter_left_->GetK();
+  ss << " type:" << k_filter_type_names[filter_left_->filter_type_];
+  ss << " nlp:" << filter_left_->nlp_;
+  ss << " sat:" << filter_left_->saturation_;
   ss << " lfo1_active:" << m_lfo1_active_;
   ss << " lfo1_type:" << m_lfo1_.m_waveform;
   ss << " lfo1_amp:" << m_lfo1_.m_amplitude << "\n";
@@ -97,11 +97,11 @@ void FilterPass::SetParam(std::string name, double val) {
     filter_left_->SetType(val);
     filter_right_->SetType(val);
   } else if (name == "nlp") {
-    filter_left_->m_nlp = val;
-    filter_right_->m_nlp = val;
+    filter_left_->nlp_ = val;
+    filter_right_->nlp_ = val;
   } else if (name == "sat") {
-    filter_left_->m_saturation = val;
-    filter_right_->m_saturation = val;
+    filter_left_->saturation_ = val;
+    filter_right_->saturation_ = val;
   } else if (name == "lfo1_active")
     SetLfoActive(1, val);
   else if (name == "lfo1_type")

@@ -17,32 +17,32 @@
 class Filter {
  public:
   Filter() = default;
-  Filter(unsigned int ftype) : m_filter_type{ftype} {};
+  Filter(unsigned int ftype) : filter_type_{ftype} {};
   virtual ~Filter() = default;
 
  public:
-  ModulationMatrix *modmatrix{nullptr};
-  GlobalFilterParams *global_filter_params{nullptr};
+  ModulationMatrix *modmatrix_{nullptr};
+  GlobalFilterParams *global_filter_params_{nullptr};
 
   // sources
-  unsigned m_mod_source_fc{DEST_NONE};
-  unsigned m_mod_source_fc_control{DEST_NONE};
+  unsigned mod_source_fc_{DEST_NONE};
+  unsigned mod_source_fc_control_{DEST_NONE};
 
   // GUI controls
-  double m_fc_control{FILTER_FC_DEFAULT};  // filter cut-off
-  double m_q_control{1};                   // 'qualvity factor' 1-10
-  double m_aux_control{0};  // a spare control, used in SEM and ladder filters
+  double fc_control_{FILTER_FC_DEFAULT};  // filter cut-off
+  double q_control_{1};                   // 'qualvity factor' 1-10
+  double aux_control_{0};  // a spare control, used in SEM and ladder filters
 
-  unsigned m_nlp{0};       // Non Linear Processing on/off switch
-  double m_saturation{1};  // used in NLP
+  unsigned nlp_{0};       // Non Linear Processing on/off switch
+  double saturation_{1};  // used in NLP
 
-  unsigned m_filter_type{LPF1};
+  unsigned filter_type_{LPF1};
 
-  double m_fc{FILTER_FC_DEFAULT};         // current filter cut-off val
-  double m_fc_smooth{FILTER_FC_DEFAULT};  // one-pole smoothed fc (prevents
-                                          // crackling on key changes)
-  double m_q{FILTER_Q_DEFAULT};           // current q value
-  double m_fc_mod{0};                     // frequency cutoff modulation input
+  double fc_{FILTER_FC_DEFAULT};         // current filter cut-off val
+  double fc_smooth_{FILTER_FC_DEFAULT};  // one-pole smoothed fc (prevents
+                                         // crackling on key changes)
+  double q_{FILTER_Q_DEFAULT};           // current q value
+  double fc_mod_{0};                     // frequency cutoff modulation input
 
  public:
   void SetFcMod(double d);

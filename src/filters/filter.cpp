@@ -9,9 +9,9 @@
 
 void Filter::SetFcControl(double val) {
   if (val >= FILTER_FC_MIN && val <= FILTER_FC_MAX) {
-    m_fc_control = val;
-    m_fc_smooth = val;  // snap immediately — smoother only applies to real-time
-                        // key-tracking changes, not explicit configuration
+    fc_control_ = val;
+    fc_smooth_ = val;  // snap immediately — smoother only applies to real-time
+                       // key-tracking changes, not explicit configuration
   } else {
     std::cout << "FC must be between " << FILTER_FC_MIN << " and "
               << FILTER_FC_MAX << std::endl;
@@ -20,7 +20,7 @@ void Filter::SetFcControl(double val) {
 
 void Filter::SetQControlGUI(double val) {
   if (val >= 1 && val <= 10) {
-    m_q_control = val;
+    q_control_ = val;
     // Update();
   } else {
     std::cout << "Q must be between " << 1 << " and " << 10 << std::endl;
@@ -28,12 +28,12 @@ void Filter::SetQControlGUI(double val) {
 }
 
 void Filter::SetFcMod(double val) {
-  m_fc_mod = val;
+  fc_mod_ = val;
 }
 
 void Filter::SetType(unsigned int type) {
   if (type < NUM_FILTER_TYPES) {
-    m_filter_type = type;
+    filter_type_ = type;
     // Update();
   } else {
     std::cout << "Type must be between 0 and " << NUM_FILTER_TYPES - 1
@@ -42,39 +42,39 @@ void Filter::SetType(unsigned int type) {
 }
 
 void Filter::Update() {
-  if (global_filter_params) {
-    m_aux_control = global_filter_params->aux_control;
-    m_fc_control = global_filter_params->fc_control;
-    m_q_control = global_filter_params->q_control;
-    m_saturation = global_filter_params->saturation;
-    m_filter_type = global_filter_params->filter_type;
-    m_nlp = global_filter_params->nlp;
+  if (global_filter_params_) {
+    aux_control_ = global_filter_params_->aux_control;
+    fc_control_ = global_filter_params_->fc_control;
+    q_control_ = global_filter_params_->q_control;
+    saturation_ = global_filter_params_->saturation;
+    filter_type_ = global_filter_params_->filter_type;
+    nlp_ = global_filter_params_->nlp;
   }
 
-  if (modmatrix) {
-    m_fc_mod = modmatrix->destinations[m_mod_source_fc];
-    if (modmatrix->destinations[m_mod_source_fc_control] > 0)
-      m_fc_control = modmatrix->destinations[m_mod_source_fc_control];
+  if (modmatrix_) {
+    fc_mod_ = modmatrix_->destinations[mod_source_fc_];
+    if (modmatrix_->destinations[mod_source_fc_control_] > 0)
+      fc_control_ = modmatrix_->destinations[mod_source_fc_control_];
   }
-  SetQControl(m_q_control);
+  SetQControl(q_control_);
 
-  double fc_target = m_fc_control * pitch_shift_multiplier(m_fc_mod);
+  double fc_target = fc_control_ * pitch_shift_multiplier(fc_mod_);
   if (fc_target > FILTER_FC_MAX) fc_target = FILTER_FC_MAX;
   if (fc_target < FILTER_FC_MIN) fc_target = FILTER_FC_MIN;
 
   // One-pole smoother: ~10ms at 44100Hz — prevents crackling when filter
   // cutoff jumps abruptly (e.g. high key-tracking on chord changes).
   static constexpr double kFcSmooth = 0.9977;
-  m_fc_smooth = kFcSmooth * m_fc_smooth + (1.0 - kFcSmooth) * fc_target;
-  m_fc = m_fc_smooth;
+  fc_smooth_ = kFcSmooth * fc_smooth_ + (1.0 - kFcSmooth) * fc_target;
+  fc_ = fc_smooth_;
 }
 
 void Filter::InitGlobalParameters(GlobalFilterParams *params) {
-  global_filter_params = params;
-  global_filter_params->aux_control = m_aux_control;
-  global_filter_params->fc_control = m_fc_control;
-  global_filter_params->q_control = m_q_control;
-  global_filter_params->saturation = m_saturation;
-  global_filter_params->filter_type = m_filter_type;
-  global_filter_params->nlp = m_nlp;
+  global_filter_params_ = params;
+  global_filter_params_->aux_control = aux_control_;
+  global_filter_params_->fc_control = fc_control_;
+  global_filter_params_->q_control = q_control_;
+  global_filter_params_->saturation = saturation_;
+  global_filter_params_->filter_type = filter_type_;
+  global_filter_params_->nlp = nlp_;
 }

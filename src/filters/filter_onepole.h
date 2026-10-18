@@ -3,20 +3,11 @@
 #include "defjams.h"
 #include "filter.h"
 
-struct OnePole : public Filter {
+class OnePole : public Filter {
+ public:
   OnePole();
   explicit OnePole(unsigned int ftype) : Filter{ftype} {};
   ~OnePole() override = default;
-
-  double m_alpha{1.0};
-  double m_beta{0.0};
-  double m_gamma{1.0};
-  double m_delta{0.0};
-  double m_epsilon{0.0};
-
-  double m_a0{1.0};
-  double m_z1{0.0};
-  double m_feedback{0.0};
 
   double DoFilter(double xn) override;
   void Update() override;
@@ -25,4 +16,23 @@ struct OnePole : public Filter {
   double GetFeedbackOutput();
   void Reset() override;
   void SetFilterType(unsigned int ftype);  // ENUM in filter.h
+
+  // Coefficients set by parent filters (MoogLadder, CKThreeFive).
+  void SetAlpha(double alpha) {
+    alpha_ = alpha;
+  }
+  void SetBeta(double beta) {
+    beta_ = beta;
+  }
+
+ private:
+  double alpha_{1.0};
+  double beta_{0.0};
+  double gamma_{1.0};
+  double delta_{0.0};
+  double epsilon_{0.0};
+
+  double a0_{1.0};
+  double z1_{0.0};
+  double feedback_{0.0};
 };
