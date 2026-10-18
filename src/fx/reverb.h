@@ -1,11 +1,12 @@
 #pragma once
 
+#include <filter_simple_onepole.h>
+
 #include "combfilter.h"
 #include "delay.h"
 #include "delayapf.h"
 #include "fx.h"
 #include "lpfcombfilter.h"
-#include "onepolelpf.h"
 
 class Reverb : public Fx {
  public:
@@ -33,7 +34,7 @@ class Reverb : public Fx {
   delay m_pre_delay;
 
   // input diffusion
-  one_pole_lpf m_input_lpf;
+  SimpleOnePole m_input_lpf;
   delay_apf m_input_apf_1;
   delay_apf m_input_apf_2;
 
@@ -50,8 +51,8 @@ class Reverb : public Fx {
   lpf_comb_filter m_parallel_cf_8;
 
   // damping
-  one_pole_lpf m_damping_lpf_1;
-  one_pole_lpf m_damping_lpf_2;
+  SimpleOnePole m_damping_lpf_1;
+  SimpleOnePole m_damping_lpf_2;
 
   // output diffusion
   delay_apf m_output_apf_3;

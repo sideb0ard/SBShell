@@ -76,7 +76,7 @@ double CKThreeFive::DoFilter(double xn) {
     double y1 = hpf1_.DoFilter(xn);
 
     double S35 = hpf2_.GetFeedbackOutput() + lpf1_.GetFeedbackOutput();
-    double u = alpha0_ * y1 + S35;
+    double u = alpha0_ * (y1 + S35);
     y = k_ * u;
 
     if (nlp_) y = tanh(saturation_ * y);

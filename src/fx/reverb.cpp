@@ -53,8 +53,7 @@ StereoVal Reverb::Process(StereoVal in) {
   double apf_2_out = 0;
   delay_apf_process_audio(&m_input_apf_2, &apf_1_out, &apf_2_out);
 
-  double input_lpf = 0;
-  one_pole_lpf_process_audio(&m_input_lpf, &apf_2_out, &input_lpf);
+  double input_lpf = m_input_lpf.Process(apf_2_out);
 
   double pc_1_out = 0;
   double pc_2_out = 0;
@@ -81,11 +80,9 @@ StereoVal Reverb::Process(StereoVal in) {
   c_2_out =
       0.25 * pc_5_out - 0.25 * pc_6_out + 0.25 * pc_7_out - 0.25 * pc_8_out;
 
-  double damping_lpf_1_out = 0;
-  one_pole_lpf_process_audio(&m_damping_lpf_1, &c_1_out, &damping_lpf_1_out);
+  double damping_lpf_1_out = m_damping_lpf_1.Process(c_1_out);
 
-  double damping_lpf_2_out = 0;
-  one_pole_lpf_process_audio(&m_damping_lpf_2, &c_2_out, &damping_lpf_2_out);
+  double damping_lpf_2_out = m_damping_lpf_2.Process(c_2_out);
 
   double apf_3_out = 0;
   delay_apf_process_audio(&m_output_apf_3, &damping_lpf_1_out, &apf_3_out);
@@ -141,9 +138,9 @@ void Reverb::Init() {
   delay_apf_init(&m_output_apf_3, 0.1 * SAMPLE_RATE);
   delay_apf_init(&m_output_apf_4, 0.1 * SAMPLE_RATE);
 
-  one_pole_lpf_init(&m_input_lpf);
-  one_pole_lpf_init(&m_damping_lpf_1);
-  one_pole_lpf_init(&m_damping_lpf_2);
+  m_input_lpf.Reset();
+  m_damping_lpf_1.Reset();
+  m_damping_lpf_2.Reset();
 
   delay_reset_delay(&m_pre_delay);
   delay_reset_delay(&m_input_apf_1.m_delay);
@@ -202,9 +199,9 @@ void Reverb::CookVariables() {
   lpf_comb_filter_set_comb_g_with_rt_sixty(&m_parallel_cf_8, m_rt60);
 
   // LPFszz
-  one_pole_lpf_set_lpf_g(&m_damping_lpf_1, m_lpf2_g2);
-  one_pole_lpf_set_lpf_g(&m_damping_lpf_2, m_lpf2_g2);
-  one_pole_lpf_set_lpf_g(&m_input_lpf, m_input_lpf_g);
+  m_damping_lpf_1.SetG(m_lpf2_g2);
+  m_damping_lpf_2.SetG(m_lpf2_g2);
+  m_input_lpf.SetG(m_input_lpf_g);
 
   // LPF-comb filters
   lpf_comb_filter_set_comb_g(&m_parallel_cf_3, m_lpf2_g2);

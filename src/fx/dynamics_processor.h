@@ -7,7 +7,6 @@
 #include "envelope_detector.h"
 #include "fx.h"
 #include "lpfcombfilter.h"
-#include "onepolelpf.h"
 
 enum { COMP, LIMIT, EXPAND, GATE };
 
