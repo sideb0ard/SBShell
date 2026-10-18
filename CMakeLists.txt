@@ -465,6 +465,7 @@ if(BUILD_TESTS)
   # TODO: parser_test needs updates for new ProcessStatement API
   # add_sbsh_test(parser_test tests/parser_test.cpp)
   add_sbsh_test(evaluator_test tests/evaluator_test.cpp)
+  add_sbsh_test(help_test tests/help_test.cpp)
 
   # Pattern parser tests
   add_sbsh_test(pattern_parser_test tests/pattern_parser_test.cpp)

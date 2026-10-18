@@ -1,0 +1,51 @@
+
+let Osc = comp()
+{
+  setup()
+  {
+    let freq = 1;
+    let cntr = 0;
+    let incr = TWO_PI * freq / 16;
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+      let x = cos(cntr);
+      let y = sin(cntr);
+      print(x, " ", y);
+      cntr = cntr + incr;
+    }
+  }
+}
+
+let blah_comp = comp()
+{
+  setup()
+  {
+    let durz = [4000, 2000, 1000, 7500, 100, 40];
+    let drx = 0;
+    let gapz = [1500, 1000, 7000, 1000, 50];
+    let gx =0;
+    let next_on = 0;
+
+    let notz = [24, 27, 31, 29, 26];
+    let nx = 0;
+  }
+  run()
+  {
+    let more_to_play = true;
+    for ( ; more_to_play; ;) {
+      note_on_at(dx, notz[nx], next_on, dur = durz[drx]);
+      drx = incr(drx, 0, len(durz));
+      next_on = next_on + gapz[gx];
+      gx = incr(gx, 0, len(gapz));
+      if (next_on > 3840) {
+        more_to_play = false;
+      }
+    }
+    next_on = next_on % 3840;
+    if (count % 4 == 3) {
+      nx = incr(nx, 0, len(notz));
+    }
+  }
+}

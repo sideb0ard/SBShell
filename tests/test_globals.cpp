@@ -2,6 +2,7 @@
 // These are normally defined in main.cpp but tests need their own copies
 
 #include <audio_action_queue.h>
+#include <display_queue.h>
 #include <event_queue.h>
 
 #include <memory>
@@ -17,6 +18,7 @@ Tsqueue<int> audio_reply_queue;
 Tsqueue<std::string> eval_command_queue;
 Tsqueue<std::string> repl_queue;
 Tsqueue<event_queue_item> process_event_queue;
+Tsqueue<ScheduledDisplayItem> display_queue;
 
 // Perlin noise generator
 siv::PerlinNoise perlinGenerator;

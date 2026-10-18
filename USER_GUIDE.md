@@ -1246,12 +1246,13 @@ pan pad 0.4;      // Right
 
 ### Mixer FX Sends
 
-Route individual generators into the mixer-level delay, reverb, or distortion:
+Route individual generators into the mixer-level delay, reverb, or DJ EQ (slot 2, still named `"distort"`). Note the argument order: `send` takes the effect first, `set_send` takes the generator first.
 
 ```javascript
-send(dx, "delay")             // send dx to delay at default level (0.4)
-send(dx, "reverb", 0.8)       // send dx to reverb at 80%
-send(dx, "distort", 0.5)      // send dx to distortion at 50%
+send("delay", dx)             // send dx to delay at default level (0.4)
+send("reverb", dx, 0.8)       // send dx to reverb at 80%
+send("reverb", [dx, sbdrum])  // send several generators at once
+send("distort", dx, 0.5)      // send dx to mixer slot 2 (DJ EQ) at 50%
 
 set_send(dx, "delay", 0.6)    // update dx delay send level to 60%
 set_send(dx, "reverb", 0.0)   // remove dx from reverb send
@@ -2302,9 +2303,9 @@ list_presets(inst)
 // Mixing
 vol inst value
 pan inst value
-send(inst, "delay", level)    // Route generator to mixer delay (default 0.4)
-send(inst, "reverb", level)   // Route generator to mixer reverb
-send(inst, "distort", level)  // Route generator to mixer distortion
+send("delay", inst, level)    // Route generator to mixer delay (default 0.4)
+send("reverb", inst, level)   // Route generator to mixer reverb
+send("distort", inst, level)  // Route generator to mixer slot 2 (DJ EQ)
 set_send(inst, fx, level)     // Update send level after routing
 global_reverb(amt)            // Global reverb send (0.0-1.0)
 global_delay(amt)             // Global delay send (0.0-1.0)
@@ -2382,7 +2383,9 @@ wavs/
 
 ### Function Categories
 
-Use `help()` to explore functions by category:
+Type `help <command>` for any built-in function's usage, arguments and an example (e.g. `help sched`), and `help commands` to list them all by category. `help` on its own lists the broader topics.
+
+Functions by category:
 
 - **Arrays**: len, append, bjork
 - **Math**: min, max, abs, pow, sqrt

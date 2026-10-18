@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "defjams.h"
+#include "help_commands.h"
 
 // clang-format off
 
@@ -47,12 +48,12 @@ static std::string help_functions() {
 
   ss << COOL_COLOR_GREEN << "RANDOM / GENERATIVE\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
-  ss << ANSI_COLOR_WHITE << "  rand(n)                        " << COOL_COLOR_ORANGE << "- Random 0..n-1; rand(arr) picks random element\n";
+  ss << ANSI_COLOR_WHITE << "  rand(n)                        " << COOL_COLOR_ORANGE << "- Random 0..n-1 (rand() / rand(1): float 0-1); rand(arr) picks element\n";
   ss << ANSI_COLOR_WHITE << "  rand_array(size, min, max)     " << COOL_COLOR_ORANGE << "- Array of random numbers\n";
   ss << ANSI_COLOR_WHITE << "  rand_sixteenthz(n)             " << COOL_COLOR_ORANGE << "- n random unique 16th-note positions\n";
   ss << ANSI_COLOR_WHITE << "  perlin(x)                      " << COOL_COLOR_ORANGE << "- Perlin noise (smooth random)\n";
   ss << ANSI_COLOR_WHITE << "  bjork(pulses, steps)           " << COOL_COLOR_ORANGE << "- Euclidean rhythm pattern\n";
-  ss << ANSI_COLOR_WHITE << "  gen_perc(len, density)         " << COOL_COLOR_ORANGE << "- Random percussion pattern\n";
+  ss << ANSI_COLOR_WHITE << "  gen_perc()                     " << COOL_COLOR_ORANGE << "- Load 8 random perc samples as prc0..prc7 + array percz\n";
   ss << ANSI_COLOR_WHITE << "  lsys_expand(axiom, rules, gen) " << COOL_COLOR_ORANGE << "- L-system sequence (gen 3-4 typical, max 6)\n";
   ss << ANSI_COLOR_WHITE << "    axiom=[0]  rules=[[0,2,4],[1,3,0],[2,4,1],[3,0,2],[4,1,3]]\n";
   ss << ANSI_COLOR_WHITE << "    let seq = lsys_expand([0], rules, 3)  " << COOL_COLOR_ORANGE << "-> 27-note index array\n";
@@ -80,8 +81,8 @@ static std::string help_functions() {
   ss << ANSI_COLOR_WHITE << "  note_off_at(gen, note, time)            " << COOL_COLOR_ORANGE << "- Schedule note off\n";
   ss << ANSI_COLOR_WHITE << "  stop(gen)                               " << COOL_COLOR_ORANGE << "- Stop all notes\n";
   ss << ANSI_COLOR_WHITE << "  solo(gen), unsolo()                     " << COOL_COLOR_ORANGE << "- Solo/unsolo\n";
-  ss << ANSI_COLOR_WHITE << "  play_array(gen, notes)                  " << COOL_COLOR_ORANGE << "- Play array (1 per beat)\n";
-  ss << ANSI_COLOR_WHITE << "  play_array_over(gen, notes, spd)        " << COOL_COLOR_ORANGE << "- Play notes over 'spd' beats\n";
+  ss << ANSI_COLOR_WHITE << "  play_array(gen, notes)                  " << COOL_COLOR_ORANGE << "- Spread array evenly across one bar\n";
+  ss << ANSI_COLOR_WHITE << "  play_array_over(gen, notes, times)      " << COOL_COLOR_ORANGE << "- Play array 'times' times within one bar\n";
   ss << ANSI_COLOR_WHITE << "  stepn(seq)                              " << COOL_COLOR_ORANGE << "- Advance step sequencer\n\n";
 
   ss << COOL_COLOR_GREEN << "STRINGS / UTILITY\n"
@@ -720,6 +721,10 @@ static std::string help_overview() {
   std::stringstream ss;
   ss << COOL_COLOR_GREEN << "\n=== SoundB0ard Help ===\n\n" << ANSI_COLOR_RESET;
 
+  ss << COOL_COLOR_GREEN << "Commands:\n";
+  ss << ANSI_COLOR_WHITE << "  help <command>    " << COOL_COLOR_ORANGE << "- usage, arguments and example, e.g. help sched\n";
+  ss << ANSI_COLOR_WHITE << "  help commands     " << COOL_COLOR_ORANGE << "- list every command by category\n\n";
+
   ss << COOL_COLOR_GREEN << "Topics:\n";
   ss << ANSI_COLOR_WHITE << "  help functions    " << COOL_COLOR_ORANGE << "- arrays, math, random/generative, music theory, built-ins\n";
   ss << ANSI_COLOR_WHITE << "  help generators   " << COOL_COLOR_ORANGE << "- all sound generators + links to detailed help\n";
@@ -886,6 +891,10 @@ static std::string help_presets() {
 
 std::string build_help(const std::string& topic) {
   if (topic.empty())              return help_overview();
+  if (topic == "commands"
+   || topic == "cmds")            return FormatCommandIndex();
+  if (const CommandHelp* cmd = FindCommandHelp(topic))
+                                  return FormatCommandHelp(*cmd);
   if (topic == "functions"
    || topic == "func"
    || topic == "builtins")        return help_functions();
@@ -929,7 +938,15 @@ std::string build_help(const std::string& topic) {
 
   // Unknown topic — show overview with a note
   std::stringstream ss;
-  ss << COOL_COLOR_ORANGE << "\nUnknown help topic: '" << topic << "'\n" << ANSI_COLOR_RESET;
+  ss << COOL_COLOR_ORANGE << "\nUnknown help topic: '" << topic << "'\n";
+  auto similar = SimilarCommands(topic);
+  if (!similar.empty()) {
+    ss << "Did you mean:";
+    for (const auto& name : similar) ss << " " << name;
+    ss << "\n" << ANSI_COLOR_RESET;
+    return ss.str();
+  }
+  ss << ANSI_COLOR_RESET;
   return ss.str() + help_overview();
 }
 
