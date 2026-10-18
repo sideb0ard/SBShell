@@ -108,6 +108,7 @@ let PLAY2blah_comp = comp()
       nested_tuplet_roll();
       p2 # "";
       hhblah_comp();
+      set dx:l1_rate 7;
     }
     if (countrr == 20) {
       p2 # phaseblah_comp;
@@ -156,10 +157,12 @@ let PLAY2blah_comp = comp()
     }
     if (countrr == 68) {
       hahahablah_comp();
+      set dx:l1_rate 3.4;
       p15 # "";
     }
     if (countrr == 69) {
       hahvolblah_fn();
+      vol swww 0;
     }
     if (countrr == 72) {
       SENDDELLblah_fn();
@@ -178,6 +181,7 @@ let PLAY2blah_comp = comp()
     }
     if (countrr == 108) {
       p1 # dx1blah_comp;
+      set dx:l1_rate 1.3;
       p3 # "";
       p15 # "";
     }
@@ -195,7 +199,6 @@ let PLAY2blah_comp = comp()
       p8 # "";
       p15 # "";
       p20 # "";
-      vol swww 0;
     }
     if (countrr == 144) {
       p8 # bd_comp;

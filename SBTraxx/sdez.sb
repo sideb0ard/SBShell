@@ -19,9 +19,12 @@ let init = fn()
   set rocka:len 4;
   set rocka:pitch 0.8;
   vol rocka 0;
+  add_fx(rocka, "sidechain", bd);
 
   set sbdrum:cp_tone 600;
   load_preset(dx3, "gentlepipe");
+
+  add_fx(dx, "sidechain", bd);
 
   p99 # PLAYblah_comp;
 }
@@ -36,7 +39,7 @@ let PLAYblah_comp = comp()
   {
     if (cntr == 0) {
       p1 # granblah_comp;
-      p2 # dkickblah_comp;
+      p2 # mfblah_comp;
     }
     if (cntr == 4) {
       p11 < osc 4 "10 95" "set dx:op2out %";
@@ -49,22 +52,33 @@ let PLAYblah_comp = comp()
     if (cntr == 12) {
       p2 # "";
     }
-    if (cntr == 24) {
+    if (cntr == 16) {
       sched(3840, 0, 1, 3840 * 2, "vol rocka %");
       p14 # rockablah_comp;
     }
-    if (cntr == 28) {
+    if (cntr == 20) {
       send("delay", rocka);
-      sched(0, 1, 0, 3840, "vol rocka %");
+      p2 # mfblah_comp;
     }
     if (cntr == 29) {
-      p2 # NEWKICblah_comp;
+      p15 # hhblah_comp;
+      sched(0, 1, 0, 3840, "vol rocka %");
     }
     if (cntr == 32) {
-      p15 # hhblah_comp;
+      p13 # dxblah_comp;
+      #p13 # dbX3dbdbbdblah_comp;
+
     }
     if (cntr == 40) {
       p13 # "";
+      p2 # "";
+    }
+    if (cntr == 44) {
+      p2 # mfblah_comp;
+      p14 # dkickblah_comp;
+      p13 # dxblah_comp;
+    }
+    if (cntr == 44) {
     }
     print("CNTR:", cntr);
     cntr++;
@@ -331,6 +345,9 @@ let mfblah_comp = comp()
 
     let bdfreqz = [80, 800, 800, 1000, 15000, 13000, 18000];
     let bdfx = 0;
+
+    let dxdurz = [300, 500, 1000, 100, 50, 1000, 2000];
+    let dxd = 0;
   }
   run()
   {
@@ -351,8 +368,69 @@ let mfblah_comp = comp()
       }
       # dx swuuush
       if (step_2_cntr == 0) {
-        note_on_at(dx3, up(chrd,12), i * pp, dur = 1350);
+        #note_on_at(dx3, up(chrd,12), i * pp, dur = dxdurz[dxd]);
+        dxd = incr(dxd, 0, len(dxdurz));
         note_on_at(hh, 1, i * pp, dur = 20);
+      }
+
+      cntr++;
+      step_1_cntr = (step_1_cntr + 1) % step;
+      step_2_cntr = (step_2_cntr + 1) % step;
+    }
+
+    bdx = incr(bdx, 0, len(bdurz));
+    set bd:fx0:freq bdfreqz[bdfx];
+    bdfx = incr(bdfx, 0, len(bdfreqz));
+
+  }
+}
+let mfMELblah_comp = comp()
+{
+  setup()
+  {
+    let cntr = 0;
+    let step = 5;
+
+    let reset_1_step = 23;
+    let step_1_cntr = 0;
+
+    let reset_2_step = 17;
+    let step_2_cntr = 0;
+
+    let chrdz = [0, 4, 3];
+    let chx = 0;
+
+    let bdurz = [180, 160, 130, 90, 60, 20];
+    let bdx = 0;
+
+    let bdfreqz = [80, 800, 800, 1000, 15000, 13000, 18000];
+    let bdfx = 0;
+
+    let dxdurz = [300, 500, 1000, 100, 50, 1000, 2000];
+    let dxd = 0;
+  }
+  run()
+  {
+
+    for (let i = 0; i < 16; i++) {
+      if (cntr % reset_1_step == 0) {
+        step_1_cntr = 0;
+      }
+      if (cntr % reset_2_step == 0) {
+        step_2_cntr = 0;
+        chx = incr(chx, 0, len(chrdz));
+      }
+      # print("STEP1:", step_1_cntr, " // STEP2:", step_2_cntr);
+      let chrd = notes_in_chord(notes[chrdz[chx]], key, 1, 1);
+      if (step_1_cntr == 0) {
+        #note_on_at(dx, chrd, i * pp, dur = 200);
+        #note_on_at(bd, 1, i * pp, dur = bdurz[bdx]);
+      }
+      # dx swuuush
+      if (step_2_cntr == 0) {
+        note_on_at(dx3, up(chrd,12), i * pp, dur = dxdurz[dxd]);
+        dxd = incr(dxd, 0, len(dxdurz));
+        #note_on_at(hh, 1, i * pp, dur = 20);
       }
 
       cntr++;
@@ -471,19 +549,37 @@ let dbX3dbdbbdblah_comp = comp()
     let chrd2 = [37, 34, 41];
     let chrdz = [chrd1, chrd1, chrd2];
     let chx = 0;
-    let durz = [1000, 5000, 8000, 500, 100, 2000];
+    let durz = [1000, 5000, 800, 500, 100, 2000];
     let drx = 0;
     let gapz = [100, 200, 500, 1000, 2000];
     let gx = 0;
     let nexton = 0;
-    let curon = 0;
+    let curtime = 0;
   }
   run()
   {
-    if (curon == nexton) {
-      note_on_at(dx3, chrdz[chx], curon, dur = durz[drx]);
-      chx = incr(chx, 0, len(chrdz));
-      drx = incr(drx, 0, len(durz));
+    let we_done = true;
+
+    let starting_time = curtime;
+    let end_window = curtime + 3480;
+
+    for (;;) {
+      if (nexton < curtime) {
+        note_on_at(dx3, chrdz[chx], curtime%3840, dur = durz[drx]);
+        chx = incr(chx, 0, len(chrdz));
+        drx = incr(drx, 0, len(durz));
+        nexton = curtime + gapz[gx];
+        gx = incr(gx, 0, len(gapz));
+        curtime = nexton;
+      }
+      if (nexton > end_window) {
+        we_done = true;
+      }
+      if (we_done == true) {
+        break;
+      }
     }
+
+    curtime = curtime + 3840;
   }
 }

@@ -21,10 +21,12 @@ let init = fn()
   add_fx(dx, "distort");
   set sbdrum:bd_vol 1;
   load_preset(dx3, "kerrizx");
+  load_preset(dx2, "WURBBB");
   brk = loop(hallow/brkLOOP.wav);
   note_off(brk, 0);
-  p99 # PLAYITblah_comp;
+  #p99 # PLAYITblah_comp;
 }
+
 
 let PLAYITblah_comp = comp()
 {
@@ -36,26 +38,35 @@ let PLAYITblah_comp = comp()
   {
     if (countr == 2) {
       p1 # patzblah_comp;
-      p2 # dbblah_comp;
     }
     if (countr == 8) {
+      p2 # dbblah_comp;
       p6 # dxfxblah_comp;
-      p4 # "";
       p8 # snnnblah_comp;
       flblah_fn();
+      p1 # "";
+    }
+    if (countr == 9) {
+      dx3b();
     }
     if (countr == 12) {
-      p1 # "";
-      p4 # soulblah_comp;
-    }
-    if (countr == 16) {
-      p4 # "";
+      dx3b();
+      p8 # "";
       p2 # "";
-      p3 # dx3b;
+      p4 # soulblah_comp;
+      p3 # DX2CMP;
+    }
+    if (countr == 13) {
       flblah_fn();
     }
+    if (countr == 16) {
+      vol soul 0;
+      vol simp 0;
+      p4 # "";
+      p2 # dbblah_comp;
+    }
     if (countr == 18) {
-      p8 # "";
+      p3 # dx3b;
     }
     if (countr == 20) {
       note_on(brk, 0, dur = 0);
@@ -66,33 +77,112 @@ let PLAYITblah_comp = comp()
       note_off(brk, 0);
     }
     if (countr == 22) {
+      vol simp 1;
       p3 # dx3blah_comp;
       note_on(brk, 0, dur = 0);
+      p2 # "";
     }
     if (countr == 24) {
       vol brk 0;
-      flblah_fn();
     }
     if (countr == 28) {
       # strings
       p1 # patzblah_comp;
       vol brk 1;
       p8 # snnnblah_comp;
-      p3 # dx3b;
-    }
-    if (countr == 30) {
-      p1 # "";
+      xassign(0, brk);
+      xassign(1, soul);
+      xassign(1, simp);
+      xassign(0, dx);
+      xassign(1, dx3);
+      xassign(0, dx2);
+      p20 # MIXdxfxblah_comp;
     }
     if (countr == 32) {
       p1 # "";
       vol brk 0;
-      p3 # "";
+      xclear();
+      xassign(0, soul);
+      xassign(1, simp);
+      p4 # soulblah_comp;
+      p3 # DX2CMP;
+
     }
-    if (countr == 36) {
+    if (countr == 34) {
+      flblah_fn();
+      p3 # dx3b;
+    }
+    if (countr == 35) {
+      flblah_fn();
+    }
+    if (countr == 38) {
       p1 # "";
       vol brk 0;
-      p4 # soulblah_comp;
+      vol simp 0;
+      p14 # brkxblah_comp;
       flblah_fn();
+      p4 # "";
+      vol soul 0;
+      p2 # iDABEAblah_comp;
+      p11 # PERCXblah_comp;
+      p3 # iDABEAHATZblah_comp;
+    }
+    if (countr == 40) {
+      p8 # "";
+      p14 # "";
+      xassign(0, dx);
+      xassign(1, dx3);
+      xassign(0, dx2);
+      p3 # "";
+      p11 # "";
+      p10 # "";
+      p2 # "";
+      p1 # patzblah_comp;
+      p4 # soulblah_comp;
+      vol simp 1;
+      xassign(0, brk);
+      vol brk 1;
+      vol brk 0;
+      xclear();
+      p3 # "";
+      p11 # "";
+      bpm 10;
+      play voices/wannaglass.wav;
+    }
+    if (countr == 41) {
+      bpm 90;
+      play voices/wannaglass.wav;
+      p3 # iDABEAHATZblah_comp;
+      flblah_fn();
+    }
+    if (countr == 44) {
+      p1 # "";
+    }
+    if (countr == 48) {
+      bpm 110;
+      flblah_fn();
+      p3 # dx3b;
+      p2 # iDABEAblah_comp;
+      p11 # PERCXblah_comp;
+      vol brk 0;
+    }
+    if (countr == 54) {
+      vol soul 0;
+      vol simp 0;
+      p2 # "";
+      p3 # dx3bBABBABAB;
+      p11 # "";
+    }
+    if (countr == 66) {
+      p3 # "";
+    }
+    if (countr == 68) {
+      flblah_fn();
+      bpm 110;
+      p3 # "";
+    }
+    if (countr == 70) {
+      p11 # "";
     }
     print("countr", countr);
     countr++;
@@ -324,28 +414,21 @@ let dxfxblah_comp = comp()
         # }
       if (ramp2tri1(out_sig1)) {
         set dx:l1_int rintz[rix] at = i * lpp;
+        set dx2:l1_int rintz[rix] at = i * lpp;
         rix = incr(rix, 0, len(rintz));
         #print("s1 NOTEON:", i*lpp);
       }
       if (ramp2tri2(out_sig2)) {
         set dx:l1_rate ratez[rx] at = i * lpp;
+        set dx2:l1_rate ratez[rx] at = i * lpp;
         rx = incr(rx, 0, len(ratez));
       }
       if (ramp2tri3(out_sig3)) {
         set dx:op1fb dfbz[dfx];
+        set dx2:op1fb dfbz[dfx];
         dfx = incr(dfx, 0, len(dfbz));
       }
     }
-  }
-}
-
-let perccblah_comp = comp()
-{
-  setup()
-  {
-  }
-  run()
-  {
   }
 }
 
@@ -462,6 +545,14 @@ let dx3blah_comp = comp()
     let durz2 = [315, 0, 230, 222,  0, 175, 0, 641,  859, 0, 0, 764,  0, 0, 0, 238];
     let velz = [107, 107, 100, 90, 90, 100, 117];
     let vx = 0;
+    # let melz =  [
+    #   [43, 0, 0, 45,  0, 31, 0, 0,  35, 0, 0, 0,  0, 0, 0, 0],
+    #   [43, 0, 0, 31,  0, 43, 0, 28,  0, 0, 0, 0,  0, 0, 0, 0],
+    #   [31, 0, 0, 31,  0, 31, 0, 0,  45, 45, 0, 43,  0, 45, 0, 0],
+    #   [31, 0, 0, 31,  0, 31, 0, 0,  52, 0, 0, 0,  0, 0, 0, 0]
+    # ];
+    let durz = [100, 100, 300, 500, 700, 90, 90, 400, 1000];
+    let drx = 0;
   }
   run()
   {
@@ -477,6 +568,242 @@ let dx3blah_comp = comp()
           note_on_at(dx3, mel[i], i * pp, dur = durz[i], vel = velz[vx]);
           vx = incr(vx, 0, len(velz));
         }
+      }
+    }
+  }
+}
+
+let DX2CMP = comp()
+{
+  setup()
+  {
+    let melz1 = down([40, 0, 52, 40,  0, 52, 57, 48,  48, 0, 0, 0,  0, 0, 52, 0], 12);
+    let melz2 = down([52, 0, 40, 40,  0, 57, 0, 48,  48, 0, 0, 50,  0, 0, 0, 50], 24);
+
+    let durz1 = [223, 0, 200, 1755,  0, 712, 207, 365,  70, 0, 0, 0,  0, 0, 400, 0];
+    let durz2 = [315, 0, 230, 222,  0, 175, 0, 641,  459, 0, 0, 64,  0, 0, 0, 238];
+    let velz = [107, 107, 100, 90, 90, 100, 117];
+    let vx = 0;
+  }
+  run()
+  {
+    if (count % 8 < 7) {
+      let mel = melz1;
+      let durz = durz1;
+      if (count % 3 == 2) {
+        mel = melz2;
+        durz = durz2;
+      }
+
+      if (count % 6 == 2) {
+        mel = reverse(mel);
+      }
+      if (count % 5 == 4) {
+        mel = shuffle(mel);
+      }
+      if (count % 14 == 7) {
+        mel = scramble(mel);
+      }
+      if (count % 4 == 3) {
+        mel = up(mel, 24);
+      }
+      for (let i = 0; i < 16; i++) {
+        let d = durz[i];
+        if (d == 0) {
+          d = 100;
+        }
+        if (mel[i] > 0) {
+          note_on_at(dx2, mel[i], i * pp, dur = d, vel = velz[vx]);
+          vx = incr(vx, 0, len(velz));
+        }
+      }
+    }
+  }
+}
+
+let iDABEAblah_comp = comp()
+{
+  setup()
+  {
+    let dbeat = [1, 0, 0, 0,  0, 0, 1, 0,  0, 1, 0, 0,  1, 0, 0, 0];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+
+      if (dbeat[i] == 1) {
+        let v = 100 + rand(27);
+        if (i % 4 == 0) {
+          v = 127;
+        }
+        note_on_at(sbdrum, 0, i * pp);
+      }
+    }
+  }
+}
+
+let iDABEAHATZblah_comp = comp()
+{
+  setup()
+  {
+    let hhbeat = [1, 0, 1, 0,  0, 0, 1, 0,  0, 1, 0, 0,  1, 0, 1, 0];
+  }
+  run()
+  {
+    for (let i = 0; i < 16; i++) {
+
+      if (hhbeat[i] == 1) {
+
+        let v = 100 + rand(27);
+
+        let offset = 34;
+        if (i % 2 == 0) {
+          offset = 0;
+        }
+        note_on_at(sbdrum, 3, i * pp + offset,  vel = v );
+      }
+    }
+    if (count % 2 == 1) {
+      note_on_at(sb2, 4, 12 * pp);
+    }
+  }
+}
+
+let PERCXblah_comp = comp()
+{
+  setup()
+  {
+    let patog = [4, 1, 2, 2,  0, 2, 4, 5,  4, 3, 2, 3,  4, 3, 2, 3];
+    let durz = [100, 50, 20, 200, 300, 120];
+    let drx = 0;
+  }
+  run()
+  {
+    let pat = patog;
+    if (count % 4 == 3) {
+      pat = rand_array(16, 0, 5);
+    }
+    for (let i = 0; i < 16; i++) {
+      let offs = 34;
+      if (i % 2 == 0) {
+        offs = 0;
+      }
+      let v = 80 + rand(47);
+      if (pat[i] == 0) {
+        note_on_at(sb2, 5, i * pp + offs, dur = durz[drx], vel = v);
+        drx = incr(drx, 0, len(durz));
+      }
+      if (pat[i] == 1) {
+        note_on_at(sb2, 6, i * pp + offs, dur = durz[drx], vel = v);
+        drx = incr(drx, 0, len(durz));
+      }
+      if (pat[i] == 2) {
+        note_on_at(sb2, 7, i * pp  +offs, dur = durz[drx], vel = v);
+        drx = incr(drx, 0, len(durz));
+      }
+    }
+  }
+}
+
+
+let MIXdxfxblah_comp = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(32);
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+    let plot_width = 80;
+    let stride = 32 / plot_width;     // 48 ticks per column
+    let ratez = [2, 12, 1, 20, 13];
+    let rx = 0;
+    let rintz = [0.1, 0.3, 0.7, 1, 0.5];
+    let rix = 0;
+
+    let dfbz = [0, 1, 2, 0.5, 6, 4];
+    let dfx = 0;
+
+    let mxrz = [-1, 1, -1, 0, -1, 0.25, -0.75, -1, 1];
+    let mx = 0;
+
+  }
+  run()
+  {
+    let lpp = 3840 / 32;
+    for (let i = 0; i < 17; i++) {
+      let rampval  = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 3/8);     // ~2.67/bar
+      let out_sig2 = ramp_div2(rampval, 3/15);    // 5/bar
+      let mod_ratio = max(out_sig2, 0.001);        // avoid /0
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio); // FM!
+      # if (i % stride == 0) {
+        #   draw_plot(rampval,  plot_width, "r  ", at=i*lpp, row=1);
+        #   draw_plot(out_sig1, plot_width, "s1 ", at=i*lpp, row=2);
+        #   draw_plot(out_sig2, plot_width, "s2 ", at=i*lpp, row=3);
+        #   draw_plot(out_sig3, plot_width, "s3 ", at=i*lpp, row=4);
+        # }
+      if (ramp2tri1(out_sig1)) {
+        # set dx:l1_int rintz[rix] at = i * lpp;
+        # rix = incr(rix, 0, len(rintz));
+        #print("s1 NOTEON:", i*lpp);
+      }
+      if (ramp2tri2(out_sig2)) {
+        #set dx:l1_rate ratez[rx] at = i * lpp;
+        #rx = incr(rx, 0, len(ratez));
+      }
+      if (ramp2tri3(out_sig3)) {
+        set mixer:xfader:xpos mxrz[mx] at = i * lpp;
+        mx = incr(mx, 0, len(mxrz));
+        ##set dx:op1fb dfbz[dfx];
+        ##dfx = incr(dfx, 0, len(dfbz));
+      }
+    }
+  }
+}
+
+let dx3bBABBABAB = comp()
+{
+  setup()
+  {
+    #let melz =  [
+    #  [43, 0, 0, 45,  0, 31, 0, 0,  35, 0, 0, 0,  0, 0, 0, 0],
+    #  [43, 0, 0, 31,  0, 43, 0, 28,  0, 0, 0, 0,  0, 0, 0, 0],
+    #  [31, 0, 0, 31,  0, 31, 0, 0,  45, 45, 0, 43,  0, 45, 0, 0],
+    #  [31, 0, 0, 31,  0, 31, 0, 0,  52, 0, 0, 0,  0, 0, 0, 0]
+    #];
+    let melz =  [
+      [0, 0,  45, 0,  0, 35, 0, 28,  45, 0, 0, 0,  0, 52, 0, 0],
+      [0, 0,  0,  0,  0, 66, 0, 28,  0, 0, 0, 0,  0, 0, 55, 0],
+      [0, 0,  31, 0,  0, 35, 0, 0,  0, 62, 0, 71,  0, 45, 0, 0],
+      [0, 0,  31, 0,  0, 35, 0, 0,  52, 0, 0, 0,  0, 0, 0, 0]
+    ];
+      let durz = [10, 100, 30, 500, 700, 90, 90, 400, 1000];
+      let drx = 0;
+  }
+  run()
+  {
+    let mel = melz[count % 4];
+    if (count % 3 == 2) {
+      mel = shuffle(mel);
+    }
+    if (count % 9 == 5) {
+      mel = stutter(mel);
+    }
+    if (count % 6 == 4) {
+      mel = up(mel, 12);
+    }
+    for (let i = 0; i < 16; i++) {
+      let offs = 20;
+      if (i % 2 == 0) {
+        offs = 0;
+      }
+      if (mel[i] > 0) {
+        note_on_at(dx3, mel[i], i * pp + offs, dur = durz[drx]);
+        drx = incr(drx, 0, len(durz));
       }
     }
   }
