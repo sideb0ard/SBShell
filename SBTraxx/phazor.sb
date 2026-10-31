@@ -304,6 +304,11 @@ let ramp_div_factory = fn()
   let accum = 0;
 
   return fn(sig_val, ratio) {
+    # call with NULL to reset/resync the divided ramp back to 0
+    if (sig_val == NULL) {
+      accum = 0;
+      return 0;
+    }
     let val = normalize_ramp(sig_val) / ratio;
     #print("SIG:", sig_val, " NORMAL:", val);
     accum = accum + val;

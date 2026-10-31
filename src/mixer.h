@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
+#include <iostream>
 #include <shared_mutex>
 #include <unordered_map>
 
@@ -171,6 +173,9 @@ struct Mixer {
   StereoVal last_reverb_out_{};
   StereoVal last_delay_out_{};
   StereoVal last_eq_out_{};
+  // Per-generator flag so a NaN-producing instrument is reported once, not
+  // every sample.
+  std::array<bool, MAX_NUM_SOUND_GENERATORS> soundgen_nan_reported_{};
   std::unordered_map<int, int>
       pending_note_ons_;  // note -> abs pos in multi-bar buffer
   std::unordered_map<int, std::string> midi_mapped_controls_ = {};
@@ -312,7 +317,22 @@ struct Mixer {
             soundgen_cur_val_[k] = StereoVal{};
             continue;
           }
-          soundgen_cur_val_[k] = sg->GenNext(timing_info);
+          StereoVal v = sg->GenNext(timing_info);
+          // A NaN/Inf from one instrument would poison the whole mix (and
+          // the global delay/reverb feedback loops), silencing everything.
+          // Mute just that instrument and report it once.
+          if (!std::isfinite(v.left) || !std::isfinite(v.right)) {
+            v = StereoVal{};
+            if (!soundgen_nan_reported_[k]) {
+              soundgen_nan_reported_[k] = true;
+              std::cerr << "\n[mixer] sound generator " << k
+                        << " output NaN/Inf - muting it. ("
+                        << sg->Info().substr(0, 60) << ")\n";
+            }
+          } else {
+            soundgen_nan_reported_[k] = false;
+          }
+          soundgen_cur_val_[k] = v;
         }
         sound_generators_mutex_.unlock_shared();
       }
@@ -384,7 +404,19 @@ struct Mixer {
       // Clamp before storing — last_*_out_ feeds back into fx sends next
       // sample. Unclamped growth (e.g. delay fb + gdlfb combining) causes NaN
       // which bypasses the output clamp and silences one channel.
-      auto clamp1 = [](double v) { return std::max(-1.0, std::min(1.0, v)); };
+      // NaN-safe: std::min/max with NaN return the non-NaN bound, which would
+      // inject full-scale DC, so zero non-finite values first.
+      auto clamp1 = [](double v) {
+        if (!std::isfinite(v)) return 0.0;
+        return std::max(-1.0, std::min(1.0, v));
+      };
+      auto sanitize = [](StereoVal &sv) {
+        if (!std::isfinite(sv.left)) sv.left = 0.0;
+        if (!std::isfinite(sv.right)) sv.right = 0.0;
+      };
+      sanitize(delay_val);
+      sanitize(reverb_val);
+      sanitize(eq_val);
       last_delay_out_ = {clamp1(delay_val.left), clamp1(delay_val.right)};
       last_reverb_out_ = {clamp1(reverb_val.left), clamp1(reverb_val.right)};
       last_eq_out_ = {clamp1(eq_val.left), clamp1(eq_val.right)};
@@ -405,11 +437,10 @@ struct Mixer {
       double final_left = volume_smooth_ * output_left;
       double final_right = volume_smooth_ * output_right;
 
-      // Hard clamp to [-1.0, 1.0] to protect speakers/ears
-      if (final_left > 1.0) final_left = 1.0;
-      if (final_left < -1.0) final_left = -1.0;
-      if (final_right > 1.0) final_right = 1.0;
-      if (final_right < -1.0) final_right = -1.0;
+      // Hard clamp to [-1.0, 1.0] to protect speakers/ears. clamp1 also
+      // zeroes NaN/Inf, which plain >/< comparisons let straight through.
+      final_left = clamp1(final_left);
+      final_right = clamp1(final_right);
 
       out[j] = final_left;
       out[j + 1] = final_right;

@@ -1,9 +1,14 @@
 
+let init = fn()
+{
+  load_preset(dx, "SHURTT");
+  load_preset(dx2, "WaterStrin");
+}
 let Osc = comp()
 {
   setup()
   {
-    let freq = 1;
+    let freq = 44;
     let cntr = 0;
     let incr = TWO_PI * freq / 16;
   }
@@ -12,12 +17,16 @@ let Osc = comp()
     for (let i = 0; i < 16; i++) {
       let x = cos(cntr);
       let y = sin(cntr);
-      print(x, " ", y);
       cntr = cntr + incr;
+      let val = scale(x, -1, 1, 0, 100);
+      set dx:op2out val at = i * pp;
+
     }
   }
 }
 
+# dx SHURTT
+# dx2 WaterStrin
 let blah_comp = comp()
 {
   setup()
@@ -33,11 +42,19 @@ let blah_comp = comp()
   }
   run()
   {
+    let played_mo_yet = false;
     let more_to_play = true;
     for ( ; more_to_play; ;) {
-      note_on_at(dx, notz[nx], next_on, dur = durz[drx]);
+      note_on_at(dx, notes_in_chord(notz[nx], 24, 1, 1), next_on, dur = durz[drx]);
+      if (!played_mo_yet) {
+        note_on_at(mo, notes_in_chord(notz[nx]+24, 24, 1, 1), next_on, dur = 2000);
+        played_mo_yet = true;
+      }
       drx = incr(drx, 0, len(durz));
       next_on = next_on + gapz[gx];
+      if (count % 4 == 3) {
+        note_on_at(dx2, notz[nx] + 36, next_on, gapz[gx]);
+      }
       gx = incr(gx, 0, len(gapz));
       if (next_on > 3840) {
         more_to_play = false;
@@ -47,5 +64,89 @@ let blah_comp = comp()
     if (count % 4 == 3) {
       nx = incr(nx, 0, len(notz));
     }
+  }
+}
+
+let rrrblah_comp = comp()
+{
+  setup()
+  {
+    let fullramp = phasor(32);
+    let ramp_div1 = ramp_div_factory();
+    let ramp_div2 = ramp_div_factory();
+    let ramp_div3 = ramp_div_factory();
+    let ramp2tri1 = ramp2trigger_factory();
+    let ramp2tri2 = ramp2trigger_factory();
+    let ramp2tri3 = ramp2trigger_factory();
+    let ratz = [2, 4, 3.2, 11, 7, 13, 3];
+    let rx = 0;
+    let algoz = [0, 1, 2, 3, 5];
+    let ax = 0;
+
+    let mofcz = [800, 1000, 2000, 4000, 10000];
+    let mox = 0;
+    let moqz = [1, 2, 4, 9, 7];
+    let mqx = 0;
+  }
+  run()
+  {
+    for (let i = 0; i < 32; i++) {
+      let rampval  = signal_from(fullramp);
+      let out_sig1 = ramp_div1(rampval, 3/8);
+      let out_sig2 = ramp_div2(rampval, 3/15);
+      let mod_ratio = max(out_sig2, 0.001);
+      let out_sig3 = ramp_div3(out_sig1, mod_ratio);
+      set sbdrum:bd_freq 50 * out_sig2 at = i * pp;
+      set sbdrum:bd_decay 600 * out_sig1  at = i * pp;
+      if (ramp2tri1(out_sig1)) {
+        set dx:o2rat ratz[rx] at = i * pp;
+        rx = incr(rx, 0, len(ratz));
+
+        set mo:fc mofcz[mox];
+        mox = incr(mox, 0, len(mofcz));
+      }
+      if (count % 4 == 3) {
+        if (ramp2tri2(out_sig2)) {
+          set dx:algo algoz[ax] at= i * pp;
+          ax = incr(ax, 0, len(algoz));
+        }
+      }
+      if (ramp2tri3(out_sig3)) {
+        set dx:o3rat ratz[rx] at = i * pp;
+        rx = incr(rx, 0, len(ratz));
+
+        set mo:fq moqz[mqx];
+        mqx = incr(mqx, 0, len(moqz));
+      }
+    }
+  }
+}
+
+let kikblah_comp = comp()
+{
+  setup()
+  {
+    let hitz = [1, 3, 5, 7, 2];
+    let hx = 0;
+  }
+  run()
+  {
+    let beat = bjork(hitz[hx], 16);
+    hx = incr(hx, 0, len(hitz));
+    for (let i = 0; i < 16; i++) {
+      if (beat[i] == 1) {
+        note_on_at(sbdrum, 0, i * pp);
+      }
+    }
+  }
+}
+
+let mixerblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
   }
 }

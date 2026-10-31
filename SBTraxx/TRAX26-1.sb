@@ -1,6 +1,66 @@
 let whl = NULL;
 let ravs = NULL;
 
+# ramp helpers (copied from phazor.sb so this file stands alone)
+let ramp2slope_factory = fn()
+{
+  let history_val = 0;
+  fn(newval) {
+    let oldval = history_val;
+    history_val = newval;
+    let delta = newval - oldval;
+    if (delta < -0.5) {
+      return 1 + delta;
+    }
+    if (delta > 0.5) {
+      return 1 - delta;
+    }
+    return delta;
+  }
+}
+
+let ramp_div_factory = fn()
+{
+  let normalize_ramp = ramp2slope_factory();
+  let accum = 0;
+
+  return fn(sig_val, ratio) {
+    # call with NULL to reset/resync the divided ramp back to 0
+    if (sig_val == NULL) {
+      accum = 0;
+      return 0;
+    }
+    let val = normalize_ramp(sig_val) / ratio;
+    #print("SIG:", sig_val, " NORMAL:", val);
+    accum = accum + val;
+    if (accum >= 1) {
+      accum = accum - 1;
+    }
+    if (accum < 0) {
+      accum = accum + 1;
+    }
+    return accum;
+  }
+
+  # let sig_mult = sig_val * steps;
+  # sig_mult = sig_mult % modr;
+  # return sig_mult / modr;
+}
+
+let ramp2trigger_factory = fn()
+{
+  let history_val = 0;
+  fn(newval) {
+    let oldval = history_val;
+    history_val = newval;
+    let delta = abs(newval - oldval);
+    if (delta > 0.5) {
+      return true;
+    }
+    return false;
+  }
+}
+
 let init = fn()
 {
   whl = loop(dloops/whole_thing.aiff);
@@ -35,6 +95,17 @@ let RUNblah_comp = comp()
     if (cntr == 16) {
       p1 # phblah_comp;
       p9 # mooooblah_comp;
+    }
+    if (cntr == 24) {
+      p1 # "";
+      p2 # "";
+    }
+    if (cntr == 32) {
+      p1 # phblah_comp;
+      p2 # bongblah_comp;
+    }
+    if (cntr == 40) {
+      p9 # "";
     }
     print("CNTR:", cntr);
     cntr++;

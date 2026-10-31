@@ -182,34 +182,37 @@ project(
 # Find Threads after project declaration
 find_package(Threads REQUIRED)
 
-# Find readline library (cross-platform with macOS Homebrew support)
+# Find GNU readline + history. On macOS the system "readline" is really libedit
+# and is missing functions we use (rl_event_hook, append_history, ...), so we
+# require Homebrew's readline. Look it up through Homebrew's stable opt/ link
+# rather than the versioned Cellar/ dir (or its pkg-config file, which also
+# hardcodes the Cellar path), so a `brew upgrade` doesn't leave existing build
+# dirs pointing at a deleted dir.
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  # macOS with Homebrew - add pkg-config paths for readline
-  file(GLOB HOMEBREW_READLINE_DIRS
-       "/opt/homebrew/Cellar/readline/*/lib/pkgconfig"
-       "/usr/local/Cellar/readline/*/lib/pkgconfig")
-  if(HOMEBREW_READLINE_DIRS)
-    list(GET HOMEBREW_READLINE_DIRS 0 READLINE_PKGCONFIG_DIR)
-    set(ENV{PKG_CONFIG_PATH} "${READLINE_PKGCONFIG_DIR}:$ENV{PKG_CONFIG_PATH}")
-    message(STATUS "Using Homebrew readline")
+  set(HOMEBREW_READLINE_PREFIXES /opt/homebrew/opt/readline
+                                 /usr/local/opt/readline)
+  find_path(
+    READLINE_INCLUDE_DIR readline/readline.h
+    PATHS ${HOMEBREW_READLINE_PREFIXES}
+    PATH_SUFFIXES include
+    NO_DEFAULT_PATH)
+  find_library(
+    READLINE_LIB readline
+    PATHS ${HOMEBREW_READLINE_PREFIXES}
+    PATH_SUFFIXES lib
+    NO_DEFAULT_PATH)
+  find_library(
+    HISTORY_LIB history
+    PATHS ${HOMEBREW_READLINE_PREFIXES}
+    PATH_SUFFIXES lib
+    NO_DEFAULT_PATH)
+  if(NOT READLINE_INCLUDE_DIR
+     OR NOT READLINE_LIB
+     OR NOT HISTORY_LIB)
+    message(FATAL_ERROR "GNU readline not found. Install with: "
+                        "brew install readline")
   endif()
-
-  # Try pkg-config first on macOS
-  pkg_check_modules(READLINE readline)
-  if(READLINE_FOUND)
-    message(STATUS "Found readline via pkg-config")
-  else()
-    # Fallback to manual search with Homebrew paths
-    file(GLOB HOMEBREW_READLINE_LIB_DIRS "/opt/homebrew/Cellar/readline/*/lib"
-         "/usr/local/Cellar/readline/*/lib")
-    find_library(
-      READLINE_LIB readline
-      PATHS ${HOMEBREW_READLINE_LIB_DIRS} /usr/lib /usr/local/lib
-      NO_DEFAULT_PATH)
-    if(NOT READLINE_LIB)
-      find_library(READLINE_LIB readline)
-    endif()
-  endif()
+  message(STATUS "Using Homebrew readline: ${READLINE_LIB}")
 else()
   # Linux and other platforms
   find_library(
@@ -219,37 +222,6 @@ else()
   if(NOT READLINE_LIB)
     find_library(READLINE_LIB readline)
   endif()
-endif()
-
-if(NOT READLINE_FOUND AND NOT READLINE_LIB)
-  message(
-    FATAL_ERROR
-      "Readline library not found. Install with: "
-      "sudo apt install libreadline-dev (Ubuntu/Debian) or "
-      "brew install readline (macOS)")
-endif()
-
-# Find history library
-if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  # macOS with Homebrew
-  if(READLINE_FOUND)
-    # If we found readline via pkg-config, history is likely included
-    set(HISTORY_FOUND TRUE)
-    set(HISTORY_LIBRARIES ${READLINE_LIBRARIES})
-  else()
-    # Manual search for history library
-    file(GLOB HOMEBREW_READLINE_LIB_DIRS "/opt/homebrew/Cellar/readline/*/lib"
-         "/usr/local/Cellar/readline/*/lib")
-    find_library(
-      HISTORY_LIB history
-      PATHS ${HOMEBREW_READLINE_LIB_DIRS} /usr/lib /usr/local/lib
-      NO_DEFAULT_PATH)
-    if(NOT HISTORY_LIB)
-      find_library(HISTORY_LIB history)
-    endif()
-  endif()
-else()
-  # Linux and other platforms
   find_library(
     HISTORY_LIB history
     PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64
@@ -257,14 +229,10 @@ else()
   if(NOT HISTORY_LIB)
     find_library(HISTORY_LIB history)
   endif()
-endif()
-
-if(NOT HISTORY_FOUND AND NOT HISTORY_LIB)
-  message(
-    FATAL_ERROR
-      "History library not found. Install with: "
-      "sudo apt install libreadline-dev (Ubuntu/Debian) or "
-      "brew install readline (macOS)")
+  if(NOT READLINE_LIB OR NOT HISTORY_LIB)
+    message(FATAL_ERROR "Readline/history library not found. Install with: "
+                        "sudo apt install libreadline-dev (Ubuntu/Debian)")
+  endif()
 endif()
 
 # Explicitly set platform definitions for Link (now that CMAKE_SYSTEM_NAME is
@@ -318,18 +286,10 @@ if(SNDFILE_FOUND)
   target_include_directories(sbsh_lib PUBLIC ${SNDFILE_INCLUDE_DIRS})
 endif()
 
-# Add readline include directories
-if(READLINE_FOUND)
-  target_include_directories(sbsh_lib PUBLIC ${READLINE_INCLUDE_DIRS})
-elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  file(GLOB HOMEBREW_READLINE_INCLUDE_DIRS
-       "/opt/homebrew/Cellar/readline/*/include"
-       "/usr/local/Cellar/readline/*/include")
-  if(HOMEBREW_READLINE_INCLUDE_DIRS)
-    target_include_directories(sbsh_lib
-                               PUBLIC ${HOMEBREW_READLINE_INCLUDE_DIRS})
-    message(STATUS "Added Homebrew readline include directories")
-  endif()
+# Add readline include directories (macOS/Homebrew only; Linux uses system
+# headers)
+if(READLINE_INCLUDE_DIR)
+  target_include_directories(sbsh_lib PUBLIC ${READLINE_INCLUDE_DIR})
 endif()
 
 # Set compiler flags on sbsh_lib
@@ -352,37 +312,8 @@ endif()
 target_link_libraries(sbsh_lib PUBLIC Ableton::Link Threads::Threads
                                       nlohmann_json::nlohmann_json)
 
-# Find readline full paths for macOS (needed before linking)
-if(READLINE_FOUND AND CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  file(GLOB HOMEBREW_READLINE_LIB_DIRS "/opt/homebrew/Cellar/readline/*/lib"
-       "/usr/local/Cellar/readline/*/lib")
-  find_library(
-    READLINE_FULL_LIB readline
-    PATHS ${HOMEBREW_READLINE_LIB_DIRS}
-    NO_DEFAULT_PATH)
-  find_library(
-    HISTORY_FULL_LIB history
-    PATHS ${HOMEBREW_READLINE_LIB_DIRS}
-    NO_DEFAULT_PATH)
-endif()
-
 # Link readline libraries
-if(READLINE_FOUND)
-  if(CMAKE_SYSTEM_NAME MATCHES "Darwin" AND READLINE_FULL_LIB)
-    target_link_libraries(sbsh_lib PUBLIC ${READLINE_FULL_LIB})
-    if(HISTORY_FULL_LIB)
-      target_link_libraries(sbsh_lib PUBLIC ${HISTORY_FULL_LIB})
-    endif()
-  else()
-    target_link_libraries(sbsh_lib PUBLIC ${READLINE_LIBRARIES})
-  endif()
-  target_compile_options(sbsh_lib PUBLIC ${READLINE_CFLAGS_OTHER})
-else()
-  target_link_libraries(sbsh_lib PUBLIC ${READLINE_LIB})
-  if(HISTORY_LIB)
-    target_link_libraries(sbsh_lib PUBLIC ${HISTORY_LIB})
-  endif()
-endif()
+target_link_libraries(sbsh_lib PUBLIC ${READLINE_LIB} ${HISTORY_LIB})
 
 # Link audio libraries
 if(PORTAUDIO_FOUND)
