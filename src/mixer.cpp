@@ -821,6 +821,17 @@ void Mixer::ProcessActionMessage(std::unique_ptr<AudioActionItem> action) {
       }
     }
     audio_reply_queue.push(1);  // unblock add_fx() caller
+  } else if (action->type == AudioAction::CLEAR_FX) {
+    // soundgen_num -1 means every sound generator
+    if (action->soundgen_num < 0) {
+      for (int i = 0; i < sound_generators_idx_; i++) {
+        if (sound_generators_[i]) sound_generators_[i]->ClearFx();
+      }
+    } else if (IsValidSoundgenNum(action->soundgen_num)) {
+      auto &sg = sound_generators_[action->soundgen_num];
+      if (sg) sg->ClearFx();
+    }
+    audio_reply_queue.push(1);  // unblock clear_fx() caller
   } else if (action->type == AudioAction::ADD_BUFFER) {
     if (IsValidSoundgenNum(action->soundgen_num)) {
       auto &sg = sound_generators_[action->soundgen_num];

@@ -328,7 +328,7 @@ let soulblah_comp = comp()
 
     if (count % 4 == 0) {
       set simp:scramble 1;
-      solo(simp, at=12*pp);
+      solo(simp, at=14*pp);
     }
     note_on(simp, 0, dur = 0);
     if (count % 5 == 4) {

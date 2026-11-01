@@ -1200,6 +1200,61 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
 
            return evaluator::NULLL;
          })},
+    // draw_array(arr, height=1, "label", at=, row=)
+    // Draws an array of 0.0-1.0 values (e.g. spectrum(gen, 16)) as a bar chart,
+    // one cell per element. height=1 is a single-line sparkline.
+    {"draw_array",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.empty()) return evaluator::NULLL;
+           auto arr = std::dynamic_pointer_cast<object::Array>(args[0]);
+           if (!arr)
+             return evaluator::NewError(
+                 "draw_array: first arg must be an array of numbers");
+
+           ScheduledDisplayItem item;
+           item.type = DisplayType::ARRAY;
+           for (auto& el : arr->elements_) {
+             auto num = std::dynamic_pointer_cast<object::Number>(el);
+             item.vals.push_back(num ? num->value_ : 0.0);
+           }
+
+           int at_tick = -1;
+           bool height_set = false;
+           for (int i = 1; i < (int)args.size(); i++) {
+             if (auto at_obj = std::dynamic_pointer_cast<object::At>(args[i])) {
+               at_tick = (int)at_obj->value_;
+             } else if (auto row_obj =
+                            std::dynamic_pointer_cast<object::Row>(args[i])) {
+               item.row = (int)row_obj->value_;
+             } else if (auto h =
+                            std::dynamic_pointer_cast<object::Number>(args[i]);
+                        h && !height_set) {
+               item.height = std::clamp((int)h->value_, 1, 32);
+               height_set = true;
+             } else if (auto l = std::dynamic_pointer_cast<object::String>(
+                            args[i])) {
+               item.label = l->value_;
+             }
+           }
+
+           // Always goes through the display queue (rendered on the next tick
+           // when there's no at=) so it shares row pinning with draw_plot.
+           int cur = global_mixr->midi_tick_.load();
+           if (at_tick >= 0) {
+             int tick_in_bar = cur % PPBAR;
+             int bar_start = (tick_in_bar <= PPBAR / 2)
+                                 ? (cur - tick_in_bar)
+                                 : (cur - tick_in_bar + PPBAR);
+             item.target_tick = bar_start + at_tick;
+             item.bar_pos = at_tick;
+           } else {
+             item.target_tick = cur;
+           }
+           display_queue.push(std::move(item));
+           return evaluator::NULLL;
+         })},
     {"funcz", std::make_shared<object::BuiltIn>(
                   [](const std::vector<std::shared_ptr<object::Object>>& args)
                       -> std::shared_ptr<object::Object> {
@@ -2193,6 +2248,35 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
                      .pop();  // block until audio thread confirms fx added
                }
              }
+           }
+           return evaluator::NULLL;
+         })},
+    {"clear_fx",
+     std::make_shared<object::BuiltIn>(
+         [](std::vector<std::shared_ptr<object::Object>> args)
+             -> std::shared_ptr<object::Object> {
+           // clear_fx() clears every sound generator; clear_fx(a, b, ...)
+           // clears just those. Runs on the audio thread, in order with any
+           // queued add_fx / set commands, and blocks until done so a
+           // following add_fx lands in fx0.
+           std::vector<int> targets;
+           if (args.empty()) {
+             targets.push_back(-1);
+           } else {
+             for (auto& arg : args) {
+               auto soundgen =
+                   std::dynamic_pointer_cast<object::SoundGenerator>(arg);
+               if (soundgen &&
+                   global_mixr->IsValidSoundgenNum(soundgen->soundgen_id_))
+                 targets.push_back(soundgen->soundgen_id_);
+             }
+           }
+           for (int sg_num : targets) {
+             auto action =
+                 std::make_unique<AudioActionItem>(AudioAction::CLEAR_FX);
+             action->soundgen_num = sg_num;
+             audio_queue.push(std::move(action));
+             audio_reply_queue.pop();
            }
            return evaluator::NULLL;
          })},

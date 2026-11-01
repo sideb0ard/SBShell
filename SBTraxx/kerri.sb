@@ -1,6 +1,7 @@
 
 let init = fn()
 {
+  clear_fx();
   add_fx(dx, "delay");
   load_preset(dx, "kerrizx");
   set dx:algo 4;

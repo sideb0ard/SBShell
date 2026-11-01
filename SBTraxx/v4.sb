@@ -13,10 +13,12 @@ let swww = NULL;
 
 let init = fn()
 {
+  clear_fx();
 #   load_preset(sbdrum, "V4");
   key = 52;
 
   bpm 130;
+  clear_fx();
 
   pesh = loop(dloops/peshayBrwak.aiff);
   add_fx(pesh, "distort");

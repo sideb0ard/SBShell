@@ -211,9 +211,76 @@ static char **sb_completion(const char *text, int start, int end) {
   return rl_completion_matches(text, sb_completion_generator);
 }
 
+// Pinned rows above the scroll region: grow the region so the prompt and
+// normal output scroll underneath and don't overwrite the plots.
+static void ReservePlotRows(int last_row) {
+  if (last_row <= max_plot_row) return;
+  max_plot_row = last_row;
+  int rows = (global_mixr->term_rows_ > 1) ? global_mixr->term_rows_ : 24;
+  printf("\033[s\033[%d;%dr\033[u", max_plot_row + 1, rows - 1);
+  fflush(stdout);
+}
+
+// draw_array: a bar chart, one 2-column cell per value, `height` rows tall.
+// Each row is coloured by how high up it is (green, yellow, then red at the
+// top), like a level meter.
+static void RenderArrayItem(const ScheduledDisplayItem &item) {
+  static const char *sparks[] = {" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
+  const int height = std::max(1, item.height);
+  std::stringstream ss;
+
+  if (item.row > 0) {
+    ReservePlotRows(item.row + height - 1);
+    ss << "\033[s";
+  } else {
+    ss << "\r";
+  }
+
+  const std::string pad(item.label.size(), ' ');
+  for (int line = 0; line < height; line++) {
+    const int level = height - 1 - line;  // 0 = bottom row
+    const double row_top = (double)(level + 1) / height;
+    const char *color = row_top <= 0.5   ? COOL_COLOR_GREEN
+                        : row_top <= 0.8 ? COOL_COLOR_YELLOW
+                                         : ANSI_COLOR_RED;
+    if (item.row > 0) ss << "\033[" << (item.row + line) << ";1H";
+    if (!item.label.empty())
+      ss << (line == height - 1 ? item.label : pad) << " ";
+    ss << "[" << color;
+    for (double v : item.vals) {
+      v = std::min(std::max(v, 0.0), 1.0);
+      // Eighths of a row filled in this row for this value
+      int eighths = (int)std::lround(v * height * 8) - level * 8;
+      eighths = std::min(std::max(eighths, 0), 8);
+      if (height == 1) {
+        // Single row: colour each cell by its own value instead
+        ss << (v < 0.5   ? COOL_COLOR_GREEN
+               : v < 0.8 ? COOL_COLOR_YELLOW
+                         : ANSI_COLOR_RED);
+      }
+      ss << sparks[eighths] << sparks[eighths];
+    }
+    ss << ANSI_COLOR_RESET << "]\033[K";
+    if (item.row <= 0 && line < height - 1) ss << "\n";
+  }
+
+  if (item.row > 0)
+    ss << "\033[u";
+  else if (height > 1)
+    ss << "\033[" << (height - 1)
+       << "A\r";  // back up so the next draw overwrites
+  else
+    ss << "\r";
+  std::cout << ss.str() << std::flush;
+}
+
 static void RenderDisplayItem(
     const ScheduledDisplayItem &item,
     std::unordered_map<std::string, std::deque<double>> &plot_bufs) {
+  if (item.type == DisplayType::ARRAY) {
+    RenderArrayItem(item);
+    return;
+  }
   std::stringstream ss;
   if (item.type == DisplayType::BAR) {
     double val = item.val;
@@ -246,12 +313,7 @@ static void RenderDisplayItem(
       int col = label_w + 1 + (item.bar_pos * item.width) / kBarLen;
       if (col < label_w + 1) col = label_w + 1;
       double v = std::min(std::max(item.val, 0.0), 1.0);
-      if (item.row > max_plot_row) {
-        max_plot_row = item.row;
-        int rows = (global_mixr->term_rows_ > 1) ? global_mixr->term_rows_ : 24;
-        printf("\033[s\033[%d;%dr\033[u", max_plot_row + 1, rows - 1);
-        fflush(stdout);
-      }
+      ReservePlotRows(item.row);
       if (item.bar_pos == 0) {
         // Clear the row at bar start so old-bar content doesn't linger on
         // the right while the new bar fills in left-to-right.

@@ -8,6 +8,7 @@ let rocka = NULL;
 
 let init = fn()
 {
+  clear_fx();
   backz = loop(qebo/QEBO-LOCKDOWNFM-23FMPERCUSSION1.wav); set backz:len 4;
   note_off(backz, 0);
 #   load_preset(sbdrum, "SNDX3");

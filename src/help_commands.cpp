@@ -176,6 +176,12 @@ static const std::vector<CommandHelp> kCommands = {
      "    compressor sculptor gran filter modfilter djeq sidechain geometer genz\n"
      "    nnirror waveshape",
      "add_fx(dx, \"reverb\"); set dx:fx0:wetmx 0.4;"},
+    {"clear_fx", "Mixer & effects", "clear_fx(gen, gen2, ...) | clear_fx()",
+     "Removes all effects from the given generators (no args: from every generator). "
+     "The next add_fx is fx0 again.",
+     "Call it at the top of a track's init() so fx numbering is the same however\n"
+     "many tracks were loaded before (and doesn't grow each time monitor() re-runs init).",
+     "clear_fx(dx, dx3); add_fx(dx, \"delay\"); // delay is dx:fx0"},
     {"send", "Mixer & effects", "send(\"fx\", gen | [gens], level=0.4, at=)",
      "Sends generators to a mixer effect. Note the order: effect first.",
      "fx: \"delay\", \"reverb\", \"distort\" (mixer slot 2, now the DJ EQ) or 0/1/2.",
@@ -297,6 +303,11 @@ static const std::vector<CommandHelp> kCommands = {
     {"draw_plot", "Utility", "draw_plot(val, width=40, \"label\", at=, row=)",
      "Draws a scrolling sparkline of 0-1 values (one history per label).", "",
      "draw_plot(signal_from(ph), 60, \"lfo\");"},
+    {"draw_array", "Utility", "draw_array(arr, height=1, \"label\", at=, row=)",
+     "Draws an array of 0-1 values as a bar chart, one cell per element (e.g. a spectrum).",
+     "height: rows tall (1 = one-line sparkline). row=: pin to that terminal row.\n"
+     "at=: tick within the bar to draw at. Values outside 0-1 are clamped.",
+     "draw_array(spectrum(dx, 16), 8, \"dx\", row=1);"},
 };
 // clang-format on
 

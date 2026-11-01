@@ -15,6 +15,7 @@
 enum AudioAction {
   ADD,
   ADD_FX,
+  CLEAR_FX,
   ADD_BUFFER,
   BPM,
   INFO,

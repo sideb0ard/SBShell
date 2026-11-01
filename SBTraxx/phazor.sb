@@ -26,6 +26,7 @@ let shades = NULL;
 #[47, 51, 54, 58]
 let init = fn()
 {
+  clear_fx();
   phzz = [];
   for (let i = 0; i < len(pentz); i++) {
     push(phzz, phasor(basephs * pentz[i]));
@@ -93,7 +94,7 @@ let PLAYblah_comp = comp()
     }
     if (countr == 16) {
       sched(0, 1, 0, 3840*4, "vol walkin %");
-      phblah_comp();
+      #phblah_comp();
     }
     if (countr == 20) {
       p4 # fliipahblah_comp;
@@ -109,7 +110,7 @@ let PLAYblah_comp = comp()
     if (countr == 32) {
       vol shades 0;
       vol dx 0;
-      p16 # phblah_comp;
+      #p16 # phblah_comp;
       p3 # drumblah_comp;
     }
 
@@ -127,10 +128,10 @@ let PLAYblah_comp = comp()
       p1 # "";
       p2 # "";
       vol dx 0;
-      phblah_comp();
+      #phblah_comp();
     }
     if (countr == 56) {
-      p18 # phblah_comp;
+      #p18 # phblah_comp;
     }
     print("COUNTr:", countr);
     countr++;

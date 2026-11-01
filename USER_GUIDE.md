@@ -1300,6 +1300,22 @@ let follow = comp()
 p5 # follow;
 ```
 
+To see the spectrum, draw it with `draw_array` (see [Signal Visualization](#12-signal-visualization)). This comp redraws an 8-row analyzer pinned to the top of the terminal once per bar:
+
+```javascript
+let analyzer = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    draw_array(spectrum(per, 16), 8, "per", row=1);
+  }
+}
+p6 # analyzer;
+```
+
 ### Process IDs and Pattern Assignment
 
 When you start computations, assign them to process IDs (p1-p99) to control them:
@@ -1511,6 +1527,31 @@ set dx:fx1:predelayms 100;
 
 // Multiple effects process in order
 ```
+
+### Clearing Effects
+
+`clear_fx` removes all effects from one or more sound generators, so the next `add_fx` is `fx0` again. With no arguments it clears every sound generator.
+
+```javascript
+clear_fx(dx);         // just dx
+clear_fx(dx, dx3);    // several at once
+clear_fx();           // every sound generator
+```
+
+Effects are numbered in the order they were added, so `set dx:fx2:freq` only points at the right effect if `dx` had nothing on it before. When you load one track after another in a live set, or `monitor()` re-runs `init()` every time you save, effects from earlier runs pile up and shift the numbers. Start each track's `init()` with `clear_fx` to keep the numbering predictable:
+
+```javascript
+let init = fn()
+{
+  clear_fx(dx, dx3);
+  add_fx(dx, "delay");    // dx:fx0
+  add_fx(dx, "reverb");   // dx:fx1
+  add_fx(dx, "filter");   // dx:fx2
+  set dx:fx2:freq 80;
+}
+```
+
+Only clear the instruments the track sets up itself: anything from the previous track that is still playing keeps its effects.
 
 
 ---
@@ -2167,6 +2208,18 @@ for (let i = 0; i < 3840; i++) {
   }
 }
 ```
+
+### draw_array — Array Bar Chart
+
+Draws a whole array of 0.0-1.0 values at once, one cell per element, e.g. the output of `spectrum()`. The first number is the height in rows: 1 (the default) gives a one-line sparkline with each cell coloured by its level; more rows give a level-meter style bar chart that's green at the bottom, yellow higher up and red at the top. Values outside 0-1 are clamped and non-numbers count as 0.
+
+```javascript
+draw_array([0.1, 0.5, 0.9, 0.3]);                     // one line
+draw_array(spectrum(dx, 16), 8, "dx", row=1);         // 8-row analyzer pinned at the top
+draw_array(spectrum(sbdrum, 8), 4, "drums", row=10);  // a second one below it
+```
+
+It takes the same `row=` and `at=` as `draw_plot`. With `row=N` it takes up rows N to N+height-1, so leave that much space between stacked displays. Without `row=` it redraws in place at the cursor.
 
 ### row= — Multi-Row Stacked Display
 

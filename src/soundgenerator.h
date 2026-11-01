@@ -94,6 +94,7 @@ class SoundGenerator {
 
  public:
   void AddFx(std::shared_ptr<Fx>);
+  void ClearFx();  // remove all effects, so the next add_fx is fx0 again
 
   StereoVal Effector(StereoVal val);
 

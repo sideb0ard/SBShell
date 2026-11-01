@@ -112,6 +112,7 @@ static std::string help_generators() {
   ss << ANSI_COLOR_WHITE << "  vol <gen> <val>        " << COOL_COLOR_ORANGE << "- Volume (0.0-1.0+)\n";
   ss << ANSI_COLOR_WHITE << "  pan <gen> <val>        " << COOL_COLOR_ORANGE << "- Pan (-1.0=L, 0=centre, 1.0=R)\n";
   ss << ANSI_COLOR_WHITE << "  add_fx(gen, fx_name)   " << COOL_COLOR_ORANGE << "- Add effect\n";
+  ss << ANSI_COLOR_WHITE << "  clear_fx(gen, ...)     " << COOL_COLOR_ORANGE << "- Remove all effects (no args: all gens)\n";
   ss << ANSI_COLOR_WHITE << "  set gen:param val      " << COOL_COLOR_ORANGE << "- Set parameter\n";
   ss << ANSI_COLOR_WHITE << "  info gen               " << COOL_COLOR_ORANGE << "- Show all parameters\n";
   ss << ANSI_COLOR_WHITE << "  load_preset(gen, name) " << COOL_COLOR_ORANGE << "- Load preset\n";
@@ -282,6 +283,7 @@ static std::string help_mixer() {
   ss << ANSI_COLOR_WHITE << "  set_send(gen, fx, level)  " << COOL_COLOR_ORANGE << "- Update send intensity (fx: \"delay\"/\"reverb\"/\"distort\")\n";
   ss << COOL_COLOR_ORANGE << "    // ps shows each generator's active sends (e.g. sends: dly:0.40)\n";
   ss << ANSI_COLOR_WHITE << "  add_fx(gen, fx_name)   " << COOL_COLOR_ORANGE << "- Add effect to generator\n";
+  ss << ANSI_COLOR_WHITE << "  clear_fx(gen, ...)     " << COOL_COLOR_ORANGE << "- Remove all effects (no args: all gens)\n";
   ss << ANSI_COLOR_WHITE << "  mvol(volume)           " << COOL_COLOR_ORANGE << "- Master volume (0.0-1.0)\n";
   ss << ANSI_COLOR_WHITE << "  monitor(filepath)      " << COOL_COLOR_ORANGE << "- Monitor file for live coding\n\n";
   ss << COOL_COLOR_GREEN << "  Granulate FX:\n";
@@ -314,7 +316,8 @@ static std::string help_mixer() {
   ss << COOL_COLOR_GREEN << "ANALYSIS\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  spectrum(gen, bands=16) " << COOL_COLOR_ORANGE << "- Array of 8/16/32 band levels (0-1, low to high)\n";
-  ss << ANSI_COLOR_WHITE << "    e.g. set mixer:delay:fb spectrum(per, 8)[6] * 90 " << COOL_COLOR_ORANGE << "- drive delay from highs\n\n";
+  ss << ANSI_COLOR_WHITE << "    e.g. set mixer:delay:fb spectrum(per, 8)[6] * 90 " << COOL_COLOR_ORANGE << "- drive delay from highs\n";
+  ss << ANSI_COLOR_WHITE << "    e.g. draw_array(spectrum(per, 16), 8, \"per\", row=1) " << COOL_COLOR_ORANGE << "- show it\n\n";
 
   ss << COOL_COLOR_GREEN << "MIDI\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
@@ -448,6 +451,7 @@ static std::string help_phasor() {
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  draw_bar(val, width, label, at=, row=)  " << COOL_COLOR_ORANGE << "- Bar graph (val: 0.0-1.0)\n";
   ss << ANSI_COLOR_WHITE << "  draw_plot(val, width, label, at=, row=) " << COOL_COLOR_ORANGE << "- Waveform sparkline (pin with row=)\n";
+  ss << ANSI_COLOR_WHITE << "  draw_array(arr, height, label, at=, row=) " << COOL_COLOR_ORANGE << "- Bar chart of an array, e.g. spectrum()\n";
   ss << ANSI_COLOR_WHITE << "    at=<ticks>  " << COOL_COLOR_ORANGE << "- Exact tick column — use at=i inside for loop\n";
   ss << ANSI_COLOR_WHITE << "    row=<n>     " << COOL_COLOR_ORANGE << "- Fixed terminal row; Ctrl-L parks cursor below all rows\n";
   ss << ANSI_COLOR_WHITE << "    width=80    " << COOL_COLOR_ORANGE << "- Match terminal width (3840/80=48 ticks per column)\n\n";

@@ -106,6 +106,12 @@ void SoundGenerator::AddFx(std::shared_ptr<Fx> f) {
   }
 }
 
+void SoundGenerator::ClearFx() {
+  std::unique_lock<std::shared_mutex> lock(effects_mutex_);
+  for (auto &f : effects_) f.reset();
+  effects_num = 0;
+}
+
 StereoVal SoundGenerator::Effector(StereoVal val) {
   std::shared_lock<std::shared_mutex> lock(
       effects_mutex_);  // Shared lock for read
