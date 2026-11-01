@@ -223,11 +223,9 @@ StereoVal DynamicsProcessor::Process(StereoVal input) {
       if (drum)
         left_detector_input = drum->voice_cur_val_[m_external_voice_].left;
       else
-        left_detector_input =
-            global_mixr->soundgen_cur_val_[m_external_source_].left;
+        left_detector_input = global_mixr->GetLastVal(m_external_source_).left;
     } else {
-      left_detector_input =
-          global_mixr->soundgen_cur_val_[m_external_source_].left;
+      left_detector_input = global_mixr->GetLastVal(m_external_source_).left;
     }
   }
 

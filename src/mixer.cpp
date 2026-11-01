@@ -2,6 +2,7 @@
 #include <defjams.h>
 #include <drum_synth.h>
 #include <drumsampler.h>
+#include <dsp/sbfft.h>
 #include <event_queue.h>
 #include <fmsynth.h>
 #include <fx/djeq.h>
@@ -1387,4 +1388,47 @@ void Mixer::PrintMidiMappings() {
   for (const auto &[id, param] : midi_mapped_controls_) {
     std::cout << "ID:" << id << " // Param:" << param << std::endl;
   }
+}
+
+std::vector<StereoVal> Mixer::SnapshotVals(int sg_num) {
+  if (sg_num < 0 || sg_num >= MAX_NUM_SOUND_GENERATORS) return {};
+
+  std::lock_guard<std::mutex> lock(snapshot_caller_mutex_);
+  snapshot_ready_.store(false, std::memory_order_relaxed);
+  snapshot_request_sg_.store(sg_num, std::memory_order_release);
+
+  auto deadline =
+      std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
+  while (!snapshot_ready_.load(std::memory_order_acquire)) {
+    if (std::chrono::steady_clock::now() > deadline) {
+      // Cancel, unless the audio thread already picked the request up.
+      int expected = sg_num;
+      if (snapshot_request_sg_.compare_exchange_strong(expected, -1)) {
+        return {};  // audio isn't running
+      }
+      // It's mid-copy: keep waiting, it will finish shortly.
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  return std::vector<StereoVal>(snapshot_.begin(), snapshot_.end());
+}
+
+std::vector<double> Mixer::Spectrum(int sg_num) {
+  auto samples = SnapshotVals(sg_num);
+  if (samples.empty()) return {};
+
+  const size_t N = samples.size();
+  std::vector<std::complex<double>> frame(N);
+  for (size_t n = 0; n < N; n++) {
+    double mono = 0.5 * (samples[n].left + samples[n].right);
+    double hann = 0.5 - 0.5 * std::cos(2.0 * M_PI * n / N);
+    frame[n] = {mono * hann, 0.0};
+  }
+  FFT(frame);
+
+  std::vector<double> mags(N / 2 + 1);
+  for (size_t k = 0; k < mags.size(); k++) {
+    mags[k] = 20.0 * std::log10(std::abs(frame[k]) + 1e-9);
+  }
+  return mags;
 }

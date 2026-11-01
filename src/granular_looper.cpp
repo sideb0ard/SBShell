@@ -635,16 +635,26 @@ StereoVal GranularLooper::GenNext(mixer_timing_info tinfo) {
       new_read_idx = 0;
 
     // stutter / scramble / speedulate / slowdown / repeat / strobe: remap slice
-    if (primary->stutter_mode_ || primary->scramble_mode_ ||
-        primary->speedulate_mode_ || primary->slowdown_mode_ ||
-        primary->repeat_mode_ || primary->strobe_mode_) {
-      int rel = (int)fmod(new_read_idx, (double)primary->size_of_sixteenth_);
-      int target_slice = primary->scrambled_pattern_[primary->cur_sixteenth_];
-      int normal_slice = primary->cur_sixteenth_;
-      int offset = (target_slice != normal_slice) ? 0 : rel;
-      new_read_idx =
-          fmod((double)(target_slice * primary->size_of_sixteenth_ + offset),
-               (double)audio_buffer->size());
+    if ((primary->stutter_mode_ || primary->scramble_mode_ ||
+         primary->speedulate_mode_ || primary->slowdown_mode_ ||
+         primary->repeat_mode_ || primary->strobe_mode_) &&
+        primary->size_of_sixteenth_ > 0) {
+      const int slice_len = primary->size_of_sixteenth_;
+      // This runs every sample, so keep the position within the current step
+      // (rel) for remapped slices too; each step then plays its target slice
+      // from start to end. rel is 0 at each step boundary, so the slice still
+      // starts on its transient.
+      int rel = (int)fmod(new_read_idx, (double)slice_len);
+      // The pattern holds 16 steps (one bar), but a multi-bar loop has 16
+      // slices per bar. Offset into the bar the playhead is currently in, so
+      // bar 2 of a 2-bar loop scrambles bar 2's slices, not bar 1's.
+      int bar_base = ((int)new_read_idx / slice_len / 16) * 16;
+      int target_slice =
+          bar_base + primary->scrambled_pattern_[primary->cur_sixteenth_];
+      new_read_idx = fmod((double)target_slice * slice_len + rel,
+                          (double)audio_buffer->size());
+      // Slice start can be odd; keep stereo frames aligned
+      if (primary->num_channels_ == 2) new_read_idx -= ((int)new_read_idx & 1);
     }
 
     primary->audio_buffer_read_idx_ = (int)new_read_idx;

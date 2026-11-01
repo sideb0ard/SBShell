@@ -26,13 +26,12 @@ class Link;
 
 #include "audio_action_queue.h"
 #include "defjams.h"
+#include "dsp/circular_buffer.h"
 #include "fmsynth.h"
 #include "fx/fx.h"
 #include "soundgenerator.h"
 #include "subsynth.h"
 #include "websocket/web_socket_server.h"
-// #include "websocket/web_socket_server.h"  // TODO: Fix websocket compilation
-// issues
 #include "xfader.h"
 
 struct PreviewBuffer {
@@ -44,7 +43,6 @@ struct PreviewBuffer {
   bool enabled{};
 
   StereoVal Generate();
-  // void ImportFile(std::string filename);
 };
 
 struct file_monitor {
@@ -99,7 +97,11 @@ struct Mixer {
   mutable std::shared_mutex
       sound_generators_mutex_;  // Protects sound_generators_ array (read-write
                                 // lock)
-  std::array<StereoVal, MAX_NUM_SOUND_GENERATORS> soundgen_cur_val_{};
+  // Recent output of each sound generator; back() is the current sample.
+  // Capacity is the FFT window size so Spectrum() can read a full window.
+  static constexpr size_t kFftSize = 512;
+  std::array<CircularBuffer<StereoVal, kFftSize>, MAX_NUM_SOUND_GENERATORS>
+      soundgen_cur_val_{};
 
   // Per-generator gain for solo fade-in/out. Ramps toward solo_gain_target_
   // each sample to avoid clicks when soloing/unsoloing.
@@ -182,6 +184,18 @@ struct Mixer {
 
   WebsocketServer *websocket_server_{nullptr};
 
+  // On-demand snapshot of a generator's last kFftSize samples. A caller
+  // thread sets snapshot_request_sg_; the audio thread copies into snapshot_
+  // and sets snapshot_ready_. See SnapshotVals().
+  std::atomic<int> snapshot_request_sg_{-1};  // -1 = no pending request
+  std::atomic<bool> snapshot_ready_{false};
+  std::array<StereoVal, kFftSize> snapshot_{};
+  std::mutex snapshot_caller_mutex_;
+  std::vector<StereoVal> SnapshotVals(int sg_num);
+  // dB magnitudes, kFftSize/2 + 1 bins; bin k = k * sample_rate / kFftSize Hz.
+  // Empty if audio isn't running. Don't call from the audio thread.
+  std::vector<double> Spectrum(int sg_num);
+
   void AddMidiMapping(int id, std::string param);
   void ResetMidiMappings();
   void PrintMidiMappings();
@@ -240,6 +254,10 @@ struct Mixer {
   void VolChange(float vol);
   void VolChange(int sig, float vol);
   void PanChange(int sig, float vol);
+
+  StereoVal GetLastVal(int sg_num) {
+    return soundgen_cur_val_[sg_num].back();
+  }
 
   void UpdateTimingInfo(long long int frame_time);
 
@@ -312,9 +330,8 @@ struct Mixer {
           if (k >= sound_generators_.size()) break;
 
           auto &sg = sound_generators_[k];
-          // Null check before dereferencing
           if (!sg) {
-            soundgen_cur_val_[k] = StereoVal{};
+            soundgen_cur_val_[k].push_back(StereoVal{});
             continue;
           }
           StereoVal v = sg->GenNext(timing_info);
@@ -332,9 +349,20 @@ struct Mixer {
           } else {
             soundgen_nan_reported_[k] = false;
           }
-          soundgen_cur_val_[k] = v;
+          soundgen_cur_val_[k].push_back(v);
         }
         sound_generators_mutex_.unlock_shared();
+        if (snapshot_request_sg_.load(std::memory_order_relaxed) >= 0) {
+          int req =
+              snapshot_request_sg_.exchange(-1, std::memory_order_acq_rel);
+          if (req >= 0) {
+            size_t got =
+                soundgen_cur_val_[req].copy_last(snapshot_.data(), kFftSize);
+            // Zero the rest if this generator hasn't produced a full window
+            std::fill(snapshot_.begin() + got, snapshot_.end(), StereoVal{});
+            snapshot_ready_.store(true, std::memory_order_release);
+          }
+        }
       }
       // If we couldn't lock, soundgen_cur_val_ still has cached values from
       // last iteration
@@ -373,14 +401,13 @@ struct Mixer {
           gain = std::max(gain - kSoloRampRate, target);
 
         if (gain > 0.0) {
-          output_left +=
-              soundgen_cur_val_[k].left * xfader_.GetValueFor(k) * gain;
-          output_right +=
-              soundgen_cur_val_[k].right * xfader_.GetValueFor(k) * gain;
+          StereoVal cur = soundgen_cur_val_[k].back();
+          output_left += cur.left * xfader_.GetValueFor(k) * gain;
+          output_right += cur.right * xfader_.GetValueFor(k) * gain;
 
-          fx_delay_send += soundgen_cur_val_[k] * fx_send_cache[k][0] * gain;
-          fx_reverb_send += soundgen_cur_val_[k] * fx_send_cache[k][1] * gain;
-          fx_eq_send += soundgen_cur_val_[k] * fx_send_cache[k][2] * gain;
+          fx_delay_send += cur * fx_send_cache[k][0] * gain;
+          fx_reverb_send += cur * fx_send_cache[k][1] * gain;
+          fx_eq_send += cur * fx_send_cache[k][2] * gain;
         }
       }
 
