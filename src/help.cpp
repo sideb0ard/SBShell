@@ -304,6 +304,17 @@ static std::string help_mixer() {
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
   ss << ANSI_COLOR_WHITE << "  sched(delay, start, end, time, action) " << COOL_COLOR_ORANGE << "- Parameter automation\n";
   ss << ANSI_COLOR_WHITE << "    e.g. sched(0, 0.8, 0.2, pp*16, \"vol dx %\") " << COOL_COLOR_ORANGE << "- fade dx out over one bar\n\n";
+  ss << ANSI_COLOR_WHITE << "  p1 < <timer> <bars> \"<vals>\" \"<cmd %>\" " << COOL_COLOR_ORANGE << "- Command process; % = current value\n";
+  ss << ANSI_COLOR_WHITE << "    osc 8 \"0.1 0.6\" \"vol hh %\"         " << COOL_COLOR_ORANGE << "- sweep back and forth, 8 bars each way\n";
+  ss << ANSI_COLOR_WHITE << "    ramp 4 \"0 1\" \"vol dx %\"            " << COOL_COLOR_ORANGE << "- 0 to 1 over 4 bars, then hold\n";
+  ss << ANSI_COLOR_WHITE << "    over 4 \"0 1\" \"vol dx %\"            " << COOL_COLOR_ORANGE << "- 0 to 1 over 4 bars, then repeat\n";
+  ss << ANSI_COLOR_WHITE << "    every 3 \"1\" \"set per:stutter %\"    " << COOL_COLOR_ORANGE << "- run once every 3 bars\n";
+  ss << ANSI_COLOR_WHITE << "    every 2 \"1 2\" \"set per:pitch %\"    " << COOL_COLOR_ORANGE << "- cycles values: 1, 2, 1, 2...\n\n";
+
+  ss << COOL_COLOR_GREEN << "ANALYSIS\n"
+     << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";
+  ss << ANSI_COLOR_WHITE << "  spectrum(gen, bands=16) " << COOL_COLOR_ORANGE << "- Array of 8/16/32 band levels (0-1, low to high)\n";
+  ss << ANSI_COLOR_WHITE << "    e.g. set mixer:delay:fb spectrum(per, 8)[6] * 90 " << COOL_COLOR_ORANGE << "- drive delay from highs\n\n";
 
   ss << COOL_COLOR_GREEN << "MIDI\n"
      << ANSI_COLOR_WHITE << "------------------------------------------------------------------------\n";

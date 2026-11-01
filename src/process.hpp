@@ -55,10 +55,19 @@ class Modulator : public ProcessRunner {
   float loop_len_{1};
   std::string mod_command_{};
 
+  std::string mod_vals_{};  // the raw value string, e.g. "0.1 0.6"
+
+  // osc / over / ramp: sweep from start_ to end_ over loop_len_ bars
   float start_{0};
   float end_{0};
   float incr_{0};
   float current_val_{0};
+
+  // every: run the command once every loop_len_ bars, substituting the next
+  // value from every_vals_ (cycling) for %
+  std::vector<std::string> every_vals_{};
+  int every_bar_count_{0};
+  size_t every_val_idx_{0};
 };
 
 class TidalPattern : public ProcessRunner {

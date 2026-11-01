@@ -275,6 +275,14 @@ static const std::vector<CommandHelp> kCommands = {
     {"change_steps", "Phasor", "change_steps(phasor, steps)", "Changes a phasor's step count.", "", ""},
     {"reset", "Phasor", "reset(phasor)", "Resets a phasor to its start.", "", ""},
 
+    // ─── Analysis ────────────────────────────────────────────────────────
+    {"spectrum", "Analysis", "spectrum(gen, bands=16)",
+     "Frequency spectrum of a sound generator's current output, as an array of 0.0-1.0 levels (low to high).",
+     "bands: 8, 16 or 32, log-spaced from ~86 Hz to 22 kHz. Each level is the loudest frequency in "
+     "its band: -60 dB or quieter = 0, full scale = 1. Analyses the last 512 samples (~12 ms). "
+     "Returns all zeros if audio isn't running.",
+     "let s = spectrum(per, 8);  set mixer:delay:fb s[1] * 90;"},
+
     // ─── Display & utility ───────────────────────────────────────────────
     {"print", "Utility", "print(val, ...)", "Prints its arguments, joined together. Alias: puts.", "", "print(\"step:\", step);"},
     {"puts", "Utility", "puts(val, ...)", "Same as print.", "", ""},

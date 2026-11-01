@@ -390,6 +390,7 @@ if(BUILD_TESTS)
   add_sbsh_test(euclidean_test tests/euclidean.cpp)
   add_sbsh_test(audioutils_test tests/audioutils.cpp)
   add_sbsh_test(ramp_test tests/ramp_test.cpp)
+  add_sbsh_test(sbfft_test tests/sbfft_test.cpp)
 
   # Interpreter tests
   add_sbsh_test(lexer_test tests/lexer_test.cpp)

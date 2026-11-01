@@ -80,7 +80,7 @@ StereoVal FilterPass::Process(StereoVal input) {
   StereoVal output;
   filter_left_->Update();
   filter_right_->Update();
-  output.left = filter_right_->DoFilter(input.left);
+  output.left = filter_left_->DoFilter(input.left);
   output.right = filter_right_->DoFilter(input.right);
 
   return output;

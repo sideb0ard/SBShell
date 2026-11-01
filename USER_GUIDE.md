@@ -1269,6 +1269,37 @@ dx = FmSynth(OCWARF2) vol:0.80 pan:0.00 algo:0
 
 The `ps` header also shows a `sends:` sub-line under each mixer FX listing which generators route to it and at what level.
 
+### Spectrum Analysis
+
+`spectrum(gen, bands)` takes a snapshot of what a sound generator is playing right now and returns its frequency content as an array of levels from 0.0 to 1.0, lowest frequencies first. Use it to drive other parameters from the music, e.g. push a delay's feedback up when the loop gets bright.
+
+```javascript
+let s = spectrum(per, 8);   // [low ... high], each 0.0-1.0
+print(s);
+```
+
+- `bands` is 8, 16 or 32 (default 16). Bands are log-spaced from about 86 Hz to 22 kHz, so each band covers roughly the same musical range.
+- Each level is the loudest frequency in that band: -60 dB or quieter is 0, a full-scale tone is 1.
+- It analyses the last 512 samples (about 12 ms), so it reacts to whatever is sounding at that instant. Low frequencies are coarse at this size: the bottom band starts around 86 Hz.
+- Returns all zeros if audio isn't running.
+
+Call it from a computation to update a control once per bar:
+
+```javascript
+let follow = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    let s = spectrum(per, 8);
+    set mixer:delay:fb 20 + s[6] * 60;   // brighter loop -> longer delay tail
+  }
+}
+p5 # follow;
+```
+
 ### Process IDs and Pattern Assignment
 
 When you start computations, assign them to process IDs (p1-p99) to control them:
@@ -1289,6 +1320,30 @@ p32 # "";          // Stop snares
 // Restart it
 p32 # snare_comp;  // Bring snares back
 ```
+
+### Command Processes (`<`)
+
+A `<` process runs a command string on a timer, replacing `%` with a value. It's a quick way to automate a parameter without writing a computation:
+
+```javascript
+p1 < <timer> <bars> "<values>" "<command with %>"
+```
+
+| Timer | Values | Behaviour |
+|---|---|---|
+| `osc` | `"start end"` | Sweeps from start to end over `bars`, then back again, forever |
+| `ramp` | `"start end"` | Sweeps from start to end over `bars`, then holds at end |
+| `over` | `"start end"` | Sweeps from start to end over `bars`, then jumps back to start and repeats |
+| `every` | `"v1 v2 ..."` | Runs the command once every `bars` bars, at the top of the bar, cycling through the values |
+
+```javascript
+p1 < osc 8 "0.1 0.6" "vol hh %";            // hats breathe in and out
+p2 < ramp 16 "0 0.8" "global_reverb %";     // slow reverb build
+p3 < every 3 "1" "set per:stutter %";       // stutter the loop every 3rd bar
+p4 < every 2 "1 2" "set per:pitch %";       // alternate pitch 1, 2, 1, 2... every 2 bars
+```
+
+`osc`, `ramp` and `over` send the command on every MIDI tick, so they suit continuous parameters like volume, pan or filter cutoff. `every` fires once per N bars, so use it for one-shot actions like `stutter`, `scramble` or switching values. A new process starts at the top of the next bar, and `every` fires on that first bar. Stop a process with `p1 $ "";`.
 
 ### Master Arrangement Computation
 

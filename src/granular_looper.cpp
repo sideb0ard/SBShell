@@ -437,13 +437,43 @@ void GranularLooper::EventNotify(broadcast_event event,
   const std::vector<double>* audio_buffer = primary->GetAudioBuffer();
 
   if (tinfo.is_start_of_loop) {
-    // Re-anchor only at the start of each loop_len_-bar cycle so that
-    // samples_into_loop grows across multiple bars and fmod handles wrapping.
-    if (loop_bar_count_ == 0)
+    // Re-anchor bar_start_sample_ to this bar so the loop stays locked to the
+    // transport. Between anchors, fmod in GenNext wraps the loop.
+    // loop_bar_count_ == 0 forces an anchor (first bar, or len just changed).
+    bool reanchor = (loop_bar_count_ == 0);
+    const double len = primary->loop_len_;
+    auto is_whole = [](double v) { return std::abs(v - std::round(v)) < 1e-9; };
+    // Loops that restart on a bar line: whole bars (1, 2, 4) or an even
+    // division of a bar (0.5, 0.25).
+    const bool bar_aligned =
+        len > 0 && (len >= 1.0 ? is_whole(len) : is_whole(1.0 / len));
+    if (bar_aligned) {
+      // Re-anchor every len bars (every bar if shorter). The loop restarts
+      // there anyway, and this also snaps back onto the bar grid after a BPM
+      // change or a NoteOn jump.
+      const int anchor_every = std::max(1, (int)std::lround(len));
+      if (loop_bar_count_ >= anchor_every) reanchor = true;
+    } else {
+      // Fractional loops (e.g. 1.2, 0.3): a loop boundary only lines up
+      // with a bar start occasionally (every 6 bars for 1.2), so re-anchor
+      // only when playback is back at the loop start right now. Re-anchoring
+      // every ceil(len) bars would jump back mid-loop.
+      const double loop_len_samples = (240.0 / tinfo.bpm) * SAMPLE_RATE * len;
+      if (!reanchor && loop_len_samples > 0) {
+        double effective = std::max<double>(0, (int64_t)tinfo.cur_sample -
+                                                   primary->bar_start_sample_) *
+                           primary->incr_speed_;
+        double phase = fmod(effective, loop_len_samples);
+        // Within a couple of samples of the boundary: at BPMs where a bar
+        // isn't a whole number of samples it never lands exactly on it.
+        reanchor = phase < 2.0 || loop_len_samples - phase < 2.0;
+      }
+    }
+    if (reanchor) {
       primary->bar_start_sample_ = (int64_t)tinfo.cur_sample;
-    loop_bar_count_++;
-    if (loop_bar_count_ >= std::max(1, (int)std::ceil(primary->loop_len_)))
       loop_bar_count_ = 0;
+    }
+    loop_bar_count_++;
   }
 
   bpm_ = tinfo.bpm;

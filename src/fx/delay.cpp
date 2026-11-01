@@ -14,13 +14,11 @@ void delay_init(delay *d, int delay_length) {
   d->m_read_index = 0;
 
   d->m_buffer_size = delay_length;
-  d->m_buffer.clear();
-  d->m_buffer.reserve(delay_length);
+  d->m_buffer.assign(delay_length, 0.0);
 }
 
 void delay_reset_delay(delay *d) {
-  d->m_buffer.clear();
-  d->m_buffer.reserve(d->m_buffer_size);
+  d->m_buffer.assign(d->m_buffer_size, 0.0);
   d->m_write_index = 0;
   d->m_read_index = 0;
   delay_cook_variables(d);

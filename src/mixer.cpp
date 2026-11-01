@@ -1426,9 +1426,18 @@ std::vector<double> Mixer::Spectrum(int sg_num) {
   }
   FFT(frame);
 
+  // A Hann-windowed sine of amplitude 1 peaks at N/4, so scale by that to
+  // make 0 dB = full scale.
+  const double full_scale = N / 4.0;
   std::vector<double> mags(N / 2 + 1);
   for (size_t k = 0; k < mags.size(); k++) {
-    mags[k] = 20.0 * std::log10(std::abs(frame[k]) + 1e-9);
+    mags[k] = 20.0 * std::log10(std::abs(frame[k]) / full_scale + 1e-9);
   }
   return mags;
+}
+
+std::vector<double> Mixer::SpectrumBands(int sg_num, int num_bands) {
+  auto bins_db = Spectrum(sg_num);
+  if (bins_db.empty()) return std::vector<double>(std::max(0, num_bands), 0.0);
+  return CondenseToBands(bins_db, num_bands);
 }

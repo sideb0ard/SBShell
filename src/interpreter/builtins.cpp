@@ -1749,6 +1749,38 @@ std::unordered_map<std::string, std::shared_ptr<object::BuiltIn>> built_ins = {
 
            return evaluator::NULLL;
          })},
+    {"spectrum",
+     std::make_shared<object::BuiltIn>(
+         [](const std::vector<std::shared_ptr<object::Object>>& args)
+             -> std::shared_ptr<object::Object> {
+           if (args.empty() || args.size() > 2)
+             return evaluator::NewError(
+                 "spectrum requires 1 or 2 args: gen, bands (8, 16 or 32)");
+           auto sg = std::dynamic_pointer_cast<object::SoundGenerator>(args[0]);
+           if (!sg)
+             return evaluator::NewError(
+                 "spectrum: first arg must be a sound generator");
+           int num_bands = 16;
+           if (args.size() == 2) {
+             auto num = std::dynamic_pointer_cast<object::Number>(args[1]);
+             if (!num)
+               return evaluator::NewError(
+                   "spectrum: bands must be a number (8, 16 or 32)");
+             num_bands = static_cast<int>(num->value_);
+           }
+           if (num_bands != 8 && num_bands != 16 && num_bands != 32)
+             return evaluator::NewError("spectrum: bands must be 8, 16 or 32");
+
+           // Waits up to one audio buffer for the audio thread to snapshot
+           // the generator's output (fine from the repl or a computation).
+           auto bands = global_mixr->SpectrumBands(sg->soundgen_id_, num_bands);
+
+           auto result = std::make_shared<object::Array>(
+               std::vector<std::shared_ptr<object::Object>>());
+           for (double v : bands)
+             result->elements_.push_back(std::make_shared<object::Number>(v));
+           return result;
+         })},
     {"solo",
      std::make_shared<object::BuiltIn>(
          [](const std::vector<std::shared_ptr<object::Object>>& args)

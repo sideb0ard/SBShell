@@ -194,7 +194,11 @@ struct Mixer {
   std::vector<StereoVal> SnapshotVals(int sg_num);
   // dB magnitudes, kFftSize/2 + 1 bins; bin k = k * sample_rate / kFftSize Hz.
   // Empty if audio isn't running. Don't call from the audio thread.
+  // Values are dBFS: 0 dB = a full-scale sine.
   std::vector<double> Spectrum(int sg_num);
+  // Spectrum condensed to num_bands log-spaced bands, each 0.0-1.0 (-60 dB
+  // and below -> 0, 0 dB -> 1). All zeros if audio isn't running.
+  std::vector<double> SpectrumBands(int sg_num, int num_bands);
 
   void AddMidiMapping(int id, std::string param);
   void ResetMidiMappings();

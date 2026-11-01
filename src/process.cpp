@@ -9,6 +9,8 @@
 #include <string.h>
 #include <utils.h>
 
+#include <algorithm>
+#include <cmath>
 #include <interpreter/builtins.hpp>
 #include <interpreter/evaluator.hpp>
 #include <iostream>
@@ -33,6 +35,8 @@ const char *ModTimerToString(ModulatorTimerType t) {
       return "EVERY";
     case ModulatorTimerType::Oscillate:
       return "OSC";
+    case ModulatorTimerType::Over:
+      return "OVER";
     case ModulatorTimerType::Ramp:
       return "RAMP";
     case ModulatorTimerType::While:
@@ -53,6 +57,17 @@ Modulator::Modulator(ModulatorTimerType timer_type, float loop_len,
     std::shared_ptr<object::String> pattern =
         std::dynamic_pointer_cast<object::String>(mod_vals_obj);
     std::string mod_vals = pattern->value_;
+    mod_vals_ = mod_vals;
+
+    if (timer_type_ == ModulatorTimerType::Every) {
+      std::istringstream iss(mod_vals);
+      std::string val;
+      while (iss >> val) every_vals_.push_back(val);
+      if (every_vals_.empty()) {
+        std::cout << "every needs at least one value, e.g. \"1\"\n";
+      }
+      return;
+    }
 
     sscanf(mod_vals.c_str(), "%f %f", &start_, &end_);
     current_val_ = start_;
@@ -221,6 +236,19 @@ void Computation::EventNotify(mixer_timing_info tinfo) {
 }
 
 void Modulator::EventNotify(mixer_timing_info tinfo) {
+  if (timer_type_ == ModulatorTimerType::Every) {
+    if (!tinfo.is_start_of_loop || every_vals_.empty()) return;
+    const int every_n = std::max(1, static_cast<int>(std::lround(loop_len_)));
+    // Fires on the first bar, then every every_n bars after that
+    if (every_bar_count_ % every_n == 0) {
+      const std::string &val = every_vals_[every_val_idx_];
+      every_val_idx_ = (every_val_idx_ + 1) % every_vals_.size();
+      eval_command_queue.push(ReplaceString(mod_command_, "%", val));
+    }
+    every_bar_count_ = (every_bar_count_ + 1) % every_n;
+    return;
+  }
+
   current_val_ += incr_;
   switch (timer_type_) {
     case ModulatorTimerType::Oscillate:
@@ -450,7 +478,7 @@ std::string Modulator::Status() {
   ss << ANSI_COLOR_GREEN;
 
   ss << "< " << ModTimerToString(timer_type_) << " " << loop_len_ << " \""
-     << " \"" << mod_command_ << "\"";
+     << mod_vals_ << "\" \"" << mod_command_ << "\"";
   ss << ANSI_COLOR_RESET;
   return ss.str();
 }
