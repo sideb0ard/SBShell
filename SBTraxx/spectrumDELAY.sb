@@ -1,0 +1,17 @@
+
+let ffffblah_comp = comp()
+{
+  setup()
+  {
+  }
+  run()
+  {
+    let vals = spectrum(dx, 16);
+    # print(vals);
+    draw_array(vals, "dx", row=1);
+
+    set dx:op2out vals[0]*100;
+    set dx:op3out vals[1]*100;
+    set dx:op4out vals[2]*100;
+  }
+}
